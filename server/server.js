@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
-import authRoutes from "./routes/auth.routes.js";
-import invoiceRoutes from "./routes/invoice.routes.js";
-import reportRoutes from "./routes/report.routes.js";
+import authRoutes from "./auth.routes.js";
+import invoiceRoutes from "./invoice.routes.js";
+import reportRoutes from "./report.routes.js";
 
 dotenv.config();
 
