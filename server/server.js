@@ -29,3 +29,17 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
+app.use(helmet());
+
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+}));
