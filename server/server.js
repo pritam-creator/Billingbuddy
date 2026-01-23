@@ -10,6 +10,9 @@ import reportRoutes from "./routes/report.routes.js";
 dotenv.config();
 
 const app = express();
+app.get("/", (req, res) => {
+  res.send("Billing Buddy Backend is Running! 🚀");
+});
 
 app.use(cors());
 app.use(express.json());
