@@ -3,31 +3,29 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
-import authRoutes from "./auth.routes.js";
-import invoiceRoutes from "./invoice.routes.js";
-import reportRoutes from "./report.routes.js";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
+import authRoutes from "./routes/auth.routes.js";
+import invoiceRoutes from "./routes/invoice.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 
-dotenv.config();
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
 dotenv.config();
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
+// routes
 app.use("/api/auth", authRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/reports", reportRoutes);
 
+// db connect
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    app.listen(5000, () => console.log("Server running on port 5000"));
-  })
+  .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error(err));
+
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
