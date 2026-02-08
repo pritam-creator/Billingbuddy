@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Create Invoice</h2>
+
+<input id="phone" placeholder="Customer Phone"><br><br>
+<select id="items"></select><br><br>
+<input id="qty" type="number" placeholder="Qty"><br><br>
+
+<button id="add">Add Item</button>
+<ul id="bill"></ul>
+
+<button onclick="window.print()">Print / PDF</button>
+
+<h3>Total: ₹<span id="total">0</span></h3>
+
+<button id="save">Save Invoice</button>
+<button onclick="location.href='dashboard.html'">Back</button>
+
+<script type="module" src="invoice.js"></script>
+</body>
+</html>

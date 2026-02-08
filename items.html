@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Add Item</h2>
+
+<input id="name" placeholder="Item Name"><br><br>
+<input id="price" type="number" placeholder="Price"><br><br>
+<button onclick="saveItem()">Save Item</button>
+
+<h3>Items List</h3>
+<ul id="list"></ul>
+
+<script type="module">
+import { db } from './firebase.js';
+import {
+ collection, addDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const ref = collection(db,"items");
+
+window.saveItem = async ()=>{
+  await addDoc(ref,{
+    name:name.value,
+    price:Number(price.value)
+  });
+  alert("Item Saved");
+  load();
+}
+
+async function load(){
+  list.innerHTML="";
+  const snap = await getDocs(ref);
+  snap.forEach(d=>{
+    list.innerHTML += `<li>${d.data().name} - ₹${d.data().price}</li>`;
+  });
+}
+load();
+</script>
+
+</body>
+</html>
