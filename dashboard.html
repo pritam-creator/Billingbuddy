@@ -1,21 +1,18 @@
 <!DOCTYPE html>
-<html><script>
-  if (localStorage.getItem("admin") !== "yes") {
-    location.href = "login.html";
-  }
-</script>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
 <body>
 
 <h2>Dashboard</h2>
 
-<button onclick="location.href='report.html'">Report</button> 
-
+<button onclick="location.href='report.html'">Report</button>
 <button onclick="location.href='orders.html'">Orders</button>
-
 <button onclick="location.href='due.html'">Check Due</button>
-
 <button onclick="location.href='invoice.html'">Invoice</button>
 <button onclick="location.href='menu.html'">Public Menu</button>
 
+<script type="module" src="dashboard.js"></script>
 </body>
-</html> 
+</html>
