@@ -39,3 +39,15 @@ th, td {
     width: 100%;
   }
 }
+input, button {
+  padding: 8px;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+}
+
+table input {
+  width: 100%;
+}
