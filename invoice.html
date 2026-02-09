@@ -78,6 +78,94 @@ table th {
 .right h3 {
   color: var(--primary);
 }
+/* ---------- MOBILE FRIENDLY ---------- */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 10px;
+}
+
+/* Invoice container */
+#invoice {
+  width: 100%;
+  min-height: auto;
+  padding: 15px;
+}
+
+/* Header responsive */
+.header {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.company {
+  text-align: center;
+}
+
+.company img {
+  margin: auto;
+  max-width: 120px;
+}
+
+/* Table scroll on mobile */
+table {
+  font-size: 14px;
+}
+
+table thead {
+  background: #f5f5f5;
+}
+
+table,
+thead,
+tbody,
+th,
+td,
+tr {
+  word-break: break-word;
+}
+
+/* Totals */
+.right {
+  font-size: 15px;
+}
+
+/* Button mobile */
+button {
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+}
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* ---------- DESKTOP ONLY ---------- */
+@media (min-width: 768px) {
+  body {
+    padding: 20px;
+  }
+  
+  #invoice {
+    width: 210mm;
+    min-height: 297mm;
+  }
+  
+  .header {
+    flex-direction: row;
+  }
+  
+  button {
+    width: auto;
+  }
+}
   </style>
 </head>
 
