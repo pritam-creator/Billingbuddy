@@ -1,0 +1,27 @@
+<h2>Invoice History</h2>
+<ul id="list"></ul>
+
+<script type="module">
+  import { db } from "./firebase.js";
+  import {
+    collection,
+    getDocs,
+    orderBy,
+    query
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  
+  const q = query(collection(db, "invoices"), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  
+  const list = document.getElementById("list");
+  
+  snap.forEach(doc => {
+    const d = doc.data();
+    list.innerHTML += `
+    <li>
+      Invoice #${d.invoiceNo} - ₹${d.total || ""}
+      <a href="invoice.html?id=${doc.id}">View</a>
+    </li>
+  `;
+  });
+</script>
