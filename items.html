@@ -1,45 +1,17 @@
 <!DOCTYPE html>
-<html><head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!--Tab to edit-->
-</head>
+<html>
 <body>
 
-<h2>Add Item</h2>
+<h2>Items</h2>
 
-<input id="name" placeholder="Item Name"><br><br>
-<input id="price" type="number" placeholder="Price"><br><br>
-<button onclick="saveItem()">Save Item</button>
+<input id="name" placeholder="Item name">
+<input id="price" type="number" placeholder="Price">
+<button id="add">Add Item</button>
 
-<h3>Items List</h3>
+<hr>
+
 <ul id="list"></ul>
 
-<script type="module">
-import { db } from './firebase.js';
-import {
- collection, addDoc, getDocs
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const ref = collection(db,"items");
-
-window.saveItem = async ()=>{
-  await addDoc(ref,{
-    name:name.value,
-    price:Number(price.value)
-  });
-  alert("Item Saved");
-  load();
-}
-
-async function load(){
-  list.innerHTML="";
-  const snap = await getDocs(ref);
-  snap.forEach(d=>{
-    list.innerHTML += `<li>${d.data().name} - ₹${d.data().price}</li>`;
-  });
-}
-load();
-</script>
-
+<script type="module" src="items.js"></script>
 </body>
 </html>
