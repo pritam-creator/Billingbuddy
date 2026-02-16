@@ -475,36 +475,54 @@ margin-bottom: 8px;
    PROFESSIONAL PRINT MODE
 =================================*/
 
+/* ===============================
+   PERFECT MOBILE PRINT FIX
+=================================*/
 @media print {
-  
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
   body * {
     visibility: hidden;
   }
-  
+
   #printable-invoice,
   #printable-invoice * {
     visibility: visible;
   }
-  
+
   #printable-invoice {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 20px;
-    background: #fff;
+    position: static !important;
+    width: 210mm !important;
+    min-height: 297mm;
+    margin: 0 auto !important;
+    padding: 15mm !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
-  
-  .no-print,
+
+  #invoicePage {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .top-fixed,
   .bottom-section,
-  .top-fixed {
+  .no-print {
     display: none !important;
   }
-  
+
   @page {
     size: A4;
-    margin: 15mm;
+    margin: 0;
   }
+
+}
   
   .invoice-table {
     width: 100%;
