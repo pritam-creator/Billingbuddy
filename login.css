@@ -355,7 +355,7 @@ margin-bottom: 8px;
 .top-fixed {
   flex-shrink: 0;
  background: #FFA700;
- padding: -2px;
+ padding: 0;
  border-bottom: 1px solid #ddd;
   
 }
@@ -451,23 +451,7 @@ margin-bottom: 8px;
 
 /* ===== MOBILE RESPONSIVE FIX ===== */
 
-@media (max-width: 600px) {
-  
-  .invoice-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .billing-row {
-    flex-direction: column;
-  }
-  
-  .invoice-meta {
-    text-align: left;
-  }
-  
-}
+
 /* ======================================
    PRINT MODE
 ====================================== */
@@ -478,51 +462,6 @@ margin-bottom: 8px;
 /* ===============================
    PERFECT MOBILE PRINT FIX
 =================================*/
-@media print {
-
-  html, body {
-    height: auto !important;
-    overflow: visible !important;
-    background: #fff !important;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #printable-invoice,
-  #printable-invoice * {
-    visibility: visible;
-  }
-
-  #printable-invoice {
-    position: static !important;
-    width: 210mm !important;
-    min-height: 297mm;
-    margin: 0 auto !important;
-    padding: 15mm !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-
-  #invoicePage {
-    position: static !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .top-fixed,
-  .bottom-section,
-  .no-print {
-    display: none !important;
-  }
-
-  @page {
-    size: A4;
-    margin: 0;
-  }
-
-}
   
   .invoice-table {
     width: 100%;
@@ -536,7 +475,7 @@ margin-bottom: 8px;
     text-align: center;
   }
   
-}
+
 
 
 html {
@@ -759,7 +698,75 @@ textarea {
   border: none;
   background: #e0e0e0;
 }
+@media print {
 
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #printable-invoice,
+  #printable-invoice * {
+    visibility: visible;
+  }
+
+  #printable-invoice {
+    position: static !important;
+    width: 210mm !important;
+    min-height: 297mm;
+    margin: 0 auto !important;
+    padding: 15mm !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  #invoicePage {
+    position: static !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .top-fixed,
+  .bottom-section,
+  .no-print {
+    display: none !important;
+  }
+
+  .invoice-top-design {
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .invoice-top-design::after {
+    clip-path: none !important;
+    width: 100% !important;
+  }
+
+  .invoice-table th,
+  .invoice-table td {
+    border: 1px solid #000 !important;
+    padding: 8px;
+    text-align: center;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+}
 
 
 
