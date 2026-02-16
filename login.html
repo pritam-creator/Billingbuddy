@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Surjya Bakery Login</title>
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+
+
+
+<section class="page login-page active" id="loginPage">
+  <div class="login-wrapper">
+    <div class="login-box">
+      <div class="logo-circle glow">
+        <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="logo-img">
+      </div>
+
+      <h1 class="brand-name">Surjya Bakery</h1>
+      <p class="subtitle">Enter 4 Digit PIN</p>
+
+      <div class="pin-box">
+        <input type="tel" maxlength="1" class="pin-input">
+        <input type="tel" maxlength="1" class="pin-input">
+        <input type="tel" maxlength="1" class="pin-input">
+        <input type="tel" maxlength="1" class="pin-input">
+      </div>
+
+      <button onclick="login()">Login</button>
+      <p class="reset-pin" onclick="showPage('resetPinPage')">Reset PIN?</p>
+      <p class="hint">Default PIN: 1234</p>
+    </div>
+  </div>
+</section>
+
+<section class="page login-page" id="resetPinPage">
+  <div class="login-wrapper">
+    <div class="login-box">
+      <h1 class="brand-name">Reset PIN</h1>
+      
+      <input id="oldPin" maxlength="4" placeholder="Old PIN">
+      <input id="newPin" maxlength="4" placeholder="New PIN">
+      <input id="confirmPin" maxlength="4" placeholder="Confirm PIN">
+      
+      <button onclick="resetPin()">Save PIN</button>
+      <p class="reset-pin" onclick="showPage('loginPage')">⬅ Back</p>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="dashboardPage">
+  <div class="dashboard-header">
+    <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="dashboard-logo">
+    <h2>Surjya Bakery</h2>
+    <p>Dashboard</p>
+  </div>
+  
+  <div class="dashboard-grid">
+    <div class="card" onclick="showPage('itemsPage')">📦<br>Items</div>
+    <div class="card" onclick="openInvoiceDirect()">🧾<br>Invoice</div>
+    <div class="card" onclick="showPage('clientsPage')">👥<br>Clients</div>
+    <div class="card" onclick="showPage('inventoryPage')">🏪<br>Inventory</div>
+   <div class="card" onclick="openRecordPage()">📊<br>Records</div>
+    <div class="card" onclick="showPage('checkDuePage')">📱<br>Check Udhaari</div>
+    <div class="card" onclick="showPage('ordersPage')">📦<br>Orders</div>
+    <div class="card" onclick="showPage('dueListPage')">💰<br>Udhaari List</div>
+  </div>
+</section>
+
+
+  
+  <section class="page" id="itemsPage">
+  
+  <section class="top-section">
+    <h2>📦 Items</h2>
+    <input type="text" id="searchInput" placeholder="Search item..." oninput="filterItems()" />
+  </section>
+  
+  <section id="itemsList" class="middle-section">
+    </section>
+  
+  <section class="bottom-section">
+    <div id="input-wrapper">
+      <input type="text" id="itemName" placeholder="Item">
+      <input type="number" id="itemPrice" placeholder="₹">
+    </div>
+    <button id="addBtn">+ Add Item</button>
+    <button id="editBtn">✏ Edit Item</button>
+    <button onclick="showPage('dashboardPage')">⬅ Back</button>
+  </section>
+
+</section> 
+
+
+<section class="page" id="itemDetailPage">
+  <div class="login-box">
+    <h2>📦 Item Details</h2>
+    <hr>
+    <h1 id="detailName" style="margin-top: 10px;">Item Name</h1>
+    <h3 id="detailPrice" style="color: #4CAF50;">₹0</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+      <button onclick="addItemToOrder()" style="background-color: #4CAF50;">➕ Add to Order</button>
+      <div style="margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <label>Available:</label>
+        <input type="checkbox" id="itemAvailableToggle" style="width: 20px; height: 20px;" onchange="toggleAvailability()">
+      </div>
+      
+      <button onclick="deleteCurrentItem()" style="background-color: #ff4d4d;">🗑 Delete Item</button>
+      
+      <button class="back" onclick="goBack()" style="background-color: #666;">⬅ Back</button>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="ordersPage">
+  <h2>📦 Orders</h2>
+  <div id="ordersList"></div>
+  <div id="currentOrderList"></div>
+  <button class="back" onclick="goBack()">⬅ Back</button>
+</section>
+
+
+<section class="page" id="checkDuePage">
+  <input id="checkPhone" placeholder="Mobile Number">
+  <button onclick="checkDue()">Check</button>
+  <p id="dueResult"></p>
+  <button class="back" onclick="goBack()">⬅ Back</button>
+</section>
+
+<section class="page" id="dueListPage">
+  <h2>💰 Customer Udhaari</h2>
+  <div id="dueList"></div>
+  <button class="back" onclick="goBack()">⬅ Back</button>
+</section>
+
+<section class="page" id="invoicePage">
+
+  <section class="top-fixed no-print">
+    <h2>Create Invoices</h2>
+    <select id="invoiceClient"></select>
+   <input type="text" id="invoiceSearch" placeholder="Search item..." />
+   <div id="invoiceSearchResult"></div>
+   <input type="checkbox" id="addToDue">
+  </section>
+
+  <section class="invoice-container" id="printable-invoice">
+    
+ <section class="invoice-top-design">
+  
+  <div class="top-left">
+    <div class="company-box">
+  <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="invoice-img">
+  <div>
+    <h2>Your Business Name</h2>
+    <p>Your Slogan Here</p>
+  </div>
+</div>
+  </div>
+  
+  <div class="top-right">
+    <h1>INVOICE</h1>
+<p>Invoice No : <span id="invoiceNumber">#00001</span></p>
+<p>Invoice Date : <span id="issueDate"></span></p>
+<p>Due Date : <span id="dueDate"></span></p>
+  </div>
+  
+</section>
+
+<section class="invoice-middle">
+  
+  <div class="invoice-to">
+    <h4>INVOICE TO:</h4>
+    <h3 id="clientNamePrint">Client Name</h3>
+    <p id="clientAddressPrint">Client Address</p>
+  </div>
+  
+  <div class="payment-info">
+    <h4>Payment Info :</h4>
+    <p>Account No : 123456789</p>
+    <p>A/C Name : Your Name</p>
+    <p>Bank Name : SBI</p>
+  </div>
+  
+</section>
+
+    <section class="items-list">
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th>Price (₹)</th> <th>Amount (₹)</th>     </tr>
+        </thead>
+       <tbody id="invoiceItems"></tbody>
+      </table>
+    </section>
+
+    <section class="invoice-footer">
+      <div class="signature-box">
+        <p>Issued by, signature:</p>
+        <div class="signature-line">Ron Paul</div>
+      </div>
+      <div class="totals-box">
+       <p>Subtotal: ₹<span id="subTotal">0</span></p>
+       <p>gst18%: ₹<span id="gstAmount">0</span></p>
+<hr>
+<div class="total-section">
+  Total (INR): ₹<span id="grandTotal">0</span>
+</div> </div>
+    </section>
+  </section>
+
+<section class="bottom-section">
+  
+  <!-- Item Add Row -->
+  <input type="text" id="invoiceItemName">
+<input type="number" id="invoiceItemQty">
+<input type="number" id="invoiceItemPrice">
+
+<button id="invoiceAddBtn">Add Item</button>
+
+<div class="bottom-actions">
+  <button id="saveBtn" class="action-btn">💾 Save</button>
+  <button id="printBtn" class="action-btn">🖨 Print</button>
+  <button id="shareBtn" class="action-btn">📤 Share</button>
+  <button id="clearBtn" class="danger-btn">🗑 Clear</button>
+</div>
+  
+  <!-- Back Button -->
+  <button onclick="showPage('dashboardPage')" class="back-btn">⬅ Back</button>
+  
+</section>
+
+
+
+</section>
+
+
+<section class="page" id="clientsPage">
+  <h2>👥 Clients</h2>
+
+  <!-- Add / Edit Client -->
+  <div class="client-form">
+    <input type="text" id="clientName" placeholder="Client Name">
+    <input type="tel" id="clientPhone" placeholder="Mobile Number">
+    <button onclick="addClient()">➕ Add Client</button>
+  </div>
+
+  <!-- Search Client -->
+  <input
+    type="text"
+    placeholder="Search client..."
+    oninput="searchClients(this.value)"
+  >
+
+  <!-- Client List -->
+  <div id="clientsList"></div>
+
+  <!-- Back -->
+  <button class="back" onclick="goBack()">⬅ Back</button>
+</section>
+
+
+<section class="page" id="recordPage">
+  <div class="record-header">
+    <h2>📊 Sales Records</h2>
+  </div>
+  
+  <div class="record-filters">
+    <input type="text" id="recordSearch" placeholder="Search Name / Mobile" oninput="filterRecords()">
+    <input type="date" id="recordDate" onchange="filterRecords()">
+  </div>
+  
+  <div class="record-summary">
+    <div class="summary-item">
+      <span id="totalInvoices">Invoices: 0</span>
+    </div>
+    <div class="summary-item">
+      <span id="totalSales">Total Sales: ₹0</span>
+    </div>
+  </div>
+  
+  <div id="recordList">
+    </div>
+  
+  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+</section>
+
+
+
+<section class="page" id="inventoryPage">
+  <h2>📦 Inventory</h2>
+  
+  <!-- Summary -->
+  <div class="inventory-summary">
+    <div>Total Items: <span id="inventoryCount">0</span></div>
+    <div>Low Stock: <span id="lowStockCount">0</span></div>
+  </div>
+  
+  <!-- Add / Update Stock -->
+  <div class="inventory-form">
+    <input type="text" id="inventorySearch" placeholder="Search product..." oninput="searchInventory()">
+    
+    <select id="inventorySelect">
+      <option value="">Select Product</option>
+    </select>
+    
+    <input type="number" id="stockQuantity" placeholder="Enter Quantity">
+    
+    <button onclick="updateStock()">➕ Update Stock</button>
+  </div>
+  
+  <!-- Inventory List -->
+  <div id="inventoryList"></div>
+  
+  <!-- Back -->
+  <button class="back" onclick="goBack()">⬅ Back</button>
+</section>
+
+
+
+<!-- Firebase Core -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
+<!-- Firebase Database -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<!-- Firebase Auth (optional agar use karte ho) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<script src="login.js"></script>
+</body>
+</html>
