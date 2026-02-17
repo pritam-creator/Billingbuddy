@@ -735,6 +735,9 @@ textarea {
     height: auto !important;
     overflow: visible !important;
   }
+  
+ 
+
 
   .top-fixed,
   .bottom-section,
@@ -742,17 +745,19 @@ textarea {
     display: none !important;
   }
 
-  .invoice-top-design {
-    width: 100% !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
+   .invoice-top-design {
+  background: linear-gradient(
+    to right,
+    #ff7b00 0%,
+    #ff9f43 50%,
+    #1f2d50 50%,
+    #243b6b 100%
+  ) !important;
+}
 
-  .invoice-top-design::after {
-    clip-path: none !important;
-    width: 100% !important;
-  }
+.invoice-top-design::after {
+  display: none !important;
+}
 
   .invoice-table th,
   .invoice-table td {
