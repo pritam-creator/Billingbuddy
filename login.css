@@ -145,11 +145,59 @@ button:hover {
   margin-top: 10px;
   color: #999;
 }
+/* ==============================
+   RESET PIN PAGE UI IMPROVED
+============================== */
 
+/* ===========================
+   RESET PIN PROFESSIONAL UI
+=========================== */
+
+#resetPinPage {
+  justify-content: center;
+  align-items: center;
+}
+
+#resetPinPage .login-box {
+  width: 90%;
+  max-width: 380px;
+  padding: 30px 22px;
+}
+
+/* Proper spacing */
+
+#resetPinPage input {
+  width: 100%;
+  height: 48px;
+  margin-bottom: 14px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 2px solid #e0e0e0;
+  background: #f7f7f7;
+  font-size: 14px;
+  color: #333;
+  transition: 0.3s ease;
+}
+
+/* Focus */
+
+#resetPinPage input:focus {
+  outline: none;
+  border-color: #00c6ff;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(0, 198, 255, 0.4);
+}
+
+/* Button spacing */
+
+#resetPinPage button {
+  margin-top: 8px;
+}
 /* ======================================
    DASHBOARD
 ====================================== */
 .dashboard-header {
+  position: relative;
   text-align: center;
   color: white;
   margin-bottom: 25px;
@@ -164,6 +212,36 @@ button:hover {
   padding: 10px;
   margin-bottom: 10px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+/* ===========================
+   DASHBOARD LOGOUT BUTTON UI
+=========================== */
+
+.logout-btn {
+  position: absolute;
+  top: 660px;
+  right: 0px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 20px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color:#F90000;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Hover / Tap Effect */
+
+.logout-btn:active {
+  transform: scale(0.95);
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .dashboard-grid {
@@ -287,21 +365,126 @@ margin-bottom: 8px;
   margin-top: 6px;
   font-size: 14px;
 }
+/* ITEM LIST CONTAINER */
+#itemsList {
+  padding: 15px;
+}
 
+/* EACH ITEM CARD */
+.item-card {
+  display: flex;
+  background: white;
+  padding: 14px 16px;
+  border-radius: 18px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  gap: 10px;
+}
+
+/* LEFT SIDE */
+.item-left {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.item-left h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.item-left p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f48c6b;
+}
+
+
+
+/* QTY STYLE */
+/* RIGHT SIDE FIX */
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  margin-top: 0px;
+}
+
+/* QTY CONTAINER */
+.qty-box {
+  display: flex;
+  align-items: center;        /* vertical center */
+  justify-content: center;    /* horizontal balance */
+  background: #f1f1f1;
+  border-radius: 40px;
+  padding: 6px 8px;
+  height: 40px;               /* 🔥 fixed height */
+  margin-top: 0px;
+}
+
+/* PLUS & MINUS BUTTON */
+.qty-box button {
+  width: 37px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg,#f6b36b,#f48c6b);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+
+  display: flex;
+  align-items: center;     /* 🔥 vertical center */
+  justify-content: center; /* 🔥 horizontal center */
+  margin-top: -1px;
+}
+
+/* HOVER EFFECT */
+.qty-box button:active {
+  transform: scale(0.95);
+}
+
+/* QTY NUMBER */
+.qty-box input {
+  width: 30px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;   /* 🔥 important */
+  margin-top: 0px;
+}
+
+.qty-box input:focus {
+  outline: none;
+}
+/* ADD BUTTON */
+.add-cart-btn {
+  padding: 8px 16px;
+  border-radius: 25px;
+  border: none;
+  background: linear-gradient(135deg, #f6b36b, #f48c6b);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: -1px;
+}
 
 
 
 /* Item Card Design Fix (Jaisa pehle dikh raha tha) */
-.item-card {
-  background: white;
-  padding: 15px;
-  margin-bottom: 12px;
-  border-radius: 20px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  border-left: 5px solid #fda085; /* Thoda design ke liye */
-  display: flex;
-  flex-direction: column;
-}
+
+
+
+
+
 
 .item-card h3 {
   margin: 0;
@@ -559,7 +742,7 @@ textarea {
 
 .top-right p {
   margin: 4px 0;
-  margin-right: 6px;
+  margin-right: 45px;
   font-size: 10px;
 }
 .top-section h1 {
@@ -773,5 +956,185 @@ textarea {
 
 }
 
+/* ==============================
+   CART PAGE PROFESSIONAL FIX
+============================== */
 
+#cartPage {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100dvh;
+  display: none;
+  flex-direction: column;
+  background: linear-gradient(135deg,#f6b36b,#f48c6b);
+  z-index: 9999 !important;   /* 🔥 force top */
+}
 
+#cartPage.active {
+  display: flex;
+}
+
+/* TOP HEADER */
+
+.cart-header {
+  flex-shrink: 0;
+  padding: 18px;
+  font-size: 18px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  color: #222;
+}
+
+/* SCROLLABLE ITEMS */
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+/* ITEM CARD */
+
+.cart-item {
+  background: white;
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.cart-item h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.cart-item p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #555;
+}
+
+/* BOTTOM FIXED AREA */
+
+.cart-bottom {
+  flex-shrink: 0;
+  padding: 15px;
+  background: white;
+  box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+
+/* TOTAL */
+
+.cart-total {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* PLACE ORDER BUTTON */
+
+.place-order-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 30px;
+  border: none;
+  font-weight: 600;
+  font-size: 15px;
+  background: linear-gradient(135deg, #ff7e5f, #ff9966);
+  color: white;
+  margin-bottom: 10px;
+}
+.cart-btn {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  padding: 3px 7px;
+  border-radius: 50%;
+  display: none;
+  min-width: 20px;
+  text-align: center;
+}
+/* BACK BUTTON */
+
+.back-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 30px;
+  border: none;
+  font-weight: 500;
+  font-size: 14px;
+  background: #eee;
+  color: #333;
+}
+#toast {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2ecc71;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-size: 14px;
+  display: none;
+  z-index: 999999;   /* 🔥 very high */
+}
+
+#toast.show {
+  opacity: 1;
+  bottom: 110px;
+}
+.cart-icon {
+  position: relative;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  padding: 3px 7px;
+  border-radius: 50%;
+  display: none;
+}
+.invoice-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px;
+}
+
+.invoice-form input {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.invoice-row {
+  display: flex;
+  gap: 10px;
+}
+
+.invoice-row input {
+  flex: 1;
+}

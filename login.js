@@ -1,5 +1,7 @@
 // ============================
 // GLOBAL VARIABLES
+let currentOrder = [];
+let cart = [];
 let invoiceItems = [];
 let allItems = [];
 let selectedItemId = null;
@@ -173,7 +175,14 @@ function openInvoiceDirect() {
 // ============================
 // INVOICE SYSTEM
 // ============================
+// ============================
+// OPEN CART PAGE
+// ============================
 
+function openCartPage() {
+  renderCart(); // cart refresh
+  showPage("cartPage");
+}
 
 /********************************
  GLOBAL DATA
@@ -253,12 +262,8 @@ function calculateTotals() {
     subtotal += item.amount;
   });
   
-  const gst = subtotal * 0.18;
-  const total = subtotal + gst;
-  
   document.getElementById("subTotal").textContent = subtotal.toFixed(2);
-  document.getElementById("gstAmount").textContent = gst.toFixed(2);
-  document.getElementById("grandTotal").textContent = total.toFixed(2);
+  document.getElementById("grandTotal").textContent = subtotal.toFixed(2);
 }
 
 
@@ -335,13 +340,14 @@ document.addEventListener("DOMContentLoaded", function() {
       try {
         
         const invoiceData = {
-          client: clientNamePrint ? clientNamePrint.textContent : "",
-          items: currentInvoiceItems || [],
-          subtotal: document.getElementById("subTotal")?.textContent || "0",
-          gst: document.getElementById("gstAmount")?.textContent || "0",
-          total: document.getElementById("grandTotal")?.textContent || "0",
-          date: new Date().toLocaleString()
-        };
+  customerName: document.getElementById("invoiceCustomerName").value,
+  customerAddress: document.getElementById("invoiceCustomerAddress").value,
+  items: currentInvoiceItems,
+  subtotal: document.getElementById("subTotal").textContent,
+ 
+  total: document.getElementById("grandTotal").textContent,
+  date: new Date().toLocaleString()
+};
         
         let invoices = [];
         
@@ -531,50 +537,122 @@ function loadItems() {
   
 }
 
-function renderItems(itemsArray) {
+function renderItems() {
+  const list = document.getElementById("itemsList");
+  list.innerHTML = "";
   
-  const container = document.getElementById("itemsList");
-  container.innerHTML = "";
-  
-  if (!itemsArray.length) {
-    container.innerHTML = "<p style='text-align:center'>No items found</p>";
-    return;
-  }
-  
-  itemsArray.forEach(item => {
-    
-    const card = document.createElement("div");
-    card.className = "item-card";
-    
-    card.innerHTML = `
-      <h3>${item.name}</h3>
+  allItems.forEach((item, index) => {list.innerHTML += `
+  <div class="item-card">
+
+    <div class="item-left">
+      <h4>${item.name}</h4>
       <p>₹${item.price}</p>
-    `;
-    
-    // ✅ CLICK FIX HERE
-    card.onclick = () => {
-      console.log("ITEM CLICKED");
-      openItemPage(item.id, item);
-    };
-    
-    container.appendChild(card);
-    
+    </div>
+
+    <div class="item-right">
+
+      <div class="qty-box">
+        <button type="button" onclick="changeQty(${index}, -1)">−</button>
+        <input type="number" id="qty-${index}" value="1" min="1">
+        <button type="button" onclick="changeQty(${index}, 1)">+</button>
+      </div>
+
+      <button type="button"
+        class="add-cart-btn"
+        onclick="addToCartWithQty(${index})">
+        Add
+      </button>
+
+    </div>
+
+  </div>
+`;
   });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
+
+function changeQty(index, change) {
+  const input = document.getElementById(`qty-${index}`);
+  let value = parseInt(input.value) || 1;
+  value += change;
+  if (value < 1) value = 1;
+  input.value = value;
+}
+
+function addToCartWithQty(index) {
+  const qty = parseInt(document.getElementById(`qty-${index}`).value) || 1;
+  const item = allItems[index];
   
-  const searchInput = document.getElementById("invoiceSearch");
+  const existing = currentOrder.find(i => i.name === item.name);
   
-  if (searchInput) {
-    searchInput.addEventListener("input", function() {
-      renderInvoiceTable(this.value);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    currentOrder.push({
+      name: item.name,
+      price: item.price,
+      qty: qty
     });
   }
   
-});
+  renderCart();
+  updateCartBadge();
+  showToast(item.name + " added to cart"); // 🔥 IMPORTANT
+}
+function showToast(message) {
+  let toast = document.getElementById("globalToast");
+  
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "globalToast";
+    document.body.appendChild(toast);
+  }
+  
+  toast.innerText = message;
+  
+  toast.style.position = "fixed";
+  toast.style.top = "80px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%) translateY(-20px)";
+  toast.style.background = "#2ecc71";
+  toast.style.color = "white";
+  toast.style.padding = "12px 22px";
+  toast.style.borderRadius = "30px";
+  toast.style.zIndex = "999999";
+  toast.style.fontSize = "14px";
+  toast.style.boxShadow = "0 8px 25px rgba(0,0,0,0.25)";
+  toast.style.opacity = "0";
+  toast.style.transition = "all 0.3s ease";
+  
+  // show animation
+  setTimeout(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateX(-50%) translateY(0)";
+  }, 10);
+  
+  // hide animation
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(-50%) translateY(-20px)";
+  }, 1500);
+}
 
-
+function updateCartBadge() {
+  const badge = document.getElementById("cartBadge");
+  
+  let totalQty = 0;
+  
+  currentOrder.forEach(item => {
+    totalQty += item.qty;
+  });
+  
+  if (totalQty > 0) {
+    badge.style.display = "inline-block";
+    badge.innerText = totalQty;
+  } else {
+    badge.style.display = "none";
+  }
+}
 
 function openItemPage(key, item) {
   
@@ -592,6 +670,11 @@ function openItemPage(key, item) {
 function goBack() {
   showPage("itemsPage");
 }
+
+  
+  console.log("Cart:", currentOrder);
+  renderCart();
+
 
 function toggleAvailability() {
   db.ref("items/" + selectedItem.id + "/available")
@@ -804,4 +887,115 @@ function addItemToOrder() {
     document.getElementById("invoiceItemSearch").value = selectedItem.name;
     document.getElementById("invoiceQty").focus();
     alert(selectedItem.name + " selected! Now enter quantity.");
+}
+function addToCart(name, price) {
+  
+  price = parseFloat(price);
+  
+  const existingItem = cart.find(item => item.name === name);
+  
+  if (existingItem) {
+    existingItem.qty += 1;
+    existingItem.amount = existingItem.qty * existingItem.price;
+  } else {
+    cart.push({
+      name: name,
+      price: price,
+      qty: 1,
+      amount: price
+    });
+  }
+  
+  renderCart();
+}
+
+function logoutUser() {
+  firebase.auth().signOut().then(() => {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById("loginPage").classList.add("active");
+  });
+}
+// ============================
+// CART RENDER SYSTEM
+// ============================
+
+function renderCart() {
+  const container = document.getElementById("cartContainer");
+  container.innerHTML = "";
+  
+  if (currentOrder.length === 0) {
+    container.innerHTML = "<p style='text-align:center;'>Cart is empty</p>";
+    return;
+  }
+  
+  let total = 0;
+  
+  currentOrder.forEach((item, index) => {
+    total += item.price * item.qty;
+    
+    container.innerHTML += `
+      <div class="cart-item">
+        <div>
+          <strong>${item.name}</strong><br>
+          ₹${item.price} × ${item.qty}
+        </div>
+        <div>
+          ₹${item.price * item.qty}
+        </div>
+      </div>
+    `;
+  });
+  
+  document.getElementById("cartTotal").innerText = "Total: ₹ " + total;
+  document.getElementById("cartTotal").innerText = "Total: ₹ " + total;
+
+updateCartBadge(); // 👈 yaha add karo
+}
+
+function removeCartItem(index) {
+  cart.splice(index, 1);
+  renderCart();
+}
+// ============================
+// PLACE ORDER (CART → INVOICE)
+// ============================
+
+function placeOrder() {
+  
+  if (currentOrder.length === 0) {
+    alert("Cart is empty");
+    return;
+  }
+  
+  // Invoice clear
+  currentInvoiceItems = [];
+  
+  // currentOrder → invoice me daalo
+  currentOrder.forEach(item => {
+    currentInvoiceItems.push({
+      name: item.name,
+      qty: item.qty,
+      price: item.price,
+      amount: item.price * item.qty
+    });
+  });
+  
+  // Cart clear
+  currentOrder = [];
+  renderCart();
+  updateCartBadge();
+  
+  // Invoice update
+  renderInvoiceItems();
+  calculateTotals();
+  
+  // Invoice page open
+  showPage("invoicePage");
+}
+function updateCustomerPreview() {
+  const name = document.getElementById("invoiceCustomerName").value;
+  const address = document.getElementById("invoiceCustomerAddress").value;
+  
+  document.getElementById("clientNamePrint").innerText = name;
+  document.getElementById("clientAddressPrint").innerText = address;
 }
