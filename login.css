@@ -694,21 +694,14 @@ textarea {
 }
 
 .invoice-top-design {
-  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;              /* ✅ FIX */
-  margin: 0 0 15px 0;       /* ✅ CLEAN */
-  padding: 15px;
+  padding: 18px;
   border-radius: 18px;
-  overflow: hidden;
-
-  
-  background: linear-gradient(135deg, #ff7b00, #ff9f43);
+  background: linear-gradient(to right, #ff7b00 50%, #1f2d50 50%);
   color: white;
-  
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
 }
 .invoice-top-design * {
   position: relative;
@@ -721,11 +714,9 @@ textarea {
   right: 0;
   width: 47%;
   height: 100%;
-
   background: linear-gradient(135deg, #1f2d50, #243b6b);
   clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%);
-
-  z-index: 0;   /* 👈 Important */
+  z-index: 0;
 }
 .invoice-top-design h1 {
   font-size: 15px;
@@ -735,6 +726,9 @@ textarea {
 .invoice-top-design p {
   font-size: 13px;
   margin: 2px 0;
+}
+.top-right {
+  text-align: right;
 }
 
 .top-right p {
@@ -1140,6 +1134,18 @@ textarea {
   
   .total-section {
     font-size: 18px;
+  }
+  
+  
+  .invoice-top-design {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    background: linear-gradient(135deg, #ff7b00, #1f2d50);
+  }
+  
+  .top-right {
+    text-align: left;
   }
   
 }
