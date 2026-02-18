@@ -1160,35 +1160,24 @@ ${window.location.href}`;
 }
 function shareAllItems() {
   
-  if (!allItems || allItems.length === 0) {
-    alert("No items available!");
-    return;
-  }
-  
   let text = "🛍️ Available Items:\n\n";
   
-  allItems.forEach((item, index) => {
-    
-    console.log("Checking item:", item); // debug line
-    
-    if (item && item.name && item.price) {
+  allItems.forEach(item => {
+    if (item && item.name) {
       text += `• ${item.name} - ₹${item.price}\n`;
-    } else {
-      console.log("Invalid item at index:", index);
     }
-    
   });
   
-  text += `\nShop Now 👇\n${window.location.href}`;
+  const shopLink = window.location.origin + "/#shop";
   
   if (navigator.share) {
     navigator.share({
       title: "Surjya Bakery Items",
       text: text,
-      url: window.location.href
-    }).catch(err => console.log(err));
+      url: shopLink
+    });
   } else {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text + "\n" + shopLink);
     alert("Items copied!");
   }
 }
