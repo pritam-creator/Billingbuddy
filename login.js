@@ -1168,7 +1168,7 @@ function shareAllItems() {
     }
   });
   
-  const shopLink = "https://surjyabakery-a3zxpdzrq-babumosais-projects-d54df714.vercel.app/#shop";
+  const shopLink = "https://surjyabakery.vercel.app/#shop";
   
   if (navigator.share) {
     navigator.share({
