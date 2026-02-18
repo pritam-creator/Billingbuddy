@@ -1160,7 +1160,7 @@ ${window.location.href}`;
 }
 function shareAllItems() {
   
-  let text = "🛍️ Available Items:\n\n";
+  let text = "🛍️ Surjya Bakery Items:\n\n";
   
   allItems.forEach(item => {
     if (item && item.name) {
@@ -1168,16 +1168,16 @@ function shareAllItems() {
     }
   });
   
-  const shopLink = window.location.origin + "/#shop";
+  const shopLink = "https://surjyabakery-a3zxpdzrq-babumosais-projects-d54df714.vercel.app/#shop";
   
   if (navigator.share) {
     navigator.share({
-      title: "Surjya Bakery Items",
+      title: "Surjya Bakery",
       text: text,
       url: shopLink
     });
   } else {
     navigator.clipboard.writeText(text + "\n" + shopLink);
-    alert("Items copied!");
+    alert("Link copied!");
   }
 }
