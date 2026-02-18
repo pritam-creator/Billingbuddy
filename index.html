@@ -78,6 +78,9 @@
   <section class="top-section">
     <h2>📦 Items</h2>
     <input type="text" id="searchInput" placeholder="Search item..." oninput="filterItems()" />
+<button onclick="shareAllItems()" class="share-btn">
+  Share Item
+</button>
   </section>
   
   <section id="itemsList" class="middle-section">
@@ -111,11 +114,17 @@
   </div>
   
   <!-- FIXED BOTTOM AREA -->
-  <div class="cart-bottom">
-    <div class="cart-total" id="cartTotal">Total: ₹ 0.00</div>
+ <div class="cart-bottom">
+  <div class="cart-total" id="cartTotal">Total: ₹ 0.00</div>
+  
+  <div class="customer-form">
+    <input type="text" id="customerName" placeholder="Your Name">
+    <input type="tel" id="customerMobile" placeholder="Mobile Number">
     <button class="place-order-btn" onclick="placeOrder()">Place Order</button>
-    <button class="back-btn" onclick="showPage('itemsPage')">⬅ Back</button>
   </div>
+  
+  <button class="back-btn" onclick="showPage('itemsPage')">⬅ Back</button>
+</div>
   
 </section>
  
@@ -265,7 +274,6 @@
   
   <div class="bottom-actions">
     <button id="saveBtn" class="action-btn">💾 Save</button>
-    <button id="printBtn" class="action-btn">🖨 Print</button>
     <button id="shareBtn" class="action-btn">📤 Share</button>
     <button id="clearBtn" class="danger-btn">🗑 Clear</button>
   </div>
@@ -370,7 +378,8 @@
 <!-- Firebase Auth (optional agar use karte ho) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
-
+<audio id="orderSound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="login.js"></script>
 </body>
 </html>

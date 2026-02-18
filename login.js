@@ -3,7 +3,7 @@
 let currentOrder = [];
 let cart = [];
 let invoiceItems = [];
-let allItems = [];
+let allItems = JSON.parse(localStorage.getItem("items")) || [];
 let selectedItemId = null;
 // ============================
 // ============================
@@ -437,9 +437,55 @@ document.addEventListener("DOMContentLoaded", function() {
   
 });
 
+function loadOrders() {
+  
+  const list = document.getElementById("ordersList");
+  const sound = document.getElementById("orderSound");
+  
+  db.ref("orders").on("value", snapshot => {
+    
+    list.innerHTML = "";
+    
+    snapshot.forEach(child => {
+      
+      const order = child.val();
+      const key = child.key;
+      
+      list.innerHTML += `
+        <div class="card" style="margin-bottom:10px;">
+          <strong>${order.customerName}</strong><br>
+          📱 ${order.customerMobile}<br>
+          💰 ₹${order.total}<br>
+          🕒 ${order.createdAt}<br>
+          📦 Status: ${order.status || "Pending"}<br><br>
 
+          <button onclick="updateOrderStatus('${key}','Accepted')" 
+            style="background:green;color:white;">Accept</button>
 
+          <button onclick="updateOrderStatus('${key}','Rejected')" 
+            style="background:red;color:white;">Reject</button>
 
+          <button onclick="openOrderInvoice('${key}')">
+            Generate Invoice
+          </button>
+        </div>
+      `;
+      
+      // 🔔 Play sound if new order
+      if (order.status === "Pending") {
+        sound.play().catch(() => {});
+      }
+      
+    });
+    
+  });
+}
+
+function updateOrderStatus(orderId, status) {
+  db.ref("orders/" + orderId).update({
+    status: status
+  });
+}
 
 
 
@@ -541,32 +587,40 @@ function renderItems() {
   const list = document.getElementById("itemsList");
   list.innerHTML = "";
   
-  allItems.forEach((item, index) => {list.innerHTML += `
-  <div class="item-card">
+  allItems.forEach((item, index) => {
+    list.innerHTML += `
+      <div class="item-card">
 
-    <div class="item-left">
-      <h4>${item.name}</h4>
-      <p>₹${item.price}</p>
-    </div>
+        <div class="item-left">
+          <img src="${item.image}" class="item-img">
+          <h4>${item.name}</h4>
+          <p>₹${item.price}</p>
+        </div>
 
-    <div class="item-right">
+        <div class="item-right">
 
-      <div class="qty-box">
-        <button type="button" onclick="changeQty(${index}, -1)">−</button>
-        <input type="number" id="qty-${index}" value="1" min="1">
-        <button type="button" onclick="changeQty(${index}, 1)">+</button>
+          <div class="qty-box">
+            <button type="button" onclick="changeQty(${index}, -1)">−</button>
+            <input type="number" id="qty-${index}" value="1" min="1">
+            <button type="button" onclick="changeQty(${index}, 1)">+</button>
+          </div>
+
+          <button type="button"
+            class="add-cart-btn"
+            onclick="addToCartWithQty(${index})">
+            Add
+          </button>
+
+          <button type="button"
+            class="share-btn"
+            onclick="shareItem(${index})">
+            Share
+          </button>
+
+        </div>
+
       </div>
-
-      <button type="button"
-        class="add-cart-btn"
-        onclick="addToCartWithQty(${index})">
-        Add
-      </button>
-
-    </div>
-
-  </div>
-`;
+    `;
   });
 }
 
@@ -852,7 +906,13 @@ window.onload = function() {
   loadClients();
   loadDueList();
   loadInventory();
+  loadOrders();
 };
+window.addEventListener("load", function() {
+  if (window.location.hash === "#shop") {
+    showPage("itemsPage");
+  }
+});
 // Items Page ke Buttons ko connect karne ke liye
 document.addEventListener("DOMContentLoaded", function() {
     const addBtn = document.getElementById("addBtn");
@@ -888,26 +948,7 @@ function addItemToOrder() {
     document.getElementById("invoiceQty").focus();
     alert(selectedItem.name + " selected! Now enter quantity.");
 }
-function addToCart(name, price) {
-  
-  price = parseFloat(price);
-  
-  const existingItem = cart.find(item => item.name === name);
-  
-  if (existingItem) {
-    existingItem.qty += 1;
-    existingItem.amount = existingItem.qty * existingItem.price;
-  } else {
-    cart.push({
-      name: name,
-      price: price,
-      qty: 1,
-      amount: price
-    });
-  }
-  
-  renderCart();
-}
+
 
 function logoutUser() {
   firebase.auth().signOut().then(() => {
@@ -962,40 +1003,192 @@ function removeCartItem(index) {
 
 function placeOrder() {
   
-  if (currentOrder.length === 0) {
-    alert("Cart is empty");
+  const name = document.getElementById("customerName").value;
+  const mobile = document.getElementById("customerMobile").value;
+  
+  if (!name || !mobile) {
+    alert("Please enter name and mobile");
     return;
   }
   
-  // Invoice clear
-  currentInvoiceItems = [];
+  const orderId = "ORD" + Date.now();
   
-  // currentOrder → invoice me daalo
+  let totalAmount = 0;
+  
   currentOrder.forEach(item => {
-    currentInvoiceItems.push({
-      name: item.name,
-      qty: item.qty,
-      price: item.price,
-      amount: item.price * item.qty
-    });
+    totalAmount += item.price * item.qty;
   });
+  
+  const orderData = {
+    id: orderId,
+    name: name,
+    mobile: mobile,
+    items: currentOrder,
+    total: totalAmount
+  };
+  
+  // 🔥 PDF Generate
+  generatePDF(orderData);
   
   // Cart clear
   currentOrder = [];
-  renderCart();
-  updateCartBadge();
-  
-  // Invoice update
-  renderInvoiceItems();
-  calculateTotals();
-  
-  // Invoice page open
-  showPage("invoicePage");
 }
+function showOrderSuccess(orderId, name, total) {
+  
+  const successHTML = `
+    <div style="
+      padding:30px;
+      text-align:center;
+      animation:fadeIn 0.5s ease-in-out;
+    ">
+      <h2 style="color:green;">✅ Order Placed Successfully</h2>
+      <p>Thank you <strong>${name}</strong> 🙏</p>
+      <p>🧾 Order ID: <strong>${orderId}</strong></p>
+      <p>💰 Total Amount: <strong>₹${total}</strong></p>
+      <br>
+      <button onclick="showPage('itemsPage')" 
+        style="padding:10px 20px;background:#111;color:#fff;border:none;border-radius:8px;">
+        Continue Shopping
+      </button>
+    </div>
+  `;
+  
+  document.getElementById("cartPage").innerHTML = successHTML;
+  
+}
+  
+
 function updateCustomerPreview() {
   const name = document.getElementById("invoiceCustomerName").value;
   const address = document.getElementById("invoiceCustomerAddress").value;
   
   document.getElementById("clientNamePrint").innerText = name;
   document.getElementById("clientAddressPrint").innerText = address;
+}
+function openOrderInvoice(orderId) {
+  
+  db.ref("orders/" + orderId).once("value").then(snapshot => {
+    
+    const order = snapshot.val();
+    
+    if (!order) return;
+    
+    currentInvoiceItems = [];
+    
+    order.items.forEach(item => {
+      currentInvoiceItems.push({
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        amount: item.price * item.qty
+      });
+    });
+    
+    renderInvoiceItems();
+    calculateTotals();
+    
+    document.getElementById("clientNamePrint").innerText = order.customerName;
+    document.getElementById("clientAddressPrint").innerText =
+      "Mobile: " + order.customerMobile;
+    
+    showPage("invoicePage");
+    setTimeout(() => {
+  window.print();
+}, 500);
+    
+  });
+  
+}
+async function generatePDF(orderData) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  doc.setFontSize(22);
+  doc.text("INVOICE", 80, 20);
+  
+  doc.setFontSize(12);
+  doc.text("Customer Name: " + orderData.name, 20, 40);
+  doc.text("Mobile: " + orderData.mobile, 20, 48);
+  doc.text("Order ID: " + orderData.id, 20, 56);
+  
+  let y = 70;
+  doc.text("Item", 20, y);
+  doc.text("Qty", 100, y);
+  doc.text("Price", 120, y);
+  doc.text("Total", 160, y);
+  
+  y += 10;
+  
+  orderData.items.forEach(item => {
+    doc.text(item.name, 20, y);
+    doc.text(String(item.qty), 100, y);
+    doc.text("₹" + item.price, 120, y);
+    doc.text("₹" + (item.qty * item.price), 160, y);
+    y += 10;
+  });
+  
+  doc.text("Grand Total: ₹" + orderData.total, 20, y + 10);
+  
+  doc.save("Invoice_" + orderData.id + ".pdf");
+}
+function shareItem(index) {
+  
+  if (!Array.isArray(allItems) || !allItems[index]) {
+    alert("Item not found!");
+    return;
+  }
+  
+  const item = allItems[index];
+  
+  const shareText = `🛍️ ${item.name || "Item"}
+Price: ₹${item.price || 0}
+Check this item 👇
+${window.location.href}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: item.name || "Item",
+      text: shareText,
+      url: window.location.href
+    }).catch(err => console.log("Share error:", err));
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(shareText)
+      .then(() => alert("Item link copied!"))
+      .catch(err => console.log(err));
+  }
+  
+}
+function shareAllItems() {
+  
+  if (!allItems || allItems.length === 0) {
+    alert("No items available!");
+    return;
+  }
+  
+  let text = "🛍️ Available Items:\n\n";
+  
+  allItems.forEach((item, index) => {
+    
+    console.log("Checking item:", item); // debug line
+    
+    if (item && item.name && item.price) {
+      text += `• ${item.name} - ₹${item.price}\n`;
+    } else {
+      console.log("Invalid item at index:", index);
+    }
+    
+  });
+  
+  text += `\nShop Now 👇\n${window.location.href}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: "Surjya Bakery Items",
+      text: text,
+      url: window.location.href
+    }).catch(err => console.log(err));
+  } else {
+    navigator.clipboard.writeText(text);
+    alert("Items copied!");
+  }
 }
