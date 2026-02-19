@@ -611,11 +611,11 @@ function renderItems() {
             Add
           </button>
 
-          <button type="button"
-            class="share-btn"
-            onclick="shareItem(${index})">
-            Share
-          </button>
+         <button type="button"
+  class="share-btn admin-only"
+  onclick="shareItem(${index})">
+  Share
+</button>
 
         </div>
 
@@ -1181,3 +1181,16 @@ function shareAllItems() {
     alert("Link copied!");
   }
 }
+function applyViewMode() {
+  
+  const isAdmin = window.location.hash.includes("admin");
+  
+  document.querySelectorAll(".admin-only").forEach(btn => {
+    btn.style.display = isAdmin ? "block" : "none";
+  });
+  
+}
+
+window.addEventListener("load", function() {
+  applyViewMode();
+});

@@ -78,9 +78,7 @@
   <section class="top-section">
     <h2>📦 Items</h2>
     <input type="text" id="searchInput" placeholder="Search item..." oninput="filterItems()" />
-<button onclick="shareAllItems()" class="share-btn">
-  Share Item
-</button>
+
   </section>
   
   <section id="itemsList" class="middle-section">
@@ -91,8 +89,9 @@
       <input type="text" id="itemName" placeholder="Item">
       <input type="number" id="itemPrice" placeholder="₹">
     </div>
-    <button id="addBtn">+ Add Item</button>
-    <button id="editBtn">✏ Edit Item</button>
+   <button class="admin-only">Share Item</button>
+<button id="addBtn" class="admin-only">+ Add Item</button>
+<button id="editBtn" class="admin-only">Edit Item</button>
     <button onclick="showPage('dashboardPage')">⬅ Back</button>
  <button onclick="openCartPage()" class="cart-btn">
   🛒 Cart
@@ -274,6 +273,7 @@
   
   <div class="bottom-actions">
     <button id="saveBtn" class="action-btn">💾 Save</button>
+    <button id="print-btn" class="action-btn">🖨 Print</button>
     <button id="shareBtn" class="action-btn">📤 Share</button>
     <button id="clearBtn" class="danger-btn">🗑 Clear</button>
   </div>
