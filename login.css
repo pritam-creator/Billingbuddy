@@ -862,103 +862,14 @@ textarea {
   border: none;
   background: #e0e0e0;
 }
-@media print {
 
-  html, body {
-    height: auto !important;
-    overflow: visible !important;
-    background: #fff !important;
-  }
-
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #printable-invoice,
-  #printable-invoice * {
-    visibility: visible;
-  }
-
-  #printable-invoice {
-    position: static !important;
-    width: 210mm !important;
-    min-height: 297mm;
-    margin: 0 auto !important;
-    padding: 15mm !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-
-  #invoicePage {
-    position: static !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-  
- 
-
-
-  .top-fixed,
-  .bottom-section,
-  .no-print {
-    display: none !important;
-  }
-
-   .invoice-top-design {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #ff7b00, #1f2d50);
-  color: white;
-}
-@media print {
-  body * {
-    visibility: hidden;
-  }
-
-  #invoicePage, #invoicePage * {
-    visibility: visible;
-  }
-
-  #invoicePage {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-  }
-}
-
-.invoice-top-design::after {
-  display: none !important;
-}
-
-  .invoice-table th,
-  .invoice-table td {
-    border: 1px solid #000 !important;
-    padding: 8px;
-    text-align: center;
-  }
-
-  @page {
-    size: A4;
-    margin: 0;
-  }
-
-}
 
 /* ==============================
    CART PAGE PROFESSIONAL FIX
 ============================== */
 
 #cartPage {
-  position: fixed !important;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -966,11 +877,12 @@ textarea {
   display: none;
   flex-direction: column;
   background: linear-gradient(135deg,#f6b36b,#f48c6b);
-  z-index: 9999 !important;   /* 🔥 force top */
+  z-index: 10;   /* normal */
 }
 
 #cartPage.active {
   display: flex;
+  z-index: 1000;
 }
 
 /* TOP HEADER */
@@ -1125,72 +1037,31 @@ textarea {
 .invoice-row input {
   flex: 1;
 }
-@media (max-width: 768px) {
-  
-  .invoice-container {
-    margin: 8px;
-    padding: 12px;
+/* CSS file ke end mein ye paste karein */
+@media print {
+  /* Hide everything except the invoice container */
+  body * {
+    visibility: hidden;
   }
   
-  .invoice-top-design {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  #printable-invoice, #printable-invoice * {
+    visibility: visible;
   }
   
-  .total-section {
-    font-size: 18px;
+  #printable-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
-  
-  
-  .invoice-top-design {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    background: linear-gradient(135deg, #ff7b00, #1f2d50);
+
+  /* Hide buttons and search bars during print */
+  .no-print, .bottom-section, .top-fixed, button, .back-btn {
+    display: none !important;
   }
-  
-  .top-right {
-    text-align: left;
-  }
-  
-}
-.share-btn {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.3s;
 }
 
-.share-btn:hover {
-  transform: scale(1.05);
-}
-.item-img {
-  width: 70px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-bottom: 5px;
-}
 
-.share-btn {
-  margin-top: 6px;
-  background: #25D366;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.share-btn:hover {
-  background: #1da851;
-}

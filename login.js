@@ -374,18 +374,15 @@ document.addEventListener("DOMContentLoaded", function() {
      PRINT BUTTON
   ========================= */
   
-  const printBtn = document.getElementById("printBtn");
-  
-  if (printBtn) {
-    printBtn.addEventListener("click", function() {
-      try {
-        window.print();
-      } catch (e) {
-        console.log(e);
-        alert("Print not supported ⚠️");
-      }
-    });
-  }
+  // login.js mein printBtn wala section replace karein
+const printBtn = document.getElementById("printBtn");
+
+if (printBtn) {
+  printBtn.addEventListener("click", function() {
+    window.print();
+  });
+}
+
   
   /* =========================
      SHARE BUTTON
@@ -1194,3 +1191,27 @@ function applyViewMode() {
 window.addEventListener("load", function() {
   applyViewMode();
 });
+function printInvoice() {
+  
+  const invoice = document.getElementById("printable-invoice");
+  
+  html2canvas(invoice, { scale: 2 }).then(canvas => {
+    
+    const imgData = canvas.toDataURL("image/png");
+    
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    
+    const pageWidth = 210;
+    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+    
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+    
+    // 👇 IMPORTANT CHANGE
+    const pdfBlob = pdf.output("blob");
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    
+    window.open(blobUrl, "_blank");
+    
+  });
+}
