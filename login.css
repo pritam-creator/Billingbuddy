@@ -1039,12 +1039,17 @@ textarea {
 }
 /* CSS file ke end mein ye paste karein */
 @media print {
-  /* Hide everything except the invoice container */
+  
+  body {
+    background: white !important;
+  }
+  
   body * {
     visibility: hidden;
   }
   
-  #printable-invoice, #printable-invoice * {
+  #printable-invoice,
+  #printable-invoice * {
     visibility: visible;
   }
   
@@ -1054,14 +1059,15 @@ textarea {
     top: 0;
     width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 20px !important;
+    border-radius: 0 !important;
     box-shadow: none !important;
   }
-
-  /* Hide buttons and search bars during print */
-  .no-print, .bottom-section, .top-fixed, button, .back-btn {
+  
+  .no-print,
+  .bottom-section,
+  .top-fixed,
+  button {
     display: none !important;
   }
 }
-
-

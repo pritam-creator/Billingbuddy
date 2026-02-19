@@ -1090,7 +1090,7 @@ function openOrderInvoice(orderId) {
     
     showPage("invoicePage");
     setTimeout(() => {
-  window.print();
+  printInvoice();
 }, 500);
     
   });
@@ -1195,23 +1195,27 @@ function printInvoice() {
   
   const invoice = document.getElementById("printable-invoice");
   
-  html2canvas(invoice, { scale: 2 }).then(canvas => {
+  html2canvas(invoice, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff"
+  }).then(canvas => {
     
     const imgData = canvas.toDataURL("image/png");
     
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF("p", "mm", "a4");
     
-    const pageWidth = 210;
-    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     
-    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+    const imgWidth = pdfWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
-    // 👇 IMPORTANT CHANGE
-    const pdfBlob = pdf.output("blob");
-    const blobUrl = URL.createObjectURL(pdfBlob);
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
     
-    window.open(blobUrl, "_blank");
+    pdf.save("Invoice.pdf");
     
   });
+  
 }
