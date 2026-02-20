@@ -1254,26 +1254,17 @@ function printInvoice() {
 }
 function sharePage() {
   
-  const pageTitle = "Surjya Bakery - Items";
-  const pageURL = window.location.href;
+  const publicURL = window.location.origin + window.location.pathname + "?view=public";
   
-  const shareText = `🛍️ Check out our items at Surjya Bakery!
-
-${pageURL}`;
-  
-  if (navigator.share && window.isSecureContext) {
-    
+  if (navigator.share) {
     navigator.share({
-      title: pageTitle,
-      text: shareText,
-      url: pageURL
-    }).catch(err => {
-      console.log("Share failed, using fallback");
-      fallbackShare(shareText);
-    });
-    
+      title: "Surjya Bakery Items",
+      text: "Check our items list 👇",
+      url: publicURL
+    }).catch(err => console.log(err));
   } else {
-    fallbackShare(shareText);
+    navigator.clipboard.writeText(publicURL)
+      .then(() => alert("Page link copied!"));
   }
 }
 
@@ -1282,3 +1273,21 @@ function fallbackShare(text) {
     "https://wa.me/?text=" + encodeURIComponent(text);
   window.open(whatsappURL, "_blank");
 }
+window.addEventListener("load", function() {
+  
+  const params = new URLSearchParams(window.location.search);
+  const isPublic = params.get("view") === "public";
+  
+  if (isPublic) {
+    
+    // Bottom buttons hide
+    document.querySelectorAll("#addBtn, #editBtn, #shareBtn")
+      .forEach(btn => btn.style.display = "none");
+    
+    // Item card ke share / add buttons hide
+    document.querySelectorAll(".item-actions")
+      .forEach(div => div.style.display = "none");
+    
+  }
+  
+});
