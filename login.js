@@ -1,5 +1,7 @@
 // ============================
 // GLOBAL VARIABLES
+const params = new URLSearchParams(window.location.search);
+const isPublic = params.get("view") === "public";
 let currentOrder = [];
 let cart = [];
 let invoiceItems = [];
@@ -611,11 +613,11 @@ function renderItems() {
             Add
           </button>
 
-          <button type="button"
-            class="share-btn admin-only"
-            onclick="event.stopPropagation(); shareItem(${index})">
-            Share
-          </button>
+         <button type="button"
+  class="share-btn"
+  onclick="event.stopPropagation(); shareItem(${index})">
+  Share
+</button>
 
         </div>
 
@@ -920,11 +922,28 @@ function filterRecords() {
 // ============================
 
 window.onload = function() {
+  
   loadItems();
   loadClients();
   loadDueList();
   loadInventory();
   loadOrders();
+  
+  // ✅ PUBLIC MODE CHECK
+  if (isPublic) {
+    
+    showPage("itemsPage"); // 🔥 LOGIN SKIP
+    
+    // Bottom buttons hide
+    document.querySelectorAll("#addBtn, #editBtn")
+      .forEach(btn => btn.style.display = "none");
+    
+  } else {
+    
+    showPage("loginPage"); // Normal visit
+    
+  }
+  
 };
 
 // Items Page ke Buttons ko connect karne ke liye
@@ -1273,20 +1292,26 @@ function fallbackShare(text) {
     "https://wa.me/?text=" + encodeURIComponent(text);
   window.open(whatsappURL, "_blank");
 }
+
+// ===== PUBLIC MODE CONTROL =====
 window.addEventListener("load", function() {
-  
-  const params = new URLSearchParams(window.location.search);
-  const isPublic = params.get("view") === "public";
   
   if (isPublic) {
     
-    // Bottom buttons hide
-    document.querySelectorAll("#addBtn, #editBtn, #shareBtn")
-      .forEach(btn => btn.style.display = "none");
+    showPage("itemsPage");
     
-    // Item card ke share / add buttons hide
-    document.querySelectorAll(".item-actions")
-      .forEach(div => div.style.display = "none");
+    // Add / Edit hide
+    const addBtn = document.getElementById("addBtn");
+    const editBtn = document.getElementById("editBtn");
+    
+    if (addBtn) addBtn.style.display = "none";
+    if (editBtn) editBtn.style.display = "none";
+    
+    // Item card ke share buttons hide
+    setTimeout(() => {
+      document.querySelectorAll(".share-btn")
+        .forEach(btn => btn.style.display = "none");
+    }, 300);
     
   }
   
