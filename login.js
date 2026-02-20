@@ -1301,7 +1301,7 @@ window.addEventListener("load", function() {
     showPage("itemsPage");
     
     // ❌ Admin buttons hide
-    document.querySelectorAll("#editBtn, #addBtn, #addItemSection")
+    document.querySelectorAll("#editBtn, #addBtn, #addItemSection, #sharePage")
       .forEach(el => {
         if (el) el.style.display = "none";
       });
