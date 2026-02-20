@@ -56,15 +56,7 @@ function showPage(pageId) {
 // ============================
 // PIN SYSTEM
 // ============================
-function loginAdmin(password) {
-  if (password === "1234") { // apna admin password
-    localStorage.setItem("isAdmin", "true");
-    applyViewMode();
-    alert("Admin Login Success");
-  } else {
-    alert("Wrong Password");
-  }
-}
+
 
 function login() {
   let inputs = document.querySelectorAll(".pin-input");
@@ -130,11 +122,6 @@ window.addEventListener("DOMContentLoaded", function() {
   
 });
 
-function logoutAdmin() {
-  localStorage.removeItem("isAdmin");
-  alert("Logged out successfully");
-  showPage("loginPage"); // ya dashboardPage agar chaho
-}
 
 function submitPin() {
   let pin = "";
@@ -182,12 +169,6 @@ function resetPin() {
     alert("PIN Updated!");
     showPage("loginPage");
   });
-}
-function adminLoginPrompt() {
-  const pass = prompt("Enter Admin Password");
-  if (pass !== null) {
-    loginAdmin(pass);
-  }
 }
 
 function openInvoiceDirect() {
@@ -667,13 +648,7 @@ function changeQty(index, change) {
   input.value = value;
 }
 
-function applyViewMode() {
-  const isAdmin = localStorage.getItem("isAdmin") === "true";
-  
-  document.querySelectorAll(".admin-only").forEach(btn => {
-    btn.style.display = isAdmin ? "block" : "none";
-  });
-}
+
 
 
 function addToCartWithQty(index) {
@@ -951,12 +926,7 @@ window.onload = function() {
   loadInventory();
   loadOrders();
 };
-window.addEventListener("load", applyViewMode);
-window.addEventListener("load", function() {
-  if (window.location.hash === "#shop") {
-    showPage("itemsPage");
-  }
-});
+
 // Items Page ke Buttons ko connect karne ke liye
 document.addEventListener("DOMContentLoaded", function() {
     const addBtn = document.getElementById("addBtn");
@@ -1200,17 +1170,6 @@ ${publicURL}`;
   }
 }
 // ---- PUBLIC VIEW MODE CHECK ----
-window.addEventListener("load", function() {
-  
-  const params = new URLSearchParams(window.location.search);
-  const isPublic = params.get("view") === "public";
-  
-  if (isPublic) {
-    document.querySelectorAll("#addBtn, #editBtn, .admin-only")
-      .forEach(btn => btn.style.display = "none");
-  }
-  
-});
 
 function shareItem(index) {
   
@@ -1264,9 +1223,7 @@ function shareAllItems() {
 }
 
 
-window.addEventListener("load", function() {
-  applyViewMode();
-});
+
 function printInvoice() {
   
   const invoice = document.getElementById("printable-invoice");
