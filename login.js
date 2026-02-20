@@ -1175,6 +1175,43 @@ async function generatePDF(orderData) {
   
   doc.save("Invoice_" + orderData.id + ".pdf");
 }
+
+function shareFullPage() {
+  
+  const baseURL = window.location.origin + window.location.pathname;
+  const publicURL = baseURL + "?view=public";
+  
+  const message = `🥖 Surjya Bakery Fresh Items
+
+Check our items 👇
+${publicURL}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: "Surjya Bakery",
+      text: message,
+      url: publicURL
+    });
+  } else {
+    window.open(
+      "https://wa.me/?text=" + encodeURIComponent(message),
+      "_blank"
+    );
+  }
+}
+// ---- PUBLIC VIEW MODE CHECK ----
+window.addEventListener("load", function() {
+  
+  const params = new URLSearchParams(window.location.search);
+  const isPublic = params.get("view") === "public";
+  
+  if (isPublic) {
+    document.querySelectorAll("#addBtn, #editBtn, .admin-only")
+      .forEach(btn => btn.style.display = "none");
+  }
+  
+});
+
 function shareItem(index) {
   
   if (!Array.isArray(allItems) || !allItems[index]) {
