@@ -1300,14 +1300,13 @@ window.addEventListener("load", function() {
     
     showPage("itemsPage");
     
-    // Add / Edit hide
-    const addBtn = document.getElementById("addBtn");
-    const editBtn = document.getElementById("editBtn");
+    // ❌ Admin buttons hide
+    document.querySelectorAll("#editBtn, #addBtn, #addItemSection")
+      .forEach(el => {
+        if (el) el.style.display = "none";
+      });
     
-    if (addBtn) addBtn.style.display = "none";
-    if (editBtn) editBtn.style.display = "none";
-    
-    // Item card ke share buttons hide
+    // ❌ Share button hide (item card wala)
     setTimeout(() => {
       document.querySelectorAll(".share-btn")
         .forEach(btn => btn.style.display = "none");
