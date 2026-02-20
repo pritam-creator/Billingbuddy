@@ -56,6 +56,15 @@ function showPage(pageId) {
 // ============================
 // PIN SYSTEM
 // ============================
+function loginAdmin(password) {
+  if (password === "1234") { // apna admin password
+    localStorage.setItem("isAdmin", "true");
+    applyViewMode();
+    alert("Admin Login Success");
+  } else {
+    alert("Wrong Password");
+  }
+}
 
 function login() {
   let inputs = document.querySelectorAll(".pin-input");
@@ -121,6 +130,12 @@ window.addEventListener("DOMContentLoaded", function() {
   
 });
 
+function logoutAdmin() {
+  localStorage.removeItem("isAdmin");
+  alert("Logged out successfully");
+  showPage("loginPage"); // ya dashboardPage agar chaho
+}
+
 function submitPin() {
   let pin = "";
   pinInputs.forEach(input => {
@@ -167,6 +182,12 @@ function resetPin() {
     alert("PIN Updated!");
     showPage("loginPage");
   });
+}
+function adminLoginPrompt() {
+  const pass = prompt("Enter Admin Password");
+  if (pass !== null) {
+    loginAdmin(pass);
+  }
 }
 
 function openInvoiceDirect() {
@@ -531,7 +552,7 @@ document.getElementById("addBtn").addEventListener("click", function() {
 });
 
 function editItem() {
-  
+  console.log("Edit clicked");
   if (!selectedItemId) {
     alert("Select item first");
     return;
@@ -585,11 +606,12 @@ function renderItems() {
   list.innerHTML = "";
   
   allItems.forEach((item, index) => {
+    
     list.innerHTML += `
-      <div class="item-card">
+      <div class="item-card" onclick="selectItem('${item.id}', '${item.name}', '${item.price}')">
 
         <div class="item-left">
-          <img src="${item.image}" class="item-img">
+          <img src="${item.image || ''}" class="item-img">
           <h4>${item.name}</h4>
           <p>₹${item.price}</p>
         </div>
@@ -597,30 +619,45 @@ function renderItems() {
         <div class="item-right">
 
           <div class="qty-box">
-            <button type="button" onclick="changeQty(${index}, -1)">−</button>
+            <button type="button" onclick="event.stopPropagation(); changeQty(${index}, -1)">−</button>
             <input type="number" id="qty-${index}" value="1" min="1">
-            <button type="button" onclick="changeQty(${index}, 1)">+</button>
+            <button type="button" onclick="event.stopPropagation(); changeQty(${index}, 1)">+</button>
           </div>
 
           <button type="button"
             class="add-cart-btn"
-            onclick="addToCartWithQty(${index})">
+            onclick="event.stopPropagation(); addToCartWithQty(${index})">
             Add
           </button>
 
-         <button type="button"
-  class="share-btn admin-only"
-  onclick="shareItem(${index})">
-  Share
-</button>
+          <button type="button"
+            class="share-btn admin-only"
+            onclick="event.stopPropagation(); shareItem(${index})">
+            Share
+          </button>
 
         </div>
 
       </div>
     `;
+    
   });
 }
-
+function selectItem(id, name, price) {
+  selectedItemId = id;
+  
+  document.getElementById("itemName").value = name;
+  document.getElementById("itemPrice").value = price;
+  
+  console.log("Selected ID:", selectedItemId);
+  
+  // Highlight selected
+  document.querySelectorAll(".item-card").forEach(card =>
+    card.classList.remove("active")
+  );
+  
+  event.currentTarget.classList.add("active");
+}
 
 function changeQty(index, change) {
   const input = document.getElementById(`qty-${index}`);
@@ -629,6 +666,15 @@ function changeQty(index, change) {
   if (value < 1) value = 1;
   input.value = value;
 }
+
+function applyViewMode() {
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
+  
+  document.querySelectorAll(".admin-only").forEach(btn => {
+    btn.style.display = isAdmin ? "block" : "none";
+  });
+}
+
 
 function addToCartWithQty(index) {
   const qty = parseInt(document.getElementById(`qty-${index}`).value) || 1;
@@ -905,6 +951,7 @@ window.onload = function() {
   loadInventory();
   loadOrders();
 };
+window.addEventListener("load", applyViewMode);
 window.addEventListener("load", function() {
   if (window.location.hash === "#shop") {
     showPage("itemsPage");
@@ -1178,15 +1225,7 @@ function shareAllItems() {
     alert("Link copied!");
   }
 }
-function applyViewMode() {
-  
-  const isAdmin = window.location.hash.includes("admin");
-  
-  document.querySelectorAll(".admin-only").forEach(btn => {
-    btn.style.display = isAdmin ? "block" : "none";
-  });
-  
-}
+
 
 window.addEventListener("load", function() {
   applyViewMode();
@@ -1218,4 +1257,34 @@ function printInvoice() {
     
   });
   
+}
+function sharePage() {
+  
+  const pageTitle = "Surjya Bakery - Items";
+  const pageURL = window.location.href;
+  
+  const shareText = `🛍️ Check out our items at Surjya Bakery!
+
+${pageURL}`;
+  
+  if (navigator.share && window.isSecureContext) {
+    
+    navigator.share({
+      title: pageTitle,
+      text: shareText,
+      url: pageURL
+    }).catch(err => {
+      console.log("Share failed, using fallback");
+      fallbackShare(shareText);
+    });
+    
+  } else {
+    fallbackShare(shareText);
+  }
+}
+
+function fallbackShare(text) {
+  const whatsappURL =
+    "https://wa.me/?text=" + encodeURIComponent(text);
+  window.open(whatsappURL, "_blank");
 }

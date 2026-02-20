@@ -28,7 +28,7 @@
         <input type="tel" maxlength="1" class="pin-input">
       </div>
 
-      <button onclick="login()">Login</button>
+   <button onclick="adminLoginPrompt()">Admin Login</button>
       <p class="reset-pin" onclick="showPage('resetPinPage')">Reset PIN?</p>
       <p class="hint">Default PIN: 1234</p>
     </div>
@@ -50,12 +50,17 @@
   </div>
 </section>
 
+
+
+
+
+
 <section class="page" id="dashboardPage">
   <div class="dashboard-header">
     <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="dashboard-logo">
     <h2>Surjya Bakery</h2>
     <p>Dashboard</p>
-     <button class="logout-btn" onclick="logoutUser()">Logout</button>
+   <button onclick="logoutAdmin()">Logout</button>
  
   </div>
   
@@ -89,7 +94,9 @@
       <input type="text" id="itemName" placeholder="Item">
       <input type="number" id="itemPrice" placeholder="₹">
     </div>
-   <button class="admin-only">Share Item</button>
+<button class="admin-only" onclick="sharePage()">
+  Share Page
+</button>
 <button id="addBtn" class="admin-only">+ Add Item</button>
 <button id="editBtn" class="admin-only">Edit Item</button>
     <button onclick="showPage('dashboardPage')">⬅ Back</button>
@@ -183,78 +190,81 @@
    <input type="checkbox" id="addToDue">
   </section>
 
-  <section class="invoice-container" id="printable-invoice">
-    
- <section class="invoice-top-design">
-  
-  <div class="top-left">
-    <div class="company-box">
-  <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="invoice-img">
-  <div>
-    <h2>Your Business Name</h2>
-    <p>Your Slogan Here</p>
-  </div>
-</div>
-  </div>
-  
-  <div class="top-right">
-    <h1>INVOICE</h1>
-<p>Invoice No : <span id="invoiceNumber">#00001</span></p>
-<p>Invoice Date : <span id="issueDate"></span></p>
-<p>Due Date : <span id="dueDate"></span></p>
-  </div>
-  
-</section>
+<section class="invoice-container" id="printable-invoice">
 
-<section class="invoice-middle">
-  
-  <div class="invoice-to">
-    <h4>INVOICE TO:</h4>
-    
-    <!-- ✅ EDITABLE NAME -->
-    <input type="text" 
-           id="invoiceCustomerName"
-           placeholder="Customer Name"
-           oninput="updateCustomerPreview()"
-           style="font-size:18px; font-weight:bold; border:none; border-bottom:1px solid #ccc;">
+  <!-- HEADER -->
+  <section class="invoice-top-design">
 
-    <!-- ✅ EDITABLE ADDRESS -->
-    <textarea id="invoiceCustomerAddress"
-              placeholder="Customer Address"
-              oninput="updateCustomerPreview()"
-              style="width:100%; border:none; border-bottom:1px solid #ccc; resize:none;"></textarea>
+    <div class="top-left">
+      <div class="company-box">
+        <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="invoice-img">
+        <div class="company-details">
+          <h2>Surjya Bakery</h2>
+          <p>Fresh • Hygienic • Quality</p>
+        </div>
+      </div>
+    </div>
 
-    <!-- ✅ PRINT VIEW (hidden on screen if needed) -->
-    <h3 id="clientNamePrint" style="display:none;"></h3>
-    <p id="clientAddressPrint" style="display:none;"></p>
+    <div class="top-right">
+      <h1>INVOICE</h1>
+      <p>Invoice No : <span id="invoiceNumber">#00001</span></p>
+      <p>Invoice Date : <span id="issueDate"></span></p>
+      <p>Due Date : <span id="dueDate"></span></p>
+    </div>
 
-  </div>
-
-</section>
-
-    <section class="items-list">
-      <table class="invoice-table">
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th>Quantity</th>
-            <th>Price (₹)</th> <th>Amount (₹)</th>     </tr>
-        </thead>
-       <tbody id="invoiceItems"></tbody>
-      </table>
-    </section>
-
-    <section class="invoice-footer">
-     
-      <div class="totals-box">
-       <p>Subtotal: ₹<span id="subTotal">0</span></p>
-       
-<hr>
-<div class="total-section">
-  Total (INR): ₹<span id="grandTotal">0</span>
-</div> </div>
-    </section>
   </section>
+
+  <!-- CUSTOMER SECTION -->
+  <section class="invoice-middle">
+
+    <div class="invoice-to">
+      <h4>BILL TO</h4>
+
+      <input type="text"
+        id="invoiceCustomerName"
+        placeholder="Customer Name"
+        oninput="updateCustomerPreview()">
+
+      <textarea id="invoiceCustomerAddress"
+        placeholder="Customer Address"
+        oninput="updateCustomerPreview()"></textarea>
+
+      <h3 id="clientNamePrint" style="display:none;"></h3>
+      <p id="clientAddressPrint" style="display:none;"></p>
+
+    </div>
+
+  </section>
+
+  <!-- TABLE -->
+  <section class="items-list">
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Qty</th>
+          <th>Price (₹)</th>
+          <th>Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody id="invoiceItems"></tbody>
+    </table>
+  </section>
+
+  <!-- TOTAL -->
+  <section class="invoice-footer">
+    <div class="totals-box">
+      <p>Subtotal: ₹<span id="subTotal">0</span></p>
+      <hr>
+      <div class="total-section">
+        Total (INR): ₹<span id="grandTotal">0</span>
+      </div>
+    </div>
+  </section>
+
+</section>
+  
+  
 
 <section class="bottom-section">
   
@@ -281,7 +291,7 @@
   <button onclick="showPage('dashboardPage')" class="back-btn">⬅ Back</button>
   
 
-
+</section>
 
 </section>
 
@@ -380,7 +390,7 @@
 
 <audio id="orderSound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <script src="login.js"></script>
 </body>
 </html>
