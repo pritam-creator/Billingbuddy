@@ -889,24 +889,28 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 
 /* ===== PRINT OPTIMIZATION ===== */
 
+/* ===============================
+   PRINT ONLY INVOICE
+================================ */
+
 @media print {
-    body {
-        background: white !important;
+    
+    body * {
+        visibility: hidden;
     }
     
-    .invoice-container {
-        box-shadow: none;
-        border-radius: 0;
+    #printable-invoice,
+    #printable-invoice * {
+        visibility: visible;
     }
     
-    .invoice-top-design {
-        background: #ff6a00 !important;
-        -webkit-print-color-adjust: exact;
+    #printable-invoice {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
     }
     
-    .invoice-footer {
-        -webkit-print-color-adjust: exact;
-    }
 }/* ===============================
    SURJYA BAKERY PREMIUM INVOICE
 ================================ */
