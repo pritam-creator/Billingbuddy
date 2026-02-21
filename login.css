@@ -1059,7 +1059,12 @@ button:active { opacity: 0.9; transform: translateY(1px); }
         top: 0;
         width: 100%;
     }
-    
+     .invoice-top-design,
+ .invoice-footer {
+     -webkit-print-color-adjust: exact;
+     print-color-adjust: exact;
+     
+ }
 }
 /* ===== BOTTOM FIXED POS PANEL ===== */
 .bottom-section {
