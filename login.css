@@ -118,13 +118,13 @@ body {
     margin-bottom: 10px;
 }
 
-.logout-btn {
+#logout-btn {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 20px;
+    right: 22px;
     width: auto;
     padding: 5px 12px;
-    font-size: 12px;
+    font-size: 18px;
     background: #e74c3c;
 }
 
@@ -893,25 +893,7 @@ button:active { opacity: 0.9; transform: translateY(1px); }
    PRINT ONLY INVOICE
 ================================ */
 
-@media print {
-    
-    body * {
-        visibility: hidden;
-    }
-    
-    #printable-invoice,
-    #printable-invoice * {
-        visibility: visible;
-    }
-    
-    #printable-invoice {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-    
-}/* ===============================
+/* ===============================
    SURJYA BAKERY PREMIUM INVOICE
 ================================ */
 
@@ -1153,3 +1135,20 @@ button:active { opacity: 0.9; transform: translateY(1px); }
     color: white;
     font-size: 13px;
 }
+.delete-btn {
+    background: #ff4d4d;
+    border: none;
+    color: white;
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.delete-btn:hover {
+    background: #d63031;
+    transform: scale(1.1);
+}
+/* ===== FIXED LAYOUT STRUCTURE ===== */
+

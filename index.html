@@ -60,7 +60,7 @@
     <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/main/Untitled.png" class="dashboard-logo">
     <h2>Surjya Bakery</h2>
     <p>Dashboard</p>
-   <button onclick="logoutUser()">Logout</button>
+   <button id="logout-btn" onclick="logoutUser()">Logout</button>
  
   </div>
   
@@ -243,6 +243,7 @@
           <th>Qty</th>
           <th>Price (₹)</th>
           <th>Amount (₹)</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody id="invoiceItems"></tbody>
@@ -315,7 +316,7 @@
   <div id="clientsList"></div>
 
   <!-- Back -->
-  <button class="back" onclick="goBack()">⬅ Back</button>
+  <button onclick="showPage('dashboardPage')" class="back-btn">⬅ Back</button>
 </section>
 
 

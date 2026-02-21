@@ -255,12 +255,22 @@ function renderInvoiceItems() {
         <td>${item.qty}</td>
         <td>₹${item.price}</td>
         <td>₹${item.amount}</td>
+        <td>
+    <button class="delete-btn" onclick="deleteItem(${index})">
+      🗑️
+    </button>
+  </td>
+
       </tr>
     `;
     tbody.innerHTML += row;
   });
 }
-
+function deleteItem(index) {
+  currentInvoiceItems.splice(index, 1);
+  renderInvoiceItems();
+  calculateTotals();
+}
 /********************************
  GST + TOTAL CALCULATION
 *********************************/
