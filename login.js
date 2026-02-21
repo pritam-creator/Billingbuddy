@@ -354,39 +354,36 @@ document.addEventListener("DOMContentLoaded", function() {
   const saveBtn = document.getElementById("saveBtn");
   
   if (saveBtn) {
-    saveBtn.addEventListener("click", function() {
-      
-      try {
-        
-        const invoiceData = {
-  customerName: document.getElementById("invoiceCustomerName").value,
-  customerAddress: document.getElementById("invoiceCustomerAddress").value,
-  items: currentInvoiceItems,
-  subtotal: document.getElementById("subTotal").textContent,
- 
-  total: document.getElementById("grandTotal").textContent,
-  date: new Date().toLocaleString()
-};
-        
-        let invoices = [];
-        
-        try {
-          invoices = JSON.parse(localStorage.getItem("invoices")) || [];
-        } catch (e) {
-          invoices = [];
-        }
-        
-        invoices.push(invoiceData);
-        localStorage.setItem("invoices", JSON.stringify(invoices));
-        
-        alert("Invoice Saved Successfully ✅");
-        
-      } catch (error) {
-        console.log(error);
-        alert("Save Failed ⚠️");
-      }
-      
-    });
+  saveBtn.addEventListener("click", async function() {
+  
+  try {
+    
+    // 🔥 AUTO INVOICE NUMBER
+    const invoiceNo = await generateInvoiceNumber();
+    document.getElementById("invoiceNumber").innerText = invoiceNo;
+    
+    const invoiceData = {
+      invoiceNo: invoiceNo, // 🔥 Important
+      customerName: document.getElementById("invoiceCustomerName").value,
+      customerAddress: document.getElementById("invoiceCustomerAddress").value,
+      items: currentInvoiceItems,
+      subtotal: document.getElementById("subTotal").textContent,
+      total: document.getElementById("grandTotal").textContent,
+      date: new Date().toLocaleString()
+    };
+    
+    let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+    invoices.push(invoiceData);
+    localStorage.setItem("invoices", JSON.stringify(invoices));
+    
+    alert("Invoice Saved Successfully ✅");
+    
+  } catch (error) {
+    console.log(error);
+    alert("Save Failed ⚠️");
+  }
+  
+});
   }
   
   /* =========================
@@ -1185,7 +1182,23 @@ async function generatePDF(orderData) {
   
   doc.save("Invoice_" + orderData.id + ".pdf");
 }
-
+async function generateInvoiceNumber() {
+  const counterRef = firebase.database().ref("invoiceCounter");
+  
+  const snapshot = await counterRef.get();
+  
+  let currentNumber = 1;
+  
+  if (snapshot.exists()) {
+    currentNumber = snapshot.val();
+  }
+  
+  const newNumber = currentNumber + 1;
+  
+  await counterRef.set(newNumber);
+  
+  return "SB-" + String(currentNumber).padStart(4, "0");
+}
 function shareFullPage() {
   
   const baseURL = window.location.origin + window.location.pathname;
