@@ -2,7 +2,10 @@
 // GLOBAL VARIABLES
 const params = new URLSearchParams(window.location.search);
 const isPublic = params.get("view") === "public";
-let currentOrder = [];
+// 🔥 GLOBAL CART (Persistent)
+if (!window.currentOrder) {
+  window.currentOrder = JSON.parse(localStorage.getItem("cartData")) || [];
+}
 let cart = [];
 let invoiceItems = [];
 let allItems = JSON.parse(localStorage.getItem("items")) || [];
@@ -184,8 +187,10 @@ function openInvoiceDirect() {
 // ============================
 
 function openCartPage() {
-  renderCart(); // cart refresh
   showPage("cartPage");
+  setTimeout(() => {
+    renderCart();
+  }, 50);
 }
 
 /********************************
@@ -657,12 +662,12 @@ function addToCartWithQty(index) {
   const qty = parseInt(document.getElementById(`qty-${index}`).value) || 1;
   const item = allItems[index];
   
-  const existing = currentOrder.find(i => i.name === item.name);
+  const existing = window.currentOrder.find(i => i.name === item.name);
   
   if (existing) {
     existing.qty += qty;
   } else {
-    currentOrder.push({
+    window.currentOrder.push({
       name: item.name,
       price: item.price,
       qty: qty
@@ -672,6 +677,7 @@ function addToCartWithQty(index) {
   renderCart();
   updateCartBadge();
   showToast(item.name + " added to cart"); // 🔥 IMPORTANT
+  localStorage.setItem("cartData", JSON.stringify(window.currentOrder));
 }
 function showToast(message) {
   let toast = document.getElementById("globalToast");
@@ -716,7 +722,7 @@ function updateCartBadge() {
   
   let totalQty = 0;
   
-  currentOrder.forEach(item => {
+  window.currentOrder.forEach(item => {
     totalQty += item.qty;
   });
   
@@ -994,36 +1000,43 @@ function logoutUser() {
 // ============================
 
 function renderCart() {
-  const container = document.getElementById("cartContainer");
-  container.innerHTML = "";
   
-  if (currentOrder.length === 0) {
-    container.innerHTML = "<p style='text-align:center;'>Cart is empty</p>";
+  const cartItems = document.getElementById("cartContainer");
+  const totalBox = document.getElementById("cartTotal");
+  
+  if (!cartItems || !totalBox) return;
+  
+  cartItems.innerHTML = "";
+  
+  if (window.currentOrder.length === 0) {
+    cartItems.innerHTML = "<p style='text-align:center'>Cart is empty</p>";
+    totalBox.innerText = "Total: ₹ 0.00";
     return;
   }
   
   let total = 0;
   
-  currentOrder.forEach((item, index) => {
+  window.currentOrder.forEach(item => {
+    
     total += item.price * item.qty;
     
-    container.innerHTML += `
-      <div class="cart-item">
-        <div>
-          <strong>${item.name}</strong><br>
-          ₹${item.price} × ${item.qty}
+    cartItems.innerHTML += `
+      <div class="cart-card">
+        <h3>${item.name}</h3>
+        <p class="price">₹${item.price}</p>
+
+        <div class="cart-qty-box">
+          <button onclick="changeCartQty('${item.name}', -1)">−</button>
+          <span class="qty-number">${item.qty}</span>
+          <button onclick="changeCartQty('${item.name}', 1)">+</button>
         </div>
-        <div>
-          ₹${item.price * item.qty}
-        </div>
+
+        <p>₹${item.price * item.qty}</p>
       </div>
     `;
   });
   
-  document.getElementById("cartTotal").innerText = "Total: ₹ " + total;
-  document.getElementById("cartTotal").innerText = "Total: ₹ " + total;
-
-updateCartBadge(); // 👈 yaha add karo
+  totalBox.innerText = "Total: ₹ " + total.toFixed(2);
 }
 
 function removeCartItem(index) {
@@ -1035,37 +1048,35 @@ function removeCartItem(index) {
 // ============================
 
 function placeOrder() {
-  
-  const name = document.getElementById("customerName").value;
-  const mobile = document.getElementById("customerMobile").value;
+  const name = document.querySelector("#cartPage input[type='text']").value;
+  const mobile = document.querySelector("#cartPage input[type='tel']").value;
   
   if (!name || !mobile) {
-    alert("Please enter name and mobile");
+    alert("Please fill name and mobile number");
     return;
   }
   
-  const orderId = "ORD" + Date.now();
+  let message = `🛒 *New Order*\n\n`;
+  message += `👤 Name: ${name}\n`;
+  message += `📞 Mobile: ${mobile}\n\n`;
   
-  let totalAmount = 0;
+  let total = 0;
   
-  currentOrder.forEach(item => {
-    totalAmount += item.price * item.qty;
+  window.currentOrder.forEach(item => {
+    const itemTotal = item.price * item.qty;
+    total += itemTotal;
+    message += `• ${item.name} (${item.qty}) - ₹${itemTotal}\n`;
   });
   
-  const orderData = {
-    id: orderId,
-    name: name,
-    mobile: mobile,
-    items: currentOrder,
-    total: totalAmount
-  };
+  message += `\n💰 Total: ₹${total}`;
   
-  // 🔥 PDF Generate
-  generatePDF(orderData);
+  const phoneNumber = "91XXXXXXXXXX"; // apna number daalo
+  const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   
-  // Cart clear
-  currentOrder = [];
+  window.open(url, "_blank");
 }
+
+
 function showOrderSuccess(orderId, name, total) {
   
   const successHTML = `
@@ -1244,8 +1255,12 @@ function shareAllItems() {
 
 
 function printInvoice() {
-  
   const invoice = document.getElementById("printable-invoice");
+  
+  if (!invoice) {
+    alert("Invoice not found");
+    return;
+  }
   
   html2canvas(invoice, {
     scale: 2,
@@ -1258,18 +1273,16 @@ function printInvoice() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF("p", "mm", "a4");
     
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
     
-    const imgWidth = pdfWidth;
+    const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
     pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
     
-    pdf.save("Invoice.pdf");
-    
+    pdf.save("Surjya_Bakery_Invoice.pdf");
   });
-  
 }
 function sharePage() {
   
@@ -1315,3 +1328,18 @@ window.addEventListener("load", function() {
   }
   
 });
+function changeCartQty(name, change) {
+  
+  const item = window.currentOrder.find(i => i.name === name);
+  if (!item) return;
+  
+  item.qty += change;
+  
+  if (item.qty <= 0) {
+    window.currentOrder = window.currentOrder.filter(i => i.name !== name);
+  }
+  
+  renderCart();
+  updateCartBadge();
+  localStorage.setItem("cartData", JSON.stringify(window.currentOrder));
+}

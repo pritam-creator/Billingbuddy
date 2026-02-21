@@ -187,15 +187,7 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 
 .back-btn, .back { background: #95a5a6; margin-top: 15px; }
 
-/* --- INVOICE TABLE --- */
-.invoice-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
 
-.invoice-table th { background: #eee; padding: 10px; text-align: left; font-size: 14px; }
-.invoice-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
 
 /* --- PRINT RULES --- */
 @media print {
@@ -203,6 +195,24 @@ button:active { opacity: 0.9; transform: translateY(1px); }
     #printable-invoice, #printable-invoice * { visibility: visible; }
     #printable-invoice { position: absolute; left: 0; top: 0; width: 100%; }
     .no-print { display: none !important; }
+    
+    .invoice-img {
+        width: 80px;
+        height: 80px;
+        box-shadow: none;
+    
+
+    .top-fixed,
+    .bottom-section {
+        display: none !important;
+    }
+
+    .invoice-container {
+        margin: 0;
+        padding: 0;
+    }
+
+}
 }
 
 /* Small Device Fix */
@@ -581,4 +591,339 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 
 #itemsPage {
   padding-bottom: 100px; /* space so content hide na ho */
+}
+/* ===== CART PAGE MODERN UI ===== */
+
+#cartPage {
+    background: #f4f7f6;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Title */
+#cartPage h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+/* Cart Card */
+.cart-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 5px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    margin-bottom: 15px;
+}
+
+/* Item Name */
+.cart-item-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Price */
+.cart-price {
+    color: #f39c12;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* Total Section */
+.cart-total {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Fields */
+#cartPage input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 14px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    outline: none;
+    transition: 0.2s;
+}
+
+#cartPage input:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.2);
+}
+
+/* Place Order Button */
+#placeOrderBtn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px;
+    background: #f39c12;
+    border: none;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#placeOrderBtn:hover {
+    background: #e67e22;
+}
+
+/* Back Button */
+#cartBackBtn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px;
+    background: #bdc3c7;
+    border: none;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+/* ===== CART QTY STYLE SAME AS ITEMS ===== */
+
+.cart-qty-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;  /* horizontal center */
+  gap: 18px;
+  background: #e6e6e6;
+  padding: 8px 18px;
+  border-radius: 40px;
+  width: fit-content;
+  margin: 12px auto; /* pura pill center */
+}
+
+.cart-qty-box button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: #f39c12;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-number {
+  font-size: 18px;
+  font-weight: bold;
+  min-width: 24px;
+  text-align: center;
+}
+.cart-qty-box span {
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* ===== FULL PAGE LAYOUT ===== */
+#invoicePage {
+    height: 100vh;
+    position: relative;
+    flex-direction: column;
+    background: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ===== TOP FIXED (COMPACT) ===== */
+.top-fixed {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: #fff;
+    padding: 10px 12px;
+    z-index: 1000;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.top-fixed h2 {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.top-fixed input,
+.top-fixed select {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+/* ===== SCROLLABLE CENTER ===== */
+.invoice-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    margin-top: 130px;
+    margin-bottom: 210px;
+}
+
+/* ===== COMPANY HEADER COMPACT ===== */
+.invoice-top-design {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.company-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.invoice-img {
+    width: 40px;
+    height: 40px;
+}
+
+.company-details h2 {
+    font-size: 16px;
+    margin: 0;
+}
+
+.company-details p {
+    font-size: 11px;
+    margin: 0;
+}
+
+/* ===== CUSTOMER SECTION ===== */
+.invoice-to h4 {
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+
+.invoice-to input,
+.invoice-to textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+}
+
+/* ===== TABLE COMPACT ===== */
+.invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.invoice-table th,
+.invoice-table td {
+    padding: 6px;
+    text-align: center;
+}
+
+.invoice-table th {
+    background: #f0f0f0;
+    font-weight: 600;
+}
+
+/* ===== TOTAL BOX ===== */
+.invoice-footer {
+    margin-top: 8px;
+}
+
+.totals-box {
+    background: #fff;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+/* ===== BOTTOM FIXED POS PANEL ===== */
+.bottom-section {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #ffffff;
+    padding: 10px 12px;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== ITEM INPUT AREA ===== */
+.invoice-form input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.invoice-row {
+    display: flex;
+    gap: 6px;
+}
+
+.invoice-row input {
+    flex: 1;
+}
+
+/* ===== ADD BUTTON ===== */
+#invoiceAddBtn {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    border: none;
+    border-radius: 8px;
+    background: #f39c12;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.bottom-actions {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.action-btn,
+.danger-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    border: none;
+}
+
+.action-btn {
+    background: #f39c12;
+    color: white;
+}
+
+.danger-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+/* ===== BACK BUTTON ===== */
+.back-btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+    background: #95a5a6;
+    color: white;
+    font-size: 13px;
 }
