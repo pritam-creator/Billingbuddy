@@ -27,8 +27,8 @@ body {
 
 .page {
     display: none;
-    height: 100vh;
-    overflow: hidden;
+    width: 100%;
+    min-height: 100vh;
 }
 
 .page.active {
@@ -218,126 +218,6 @@ button:active { opacity: 0.9; transform: translateY(1px); }
    ITEMS PAGE - DASHBOARD STYLE
 ==================================== */
 
-#itemsPage {
-    display: none;
-    flex-direction: column;
-    height: 100dvh;
-    background: #eef1f4;
-    position: relative;
-}
-
-#itemsPage.active {
-    display: flex;
-}
-
-/* ===== TOP SECTION ===== */
-#itemsPage .top-section {
-    padding: 25px 20px 15px;
-    text-align: center;
-    margin-top: -20px;
-}
-
-#itemsPage .top-section h2 {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: #2c3e50;
-}
-
-#itemsPage .top-section input {
-    width: 100%;
-    padding: 12px 18px;
-    border-radius: 30px;
-    border: 1px solid #ddd;
-    background: #fff;
-    font-size: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-/* ===== SCROLL AREA ===== */
-#itemsPage .middle-section {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 20px 140px;
-}
-
-/* ===== ITEM CARD ===== */
-#itemsPage .item-card {
-    background: #ffffff;
-    border-radius: 22px;
-    padding: 18px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: 0.2s ease;
-}
-
-#itemsPage .item-card:active {
-    transform: scale(0.98);
-}
-
-/* LEFT */
-#itemsPage .item-left h4 {
-    font-size: 16px;
-    margin-bottom: 6px;
-}
-
-#itemsPage .item-left p {
-    color: #f39c12;
-    font-weight: 600;
-}
-
-/* QTY BOX */
-/* ===== QTY BOX PERFECT FIX ===== */
-
-#itemsPage .qty-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: #f1f1f1;
-  border-radius: 20px;
-  padding: 4px 8px;
-  flex-wrap: nowrap;           /* 👈 important */
-}
-
-#itemsPage .qty-box button {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;             /* 👈 prevent shrink */
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  padding: 0;
-}
-
-#itemsPage .qty-box input {
-  width: 51px;                 /* 👈 increased width */
-  min-width: 5px;             /* 👈 prevent shrink */
-  height: 28px;
-  text-align: center;
-  font-size: 14px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: #000;
-  flex-shrink: 0;              /* 👈 important */
-}
-
-#itemsPage .qty-box input:focus {
-    outline: black;
-}
-
-/* ===== BOTTOM ADMIN SECTION ===== */
-#itemsPage .bottom-section {
-    padding: 15px 20px 25px;
-    background: #eef1f4;
-    margin-bottom: -120px;
-}
 
 #input-wrapper {
     display: flex;
@@ -354,15 +234,7 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 }
 
 /* ADMIN BUTTONS */
-#itemsPage .bottom-section button {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 12px;
-    border-radius: 16px;
-    border: none;
-    font-weight: 600;
-    font-size: 14px;
-}
+
 
 #addBtn {
     background: #f39c12;
@@ -371,9 +243,7 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 
 
 /* BACK BUTTON */
-#itemsPage .bottom-section button:last-of-type:not(.cart-btn) {
-    background: #d0d0d0;
-}
+
 
 /* ===== FLOATING CART BUTTON ===== */
 
@@ -390,50 +260,9 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 ================================ */
 
 /* Item card size reduce */
-#itemsPage .item-card {
-    padding: 14px;
-    border-radius: 16px;
-    margin-bottom: 14px;
-}
+/* ===== COMPACT POS ITEM CARD ===== */
 
-/* Item name smaller */
-#itemsPage .item-left h4 {
-    font-size: 15px;
-}
 
-#itemsPage .item-left p {
-    font-size: 14px;
-}
-
-/* Qty box smaller */
-#itemsPage .qty-box {
-    padding: 4px 8px;
-}
-
-#itemsPage .qty-box button {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
-}
-
-#itemsPage .qty-box input {
-    color: #000;
-    width: 22px;
-    font-size: 14px;
-}
-
-/* Add / Share buttons smaller */
-#itemsPage .item-card button {
-    padding: 10px;
-    font-size: 14px;
-    border-radius: 12px;
-}
-
-/* Search bar compact */
-#itemsPage .top-section input {
-    padding: 10px 14px;
-    font-size: 14px;
-}
 
 /* Floating cart compact */
 
@@ -444,106 +273,9 @@ button:active { opacity: 0.9; transform: translateY(1px); }
 }
 /* ===== ITEM RIGHT SIDE INLINE LAYOUT ===== */
 
-#itemsPage .item-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
+
 
 /* Right side container */
-#itemsPage .item-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Qty box compact */
-
-
-/* Add & Share buttons inline */
-#itemsPage .item-card button {
-    padding: 8px 14px;
-    font-size: 13px;
-    border-radius: 10px;
-    white-space: nowrap;
-}
-
-/* Add button orange */
-#itemsPage .item-card .add-btn {
-    background: #f39c12;
-    color: white;
-}
-
-/* Share button slightly lighter */
-#itemsPage .item-card .share-btn {
-    background: #ffb347;
-    color: white;
-}
-/* ===== FORCE INLINE LAYOUT ===== */
-
-#itemsPage .item-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Right side ko row bana do */
-#itemsPage .item-card>div:last-child {
-    display: flex !important;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Qty box compact */
-
-
-/* Add & Share inline */
-#itemsPage .item-card button {
-    padding: 8px 12px;
-    font-size: 13px;
-    border-radius: 10px;
-    white-space: nowrap;
-}
-/* ===== SMALLER QTY BOX ===== */
-
-#itemsPage .qty-box {
-    display: flex;
-    align-items: center;
-    background: #f1f1f1;
-    border-radius: 20px;
-    padding: 4px 8px;
-}
-
-#itemsPage .qty-box button {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-}
-
-#itemsPage .qty-box input {
-    width: 35px;
-    text-align: center;
-    font-size: 14px;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: #000;
-}
-
-
-/* ===== FIX QTY BUTTON CENTER ===== */
-
-
-
-
-/* ===== FIX CART SAFE AREA ===== */
-
-/* ===== FLOATING CART TOP RIGHT ===== */
 
 #cartBar {
   position: fixed;
@@ -566,10 +298,6 @@ button:active { opacity: 0.9; transform: translateY(1px); }
   font-size: 12px;
 }
 
-#itemsPage {
-  padding-bottom: 100px; /* space so content hide na ho */
-}
-/* ===== CART PAGE MODERN UI ===== */
 
 #cartPage {
     background: #f4f7f6;
@@ -1067,14 +795,7 @@ button:active { opacity: 0.9; transform: translateY(1px); }
  }
 }
 /* ===== BOTTOM FIXED POS PANEL ===== */
-.bottom-section {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: #ffffff;
-    padding: 10px 12px;
-    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
-}
+
 
 /* ===== ITEM INPUT AREA ===== */
 .invoice-form input {
@@ -1148,16 +869,337 @@ button:active { opacity: 0.9; transform: translateY(1px); }
     background: #ff4d4d;
     border: none;
     color: white;
-    font-size: 14px;
-    padding: 4px 6px;
-    border-radius: 6px;
+    font-size: 13px;
+
+    width: 32px;
+    height: 32px;
+    padding: 0;
+
+    border-radius: 10px;
     cursor: pointer;
     transition: 0.2s ease;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;   /* flex card me stretch nahi hoga */
 }
 
 .delete-btn:hover {
     background: #d63031;
-    transform: scale(1.1);
+    transform: scale(0.95);
 }
 /* ===== FIXED LAYOUT STRUCTURE ===== */
+.item-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    margin-bottom: 18px;
+    background: transparent;
+}
 
+.delete-bg {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 90%;
+    width: 90px;
+    background: #e74c3c;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 14px;
+}
+
+.swipe-card {
+    background: #fff;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.25s ease;
+    touch-action: pan-y;
+}
+/* =========================================
+   SURJYA BAKERY POS – CLEAN OPTIMIZED CSS
+========================================= */
+
+/* PAGE LAYOUT */
+#itemsPage {
+    height: 100vh;
+    
+    flex-direction: column;}
+
+/* ================= TOP HEADER ================= */
+
+#itemsPage .top-section {
+    
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #eef1f4;   /* same page bg */
+    padding: 12px;
+}
+
+#itemsPage .top-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* SEARCH BAR */
+#itemsPage .top-section input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+/* ================= ITEM SCROLL AREA ================= */
+
+#itemsPage .middle-section {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    padding-bottom: 70dvh;   /* FIXED */
+}
+
+/* ================= ITEM CARD ================= */
+
+
+
+/* LEFT SIDE */
+#itemsPage .item-left h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+#itemsPage .item-left p {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f39c12;
+}
+
+/* ================= QTY PILL ================= */
+
+
+
+#itemsPage .qty-box input {
+    width: 28px;
+    font-size: 13px;
+    text-align: center;
+    border: none;
+    background: transparent;
+}
+
+/* ================= ADD BUTTON ================= */
+
+
+
+/* ================= BOTTOM FIXED PANEL ================= */
+
+#itemsPage .bottom-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    padding: 15px 20px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    margin-bottom: 0px;
+}
+
+/* TOTAL ROW */
+#itemsPage .total-row {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+/* BUTTON ROW */
+#itemsPage .action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+#itemsPage .action-buttons button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#itemsPage .btn-primary {
+    background: #f39c12;
+    color: white;
+}
+
+#itemsPage .btn-secondary {
+    background: #2c3e50;
+    color: white;
+}
+
+
+/* Left Side */
+.item-left {
+    flex: 1;
+}
+
+.item-name {
+    font-size: 16px;
+    margin: 0;
+}
+
+.item-price {
+    font-size: 14px;
+    color: #f39c12;
+    margin: 4px 0 0;
+}
+
+/* Right Side */
+.item-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Qty Box */
+.qty-box {
+    display: flex;
+    align-items: center;
+    background: #f3f3f3;
+    border-radius: 30px;
+    padding: 4px 8px;
+}
+
+.qty-box button {
+    border: none;
+    background: #f39c12;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 14px;
+}
+
+.qty-box span {
+    margin: 0 6px;
+    font-size: 14px;
+}
+
+/* Buttons */
+.add-btn {
+    background: #f39c12;
+    border: none;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+/* ===== POS ITEM CARD ===== */
+
+.pos-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transition: 0.2s ease;
+}
+
+.pos-card:active {
+    transform: scale(0.98);
+}
+
+/* LEFT */
+.pos-left {
+    flex: 1;
+}
+
+.pos-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.pos-price {
+    font-size: 14px;
+    margin-top: 4px;
+    color: #f39c12;
+    font-weight: 600;
+}
+
+/* RIGHT */
+.pos-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* QTY */
+.pos-qty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f4f4;
+    border-radius: 25px;
+    padding: 4px 10px;
+    height: 34px;
+}
+
+.qty-btn {
+    border: none;
+    background: #f39c12;
+    color: white;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+}
+
+.qty-number {
+    margin: 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* ICON BUTTONS */
+.icon-btn {
+    border: none;
+    background: #f39c12;
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+}
+
+.share-icon {
+    background: #2c3e50;
+}
+html, body {
+    height: 100%;
+    overflow: hidden;
+    overflow-x: hidden;
+}

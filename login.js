@@ -32,7 +32,8 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 // ✅ THIS FIXES YOUR ERROR
-var db = firebase.database();
+// 🔥 FIRESTORE INIT
+var db = firebase.firestore();
 
 
 let currentPage = "loginPage";
@@ -64,26 +65,29 @@ function showPage(pageId) {
 
 
 function login() {
-  let inputs = document.querySelectorAll(".pin-input");
-  let pin = "";
-  inputs.forEach(i => pin += i.value);
   
-  db.ref("settings/pin").once("value").then(snapshot => {
-    let savedPin = snapshot.val() || "1234";
+  let pin = "";
+  document.querySelectorAll(".pin-input").forEach(i => pin += i.value);
+  
+  db.collection("settings").doc("pin").get().then(doc => {
+    
+    let savedPin = doc.exists ? doc.data().value : "1234";
     
     if (pin === savedPin) {
       showPage("dashboardPage");
     } else {
       alert("Wrong PIN!");
     }
+    
   });
+  
 }
 
 
 
 let pinInputs = [];
 
-window.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function() {
   
   pinInputs = document.querySelectorAll(".pin-input");
   
@@ -134,8 +138,8 @@ function submitPin() {
     pin += input.value;
   });
   
-  db.ref("settings/pin").once("value").then(snapshot => {
-    let savedPin = snapshot.val() || "1234";
+ db.collection("settings").doc("pin").get().then(doc => {
+      let savedPin = doc.exists ? doc.data().value : "1234";
     
     if (pin === savedPin) {
       showPage("dashboardPage"); // 🔥 PAGE CHANGE HERE
@@ -153,24 +157,20 @@ function clearPin() {
 }
 
 function resetPin() {
+  
   let oldPin = document.getElementById("oldPin").value;
   let newPin = document.getElementById("newPin").value;
   let confirmPin = document.getElementById("confirmPin").value;
   
-  db.ref("settings/pin").once("value").then(snapshot => {
-    let savedPin = snapshot.val() || "1234";
+  db.collection("settings").doc("pin").get().then(doc => {
     
-    if (oldPin !== savedPin) {
-      alert("Old PIN incorrect");
-      return;
-    }
+    let savedPin = doc.exists ? doc.data().value : "1234";
     
-    if (newPin !== confirmPin) {
-      alert("PIN not matched");
-      return;
-    }
+    if (oldPin !== savedPin) return alert("Old PIN incorrect");
+    if (newPin !== confirmPin) return alert("PIN not matched");
     
-    db.ref("settings/pin").set(newPin);
+    db.collection("settings").doc("pin").set({ value: newPin });
+    
     alert("PIN Updated!");
     showPage("loginPage");
   });
@@ -212,22 +212,28 @@ let savedItems = [
 /********************************
  MANUAL ADD ITEM
 *********************************/
-document.getElementById("invoiceAddBtn").addEventListener("click", function() {
-  const name = document.getElementById("invoiceItemName").value.trim();
-  const qty = parseFloat(document.getElementById("invoiceItemQty").value);
-  const price = parseFloat(document.getElementById("invoiceItemPrice").value);
+const invoiceAddBtn = document.getElementById("invoiceAddBtn");
+
+if (invoiceAddBtn) {
+  invoiceAddBtn.addEventListener("click", function() {
+    const name = document.getElementById("invoiceItemName").value.trim();
+    const qty = parseFloat(document.getElementById("invoiceItemQty").value);
+    const price = parseFloat(document.getElementById("invoiceItemPrice").value);
+    
+    if (!name || qty <= 0 || price <= 0) {
+      alert("Enter valid item details");
+      return;
+    }
+    
+    addItemToInvoice(name, qty, price);
+    
+    document.getElementById("invoiceItemName").value = "";
+    document.getElementById("invoiceItemQty").value = "";
+    document.getElementById("invoiceItemPrice").value = "";
+  });
+}
   
-  if (!name || qty <= 0 || price <= 0) {
-    alert("Enter valid item details");
-    return;
-  }
-  
-  addItemToInvoice(name, qty, price);
-  
-  document.getElementById("invoiceItemName").value = "";
-  document.getElementById("invoiceItemQty").value = "";
-  document.getElementById("invoiceItemPrice").value = "";
-});
+
 
 /********************************
  ADD ITEM FUNCTION
@@ -246,7 +252,9 @@ function addItemToInvoice(name, qty, price) {
 *********************************/
 function renderInvoiceItems() {
   const tbody = document.getElementById("invoiceItems");
-  tbody.innerHTML = "";
+  if (!tbody) return;
+  
+  tbody.innerHTML = ""; // 🔥 IMPORTANT FIX
   
   currentInvoiceItems.forEach((item, index) => {
     const row = `
@@ -256,11 +264,10 @@ function renderInvoiceItems() {
         <td>₹${item.price}</td>
         <td>₹${item.amount}</td>
         <td>
-    <button class="delete-btn" onclick="deleteItem(${index})">
-      🗑️
-    </button>
-  </td>
-
+          <button class="delete-btn" onclick="deleteItem(${index})">
+            🗑️
+          </button>
+        </td>
       </tr>
     `;
     tbody.innerHTML += row;
@@ -286,9 +293,7 @@ function calculateTotals() {
 }
 
 
-function openInvoiceDirect() {
-  showPage('invoicePage');
-}
+
 
 
 /********************************
@@ -297,30 +302,32 @@ function openInvoiceDirect() {
 const searchInput = document.getElementById("invoiceSearch");
 const searchResult = document.getElementById("invoiceSearchResult");
 
-searchInput.addEventListener("input", function() {
-  const value = this.value.toLowerCase();
-  searchResult.innerHTML = "";
-  
-  if (!value) return;
-  
-  const filtered = savedItems.filter(item =>
-    item.name.toLowerCase().includes(value)
-  );
-  
-  filtered.forEach(item => {
-    const div = document.createElement("div");
-    div.textContent = item.name + " - ₹" + item.price;
-    div.style.cursor = "pointer";
+if (searchInput && searchResult) {
+  searchInput.addEventListener("input", function() {
+    const value = this.value.toLowerCase();
+    searchResult.innerHTML = "";
     
-    div.onclick = function() {
-      addItemToInvoice(item.name, 1, item.price);
-      searchResult.innerHTML = "";
-      searchInput.value = "";
-    };
+    if (!value) return;
     
-    searchResult.appendChild(div);
+    const filtered = savedItems.filter(item =>
+      item.name.toLowerCase().includes(value)
+    );
+    
+    filtered.forEach(item => {
+      const div = document.createElement("div");
+      div.textContent = item.name + " - ₹" + item.price;
+      div.style.cursor = "pointer";
+      
+      div.onclick = function() {
+        addItemToInvoice(item.name, 1, item.price);
+        searchResult.innerHTML = "";
+        searchInput.value = "";
+      };
+      
+      searchResult.appendChild(div);
+    });
   });
-});
+}
 
 /********************************
   SAFE INVOICE CONTROLS
@@ -372,9 +379,9 @@ document.addEventListener("DOMContentLoaded", function() {
       date: new Date().toLocaleString()
     };
     
-    let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
-    invoices.push(invoiceData);
-    localStorage.setItem("invoices", JSON.stringify(invoices));
+  await db.collection("invoices")
+  .doc(invoiceNo)
+  .set(invoiceData);
     
     alert("Invoice Saved Successfully ✅");
     
@@ -455,14 +462,13 @@ function loadOrders() {
   const list = document.getElementById("ordersList");
   const sound = document.getElementById("orderSound");
   
-  db.ref("orders").on("value", snapshot => {
-    
-    list.innerHTML = "";
-    
-    snapshot.forEach(child => {
+ db.collection("orders").onSnapshot(snapshot => {
       
-      const order = child.val();
-      const key = child.key;
+      list.innerHTML = "";
+      
+      snapshot.forEach(doc => {
+            const order = doc.data();
+            const key = doc.id;
       
       list.innerHTML += `
         <div class="card" style="margin-bottom:10px;">
@@ -495,9 +501,9 @@ function loadOrders() {
 }
 
 function updateOrderStatus(orderId, status) {
-  db.ref("orders/" + orderId).update({
-    status: status
-  });
+ db.collection("orders").doc(orderId).update({
+  status: status
+});
 }
 
 
@@ -536,10 +542,11 @@ document.getElementById("addBtn").addEventListener("click", function() {
     return;
   }
   
-  firebase.database().ref("items").push({
-    name: name,
-    price: price
-  });
+  db.collection("items").add({
+  name: name,
+  price: parseFloat(price),
+  available: true
+});
   
   // inputs clear
   document.getElementById("itemName").value = "";
@@ -561,10 +568,10 @@ function editItem() {
     return;
   }
   
-  db.ref("items/" + selectedItemId).update({
-    name: name,
-    price: price
-  });
+db.collection("items").doc(selectedItemId).update({
+  name: name,
+  price: parseFloat(price)
+});
   
   clearItemForm();
 }
@@ -577,81 +584,76 @@ function clearItemForm() {
 
 function loadItems() {
   
-  db.ref("items").on("value", snapshot => {
+  db.collection("items").onSnapshot(snapshot => {
     
-    const data = snapshot.val() || {};
     allItems = [];
     
-    Object.keys(data).forEach(key => {
+    snapshot.forEach(doc => {
       allItems.push({
-        id: key,
-        name: data[key].name,
-        price: data[key].price
+        id: doc.id,
+        name: doc.data().name,
+        price: doc.data().price
       });
     });
     
-    renderItems(allItems);
-    
+    renderItems();
   });
   
 }
 
 function renderItems() {
-  const list = document.getElementById("itemsList");
-  list.innerHTML = "";
+const list = document.getElementById("itemsList");
+if (!list) return;
+
+list.innerHTML = "";
   
   allItems.forEach((item, index) => {
     
     list.innerHTML += `
-      <div class="item-card" onclick="selectItem('${item.id}', '${item.name}', '${item.price}')">
+     <div class="item-wrapper">
+ <div class="delete-bg" onclick="event.stopPropagation(); deleteItemById('${item.id}')">
 
-        <div class="item-left">
-          <img src="${item.image || ''}" class="item-img">
-          <h4>${item.name}</h4>
-          <p>₹${item.price}</p>
+  <div class="item-card swipe-card"
+    data-id="${item.id}"
+    onclick="selectItem(event, '${item.id}', '${item.name}', '${item.price}')">
+
+        <div class="pos-card">
+
+    <div class="pos-left">
+       <div class="pos-title">${item.name}</div>
+<div class="pos-price">₹${item.price}</div>
+    </div>
+
+    <div class="pos-right">
+
+        <div class="pos-qty">
+            <button class="qty-btn minus">−</button>
+            <span class="qty-number">1</span>
+            <button class="qty-btn plus">+</button>
         </div>
 
-        <div class="item-right">
+        <button class="icon-btn add-icon">+</button>
+      
 
-          <div class="qty-box">
-            <button type="button" onclick="event.stopPropagation(); changeQty(${index}, -1)">−</button>
-            <input type="number" id="qty-${index}" value="1" min="1">
-            <button type="button" onclick="event.stopPropagation(); changeQty(${index}, 1)">+</button>
-          </div>
+    </div>
 
-          <button type="button"
-            class="add-cart-btn"
-            onclick="event.stopPropagation(); addToCartWithQty(${index})">
-            Add
-          </button>
-
-         <button type="button"
-  class="share-btn"
-  onclick="event.stopPropagation(); shareItem(${index})">
-  Share
-</button>
-
-        </div>
+</div>
 
       </div>
     `;
-    
+    enableSwipeDelete();
   });
 }
-function selectItem(id, name, price) {
-  selectedItemId = id;
+function selectItem(e, id, name, price) {
+  selectedItem = { id, name, price };
   
   document.getElementById("itemName").value = name;
   document.getElementById("itemPrice").value = price;
   
-  console.log("Selected ID:", selectedItemId);
+  document.querySelectorAll(".item-card")
+    .forEach(card => card.classList.remove("active"));
   
-  // Highlight selected
-  document.querySelectorAll(".item-card").forEach(card =>
-    card.classList.remove("active")
-  );
-  
-  event.currentTarget.classList.add("active");
+  e.currentTarget.classList.add("active");
 }
 
 function changeQty(index, change) {
@@ -726,6 +728,7 @@ function showToast(message) {
 
 function updateCartBadge() {
   const badge = document.getElementById("cartBadge");
+  if (!badge) return; // 🔥 ADD THIS
   
   let totalQty = 0;
   
@@ -759,25 +762,32 @@ function goBack() {
 }
 
   
-  console.log("Cart:", currentOrder);
+  console.log("Cart:", window.currentOrder);
   renderCart();
 
 
 function toggleAvailability() {
-  db.ref("items/" + selectedItem.id + "/available")
-    .set(document.getElementById("itemAvailableToggle").checked);
+  
+  if (!selectedItem) return;
+  
+  db.collection("items")
+    .doc(selectedItem.id)
+    .update({
+      available: document.getElementById("itemAvailableToggle").checked
+    });
+  
 }
 
 function deleteCurrentItem() {
-  db.ref("items/" + selectedItem.id).remove();
+  db.collection("items").doc(selectedItem.id).delete();
   showPage("itemsPage");
 }
 
 function updateItem() {
   if (!selectedItem) return;
-  db.ref("items/" + selectedItem.id).update({
+  db.collection("items").doc(selectedItem.id).update({
     name: document.getElementById("productName").value,
-    price: document.getElementById("productPrice").value
+    price: parseFloat(document.getElementById("productPrice").value)
   });
 }
 
@@ -796,7 +806,7 @@ function addClient() {
   
   if (!name || !phone) return alert("Fill all fields");
   
-  db.ref("clients/" + phone).set({
+  db.collection("clients").doc(phone).set({
     name,
     phone,
     due: 0
@@ -807,14 +817,16 @@ function addClient() {
 }
 
 function loadClients() {
-  db.ref("clients").on("value", snapshot => {
+  db.collection("clients").onSnapshot(snapshot => {
+    
     let list = document.getElementById("clientsList");
     list.innerHTML = "";
     
-    snapshot.forEach(child => {
-      let c = child.val();
+    snapshot.forEach(doc => {
+      const c = doc.data();
       list.innerHTML += `<div class="card">${c.name} - ${c.phone}</div>`;
     });
+    
   });
 }
 
@@ -827,30 +839,40 @@ function searchClients(value) {
 // ============================
 
 function checkDue() {
+  
   let phone = document.getElementById("checkPhone").value;
   
-  db.ref("clients/" + phone).once("value").then(snapshot => {
-    if (!snapshot.exists()) {
+  db.collection("clients").doc(phone).get().then(doc => {
+    
+    if (!doc.exists) {
       document.getElementById("dueResult").innerText = "Client not found";
       return;
     }
-    let data = snapshot.val();
+    
+    const data = doc.data();
     document.getElementById("dueResult").innerText =
       "Due: ₹" + (data.due || 0);
+    
   });
 }
 
 function loadDueList() {
-  db.ref("clients").on("value", snapshot => {
+  
+  db.collection("clients").onSnapshot(snapshot => {
+    
     let list = document.getElementById("dueList");
     list.innerHTML = "";
     
-    snapshot.forEach(child => {
-      let c = child.val();
+    snapshot.forEach(doc => {
+      
+      const c = doc.data();
+      
       if (c.due > 0) {
         list.innerHTML += `<div class="card">${c.name} - ₹${c.due}</div>`;
       }
+      
     });
+    
   });
 }
 
@@ -859,33 +881,53 @@ function loadDueList() {
 // ============================
 
 function updateStock() {
+  
   let product = document.getElementById("inventorySelect").value;
   let qty = parseInt(document.getElementById("stockQuantity").value);
   
   if (!product || !qty) return alert("Select product & qty");
   
-  db.ref("inventory/" + product).transaction(current => {
-    return (current || 0) + qty;
+  const docRef = db.collection("inventory").doc(product);
+  
+  db.runTransaction(async (transaction) => {
+    
+    const doc = await transaction.get(docRef);
+    
+    let current = doc.exists ? doc.data().qty : 0;
+    
+    transaction.set(docRef, {
+      qty: current + qty
+    });
+    
   });
+  
 }
 
 function loadInventory() {
-  db.ref("inventory").on("value", snapshot => {
+  db.collection("inventory").onSnapshot(snapshot => {
+    
     let list = document.getElementById("inventoryList");
     list.innerHTML = "";
     
     let total = 0;
     let low = 0;
     
-    snapshot.forEach(child => {
+    snapshot.forEach(doc => {
       total++;
-      if (child.val() < 5) low++;
       
-      list.innerHTML += `<div class="card">${child.key} - ${child.val()}</div>`;
+      const data = doc.data();
+      const qty = data.qty || 0;
+      
+      if (qty < 5) low++;
+      
+      list.innerHTML += `
+        <div class="card">${doc.id} - ${qty}</div>
+      `;
     });
     
     document.getElementById("inventoryCount").innerText = total;
     document.getElementById("lowStockCount").innerText = low;
+    
   });
 }
 
@@ -898,31 +940,33 @@ function openRecordPage() {
     const recordList = document.getElementById("recordList");
     recordList.innerHTML = "Loading...";
 
-    db.ref("records").on("value", snapshot => {
-        recordList.innerHTML = "";
-        let totalSales = 0;
-        let count = 0;
-
-        snapshot.forEach(child => {
-            const data = child.val();
-            totalSales += data.total || 0;
-            count++;
-
-            const div = document.createElement("div");
-            div.className = "card";
-            div.style.marginBottom = "10px";
-            div.innerHTML = `
-                <strong>${data.invoiceNo}</strong><br>
-                Client: ${data.clientPhone}<br>
-                Total: ₹${data.total}<br>
-                <small>${data.date}</small>
-            `;
-            recordList.appendChild(div);
-        });
-
-        document.getElementById("totalInvoices").innerText = "Invoices: " + count;
-        document.getElementById("totalSales").innerText = "Total Sales: ₹" + totalSales.toFixed(2);
-    });
+    db.collection("invoices").onSnapshot(snapshot => {
+  
+  const recordList = document.getElementById("recordList");
+  recordList.innerHTML = "";
+  
+  let totalSales = 0;
+  let count = snapshot.size;
+  
+  snapshot.forEach(doc => {
+    
+    const data = doc.data();
+    totalSales += parseFloat(data.total) || 0;
+    
+    recordList.innerHTML += `
+          <div class="card" style="margin-bottom:10px;">
+            <strong>${data.invoiceNo}</strong><br>
+            Client: ${data.customerName}<br>
+            Total: ₹${data.total}<br>
+            <small>${data.date}</small>
+          </div>
+        `;
+  });
+  
+  document.getElementById("totalInvoices").innerText = "Invoices: " + count;
+  document.getElementById("totalSales").innerText = "Total Sales: ₹" + totalSales.toFixed(2);
+  
+});
 }
 
 
@@ -960,31 +1004,8 @@ window.onload = function() {
 };
 
 // Items Page ke Buttons ko connect karne ke liye
-document.addEventListener("DOMContentLoaded", function() {
-    const addBtn = document.getElementById("addBtn");
-    const editBtn = document.getElementById("editBtn");
 
-    if (addBtn) {
-        // Purana alert wala code hatakar ye likhein
-        addBtn.onclick = function() {
-            const name = document.getElementById("itemName").value.trim();
-            const price = document.getElementById("itemPrice").value.trim();
-            if (!name || !price) return alert("Fill all fields");
 
-            db.ref("items").push({
-                name: name,
-                price: price,
-                available: true // Default available rakhein
-            });
-            document.getElementById("itemName").value = "";
-            document.getElementById("itemPrice").value = "";
-        };
-    }
-    
-    if (editBtn) {
-        editBtn.onclick = editItem; 
-    }
-});
 function addItemToOrder() {
     if (!selectedItem) return;
     
@@ -1047,8 +1068,10 @@ function renderCart() {
 }
 
 function removeCartItem(index) {
-  cart.splice(index, 1);
+  window.currentOrder.splice(index, 1);
   renderCart();
+  updateCartBadge();
+  localStorage.setItem("cartData", JSON.stringify(window.currentOrder));
 }
 // ============================
 // PLACE ORDER (CART → INVOICE)
@@ -1077,7 +1100,7 @@ function placeOrder() {
   
   message += `\n💰 Total: ₹${total}`;
   
-  const phoneNumber = "91XXXXXXXXXX"; // apna number daalo
+  const phoneNumber = "917085662649"; // apna number daalo
   const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   
   window.open(url, "_blank");
@@ -1118,11 +1141,11 @@ function updateCustomerPreview() {
 }
 function openOrderInvoice(orderId) {
   
-  db.ref("orders/" + orderId).once("value").then(snapshot => {
+  db.collection("orders").doc(orderId).get().then(doc => {
     
-    const order = snapshot.val();
+    if (!doc.exists) return;
     
-    if (!order) return;
+    const order = doc.data();
     
     currentInvoiceItems = [];
     
@@ -1143,6 +1166,10 @@ function openOrderInvoice(orderId) {
       "Mobile: " + order.customerMobile;
     
     showPage("invoicePage");
+    
+  
+  
+
     setTimeout(() => {
   printInvoice();
 }, 500);
@@ -1182,23 +1209,7 @@ async function generatePDF(orderData) {
   
   doc.save("Invoice_" + orderData.id + ".pdf");
 }
-async function generateInvoiceNumber() {
-  const counterRef = firebase.database().ref("invoiceCounter");
-  
-  const snapshot = await counterRef.get();
-  
-  let currentNumber = 1;
-  
-  if (snapshot.exists()) {
-    currentNumber = snapshot.val();
-  }
-  
-  const newNumber = currentNumber + 1;
-  
-  await counterRef.set(newNumber);
-  
-  return "SB-" + String(currentNumber).padStart(4, "0");
-}
+
 function shareFullPage() {
   
   const baseURL = window.location.origin + window.location.pathname;
@@ -1222,6 +1233,7 @@ ${publicURL}`;
     );
   }
 }
+
 // ---- PUBLIC VIEW MODE CHECK ----
 
 function shareItem(index) {
@@ -1301,10 +1313,13 @@ function printInvoice() {
     
     const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-    
-    pdf.save("Surjya_Bakery_Invoice.pdf");
+   if (imgHeight > pageHeight) {
+  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, pageHeight);
+} else {
+  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+}
+
+pdf.save("Surjya_Bakery_Invoice.pdf");
   });
 }
 function sharePage() {
@@ -1365,4 +1380,91 @@ function changeCartQty(name, change) {
   renderCart();
   updateCartBadge();
   localStorage.setItem("cartData", JSON.stringify(window.currentOrder));
+}
+// ============================
+// AUTO INVOICE NUMBER SYSTEM
+// ============================
+
+async function generateInvoiceNumber() {
+  
+  const counterRef = db.collection("settings").doc("invoiceCounter");
+  
+  return db.runTransaction(async (transaction) => {
+    
+    const doc = await transaction.get(counterRef);
+    
+    let current = 0;
+    
+    if (doc.exists) {
+      current = doc.data().value || 0;
+    }
+    
+    const newNumber = current + 1;
+    
+    transaction.set(counterRef, { value: newNumber });
+    
+    return "SB-" + String(newNumber).padStart(4, "0");
+    
+  });
+  
+}
+function enableSwipeDelete() {
+  const cards = document.querySelectorAll(".swipe-card");
+  let openedCard = null;
+  
+  cards.forEach(card => {
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    const maxSwipe = -90;
+    
+    card.addEventListener("touchstart", e => {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+      
+      if (openedCard && openedCard !== card) {
+        openedCard.style.transform = "translateX(0)";
+      }
+    });
+    
+    card.addEventListener("touchmove", e => {
+      if (!isDragging) return;
+      
+      currentX = e.touches[0].clientX;
+      let diff = currentX - startX;
+      
+      if (diff < 0) {
+        if (diff < maxSwipe) diff = maxSwipe;
+        card.style.transform = `translateX(${diff}px)`;
+      }
+    });
+    
+    card.addEventListener("touchend", () => {
+      isDragging = false;
+      let diff = currentX - startX;
+      
+      if (diff < -60) {
+        card.style.transform = `translateX(${maxSwipe}px)`;
+        openedCard = card;
+      } else {
+        card.style.transform = "translateX(0)";
+        openedCard = null;
+      }
+      
+      startX = 0;
+      currentX = 0;
+    });
+  });
+}
+function deleteItemById(id) {
+  if (!confirm("Delete this item?")) return;
+  
+  db.collection("items").doc(id).delete()
+    .then(() => {
+      showToast("Item Deleted ✅");
+    })
+    .catch(err => {
+      console.log(err);
+      alert("Delete failed");
+    });
 }

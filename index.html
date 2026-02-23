@@ -161,7 +161,7 @@
   <h2>📦 Orders</h2>
   <div id="ordersList"></div>
   <div id="currentOrderList"></div>
-  <button class="back" onclick="goBack()">⬅ Back</button>
+<button id="backBtn" onclick="showPage('dashboardPage')">⬅ Back</button>
 </section>
 
 
@@ -169,13 +169,13 @@
   <input id="checkPhone" placeholder="Mobile Number">
   <button onclick="checkDue()">Check</button>
   <p id="dueResult"></p>
-  <button class="back" onclick="goBack()">⬅ Back</button>
+<button id="backBtn" onclick="showPage('dashboardPage')">⬅ Back</button>
 </section>
 
 <section class="page" id="dueListPage">
   <h2>💰 Customer Udhaari</h2>
   <div id="dueList"></div>
-  <button class="back" onclick="goBack()">⬅ Back</button>
+<button id="backBtn" onclick="showPage('dashboardPage')">⬅ Back</button>
 </section>
 
 <section class="page" id="invoicePage">
@@ -342,7 +342,7 @@
   <div id="recordList">
     </div>
   
-  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+<button id="backBtn" onclick="showPage('dashboardPage')">⬅ Back</button>
 </section>
 
 
@@ -373,7 +373,7 @@
   <div id="inventoryList"></div>
   
   <!-- Back -->
-  <button class="back" onclick="goBack()">⬅ Back</button>
+  <button id="backBtn" onclick="showPage('dashboardPage')">⬅ Back</button>
 </section>
 
 
@@ -381,11 +381,11 @@
 <!-- Firebase Core -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 
-<!-- Firebase Database -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<!-- Firestore SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<!-- Firebase Auth (optional agar use karte ho) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<!-- (Optional) Realtime DB -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <audio id="orderSound" src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"></audio>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
