@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surjya Bakery - Login</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,#5b3df5,#7b5dfc);
+}
+
+.login-box{
+  background:white;
+  padding:35px 25px;
+  border-radius:20px;
+  text-align:center;
+  width:320px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  animation:fadeIn 0.5s ease-in-out;
+}
+
+h2{
+  margin-bottom:25px;
+  color:#5b3df5;
+}
+
+.pin-container{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.pin-input{
+  width:50px;
+  height:55px;
+  border:2px solid #ddd;
+  border-radius:12px;
+  text-align:center;
+  font-size:22px;
+  font-weight:600;
+  outline:none;
+  transition:0.2s;
+}
+
+.pin-input:focus{
+  border-color:#5b3df5;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#5b3df5;
+  color:white;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:active{
+  transform:scale(0.97);
+}
+
+.link{
+  margin-top:15px;
+  font-size:14px;
+  color:#5b3df5;
+  cursor:pointer;
+}
+
+.message{
+  margin-top:10px;
+  font-size:13px;
+  min-height:18px;
+}
+
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-5px)}
+  50%{transform:translateX(5px)}
+  75%{transform:translateX(-5px)}
+  100%{transform:translateX(0)}
+}
+
+.shake{
+  animation:shake 0.3s;
+}
+
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(20px)}
+  to{opacity:1; transform:translateY(0)}
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box" id="loginBox">
+  <h2>🍞 Surjya Bakery</h2>
+
+  <div class="pin-container">
+    <input maxlength="1" class="pin-input" type="password">
+    <input maxlength="1" class="pin-input" type="password">
+    <input maxlength="1" class="pin-input" type="password">
+    <input maxlength="1" class="pin-input" type="password">
+  </div>
+
+  <button onclick="login()">Login</button>
+  <p class="link" onclick="goReset()">Reset PIN?</p>
+  <div class="message" id="message"></div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+  authDomain: "billingbuddy-551f9.firebaseapp.com",
+  projectId: "billingbuddy-551f9",
+  storageBucket: "billingbuddy-551f9.firebasestorage.app",
+  messagingSenderId: "287026017084",
+  appId: "1:287026017084:web:aae879570ad706e5a2a439"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const inputs = document.querySelectorAll(".pin-input");
+const message = document.getElementById("message");
+const loginBox = document.getElementById("loginBox");
+
+// Auto focus next input
+inputs.forEach((input,index)=>{
+  input.addEventListener("input",()=>{
+    if(input.value && index < inputs.length-1){
+      inputs[index+1].focus();
+    }
+  });
+
+  input.addEventListener("keydown",(e)=>{
+    if(e.key==="Backspace" && !input.value && index>0){
+      inputs[index-1].focus();
+    }
+  });
+});
+
+// Auto redirect if already logged in
+if(sessionStorage.getItem("loggedIn") === "true"){
+  window.location.href="dashboard.html";
+}
+
+window.login = async function(){
+
+  message.style.color = "#555";
+  message.innerText = "Checking...";
+
+  let pin="";
+  inputs.forEach(i=> pin+=i.value);
+
+  if(pin.length !== 4){
+    showError("Enter 4 digit PIN");
+    return;
+  }
+
+  try{
+    const docRef = doc(db,"settings","admin");
+    const docSnap = await getDoc(docRef);
+
+    if(docSnap.exists()){
+      let savedPin = docSnap.data().pin;
+
+      if(pin === savedPin){
+        message.style.color = "green";
+        message.innerText = "Login Successful ✓";
+        sessionStorage.setItem("loggedIn","true");
+
+        setTimeout(()=>{
+          window.location.href="dashboard.html";
+        },800);
+
+      }else{
+        showError("Wrong PIN");
+      }
+    }else{
+      showError("Admin not configured");
+    }
+
+  }catch(error){
+    showError("Connection Error");
+  }
+
+};
+
+function showError(text){
+  message.style.color = "#e74c3c";
+  message.innerText = text;
+
+  loginBox.classList.add("shake");
+  setTimeout(()=>{
+    loginBox.classList.remove("shake");
+  },300);
+
+  inputs.forEach(i=> i.value="");
+  inputs[0].focus();
+}
+
+window.goReset = function(){
+  window.location.href="reset-pin.html";
+};
+
+</script>
+
+</body>
+</html>

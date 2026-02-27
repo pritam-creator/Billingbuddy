@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  background:#f2f3f7;
+  padding-bottom:100px;
+}
+
+/* HEADER */
+.header{
+  background:#5b3df5;
+  color:white;
+  padding:18px;
+  text-align:center;
+  position:sticky;
+  top:0;
+}
+
+.header h2{
+  margin-bottom:8px;
+}
+
+.logout-btn{
+  background:white;
+  color:#5b3df5;
+  border:none;
+  padding:8px 16px;
+  border-radius:20px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.logout-btn:active{
+  transform:scale(0.95);
+}
+
+/* GRID */
+.container{
+  padding:20px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.card{
+  background:white;
+  padding:25px 15px;
+  border-radius:18px;
+  text-align:center;
+  box-shadow:0 6px 15px rgba(0,0,0,0.05);
+  cursor:pointer;
+  font-size:16px;
+  font-weight:600;
+  transition:0.2s;
+}
+
+.card:active{
+  transform:scale(0.96);
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.bottom-nav div{
+  text-align:center;
+  font-size:12px;
+  color:#888;
+  cursor:pointer;
+}
+
+.bottom-nav .active{
+  color:#5b3df5;
+  font-weight:600;
+}
+
+.bottom-nav div:active{
+  transform:scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>🍞 Surjya Bakery</h2>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+  <div class="grid">
+    <div class="card" onclick="go('items.html')">📦 Items</div>
+    <div class="card" onclick="go('invoice.html')">🧾 Invoice</div>
+    <div class="card" onclick="go('clients.html')">👥 Clients</div>
+    <div class="card" onclick="go('inventory.html')">🏪 Inventory</div>
+    <div class="card" onclick="go('orders.html')">📋 Orders</div>
+    <div class="card" onclick="go('records.html')">📊 Records</div>
+  </div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <div class="active" onclick="go('index.html')">🏠<br>Home</div>
+  <div onclick="go('clients.html')">👥<br>Clients</div>
+  <div onclick="go('inventory.html')">📦<br>Inventory</div>
+  <div onclick="go('orders.html')">🧾<br>Orders</div>
+  <div onclick="go('records.html')">📊<br>Records</div>
+</div>
+
+<script>
+function go(page){
+  window.location.href = page;
+}
+
+function logout(){
+  if(confirm("Are you sure you want to logout?")){
+    window.location.href="login.html";
+  }
+}
+</script>
+
+</body>
+</html>

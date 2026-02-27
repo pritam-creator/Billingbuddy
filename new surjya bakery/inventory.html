@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  background:#f2f3f7;
+  padding-bottom:140px;
+}
+
+/* HEADER */
+.header{
+  background:#5b3df5;
+  color:white;
+  padding:18px;
+  font-size:20px;
+  font-weight:600;
+  text-align:center;
+  position:sticky;
+  top:0;
+}
+
+/* ITEM CARD */
+.item{
+  background:white;
+  margin:15px;
+  padding:18px;
+  border-radius:16px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.05);
+}
+
+.item-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.item h3{
+  font-size:16px;
+}
+
+.stock{
+  margin-top:6px;
+  font-size:14px;
+  color:#555;
+}
+
+.low{
+  color:#e74c3c;
+  font-weight:600;
+  font-size:13px;
+}
+
+/* ACTION BUTTONS */
+.actions{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+}
+
+.btn{
+  flex:1;
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.edit{
+  background:#f1c40f;
+  color:white;
+}
+
+.delete{
+  background:#e74c3c;
+  color:white;
+}
+
+.btn:active{
+  transform:scale(0.95);
+}
+
+/* ADD BUTTON */
+.add-btn{
+  position:fixed;
+  bottom:90px;
+  right:20px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#6ecf8b;
+  color:white;
+  font-size:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 6px 15px rgba(0,0,0,0.2);
+  cursor:pointer;
+}
+
+.add-btn:active{
+  transform:scale(0.9);
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.bottom-nav div{
+  text-align:center;
+  font-size:12px;
+  color:#888;
+  cursor:pointer;
+}
+
+.bottom-nav .active{
+  color:#5b3df5;
+  font-weight:600;
+}
+
+.bottom-nav div:active{
+  transform:scale(0.95);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">📦 Inventory</div>
+
+<!-- ITEM 1 -->
+<div class="item">
+  <div class="item-top">
+    <h3>Bread</h3>
+  </div>
+  <div class="stock">Stock: 50</div>
+
+  <div class="actions">
+    <button class="btn edit" onclick="editItem('Bread')">Edit</button>
+    <button class="btn delete" onclick="deleteItem('Bread')">Delete</button>
+  </div>
+</div>
+
+<!-- ITEM 2 -->
+<div class="item">
+  <div class="item-top">
+    <h3>Cake</h3>
+  </div>
+  <div class="stock">
+    Stock: 5 <span class="low">(Low Stock)</span>
+  </div>
+
+  <div class="actions">
+    <button class="btn edit" onclick="editItem('Cake')">Edit</button>
+    <button class="btn delete" onclick="deleteItem('Cake')">Delete</button>
+  </div>
+</div>
+
+<!-- ADD BUTTON -->
+<div class="add-btn" onclick="addItem()">+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div onclick="go('index.html')">🏠<br>Home</div>
+  <div onclick="go('clients.html')">👥<br>Clients</div>
+  <div class="active">📦<br>Inventory</div>
+  <div onclick="go('orders.html')">🧾<br>Orders</div>
+  <div onclick="go('records.html')">📊<br>Records</div>
+</div>
+
+<script>
+function go(page){
+  window.location.href = page;
+}
+
+function addItem(){
+  alert("Add Item Page Next Step Me Banayenge 🔥");
+}
+
+function editItem(name){
+  alert("Edit Item: " + name);
+}
+
+function deleteItem(name){
+  if(confirm("Delete " + name + " ?")){
+    alert(name + " deleted (demo)");
+  }
+}
+</script>
+
+</body>
+</html>

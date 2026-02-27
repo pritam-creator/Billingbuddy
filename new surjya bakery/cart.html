@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    body {
+      background: #f2f3f7;
+      padding-bottom: 160px;
+    }
+    
+    .header {
+      padding: 18px;
+      background: #5b3df5;
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      position: sticky;
+      top: 0;
+    }
+    
+    .cart-item {
+      background: white;
+      margin: 15px;
+      padding: 15px;
+      border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .item-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    .item-price {
+      font-weight: 600;
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .qty-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: #5b3df5;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .remove {
+      font-size: 12px;
+      color: #e74c3c;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .total {
+      margin: 20px 15px;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: right;
+    }
+    
+    .checkout {
+      position: fixed;
+      bottom: 70px;
+      left: 15px;
+      right: 15px;
+      background: #6ecf8b;
+      color: white;
+      text-align: center;
+      padding: 16px;
+      font-size: 18px;
+      border-radius: 30px;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+    }
+    
+    .empty {
+      text-align: center;
+      margin-top: 40px;
+      color: #777;
+    }
+    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .bottom-nav div {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      cursor: pointer;
+    }
+    
+    .bottom-nav .active {
+      color: #5b3df5;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  
+  <div class="header">🛒 Cart</div>
+  
+  <div id="cartList"></div>
+  <div class="total" id="totalAmount"></div>
+  <div class="checkout" onclick="checkout()">Checkout</div>
+  
+  <div class="bottom-nav">
+    <div onclick="go('index.html')">🏠<br>Dashboard</div>
+    <div onclick="go('clients.html')">👥<br>Clients</div>
+    <div onclick="go('inventory.html')">📦<br>Inventory</div>
+    <div onclick="go('orders.html')">🧾<br>Orders</div>
+    <div class="active">🛒<br>Cart</div>
+  </div>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      deleteDoc,
+      addDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+      authDomain: "billingbuddy-551f9.firebaseapp.com",
+      projectId: "billingbuddy-551f9",
+      storageBucket: "billingbuddy-551f9.firebasestorage.app",
+      messagingSenderId: "287026017084",
+      appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    if (sessionStorage.getItem("loggedIn") !== "true") {
+      window.location.href = "login.html";
+    }
+    
+    const cartList = document.getElementById("cartList");
+    const totalAmount = document.getElementById("totalAmount");
+    
+    let cartDocs = [];
+    
+    async function render() {
+      cartList.innerHTML = "";
+      totalAmount.innerText = "";
+      let total = 0;
+      
+      const querySnapshot = await getDocs(collection(db, "cart"));
+      cartDocs = [];
+      
+      if (querySnapshot.empty) {
+        cartList.innerHTML = "<div class='empty'>Your cart is empty</div>";
+        return;
+      }
+      
+      querySnapshot.forEach((docSnap) => {
+        cartDocs.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      
+      cartDocs.forEach((item, index) => {
+        let itemTotal = item.price * item.qty;
+        total += itemTotal;
+        
+        cartList.innerHTML += `
+      <div class="cart-item">
+        <div class="item-top">
+          <div class="item-name">${item.name}</div>
+          <div class="item-price">₹ ${itemTotal}</div>
+        </div>
+
+        <div class="controls">
+          <div class="qty-box">
+            <button class="qty-btn" onclick="changeQty(${index},-1)">-</button>
+            <span>${item.qty}</span>
+            <button class="qty-btn" onclick="changeQty(${index},1)">+</button>
+          </div>
+
+          <button class="remove" onclick="removeItem(${index})">Remove</button>
+        </div>
+      </div>
+    `;
+      });
+      
+      totalAmount.innerText = "Total: ₹ " + total;
+    }
+    
+    window.changeQty = async function(index, change) {
+      let item = cartDocs[index];
+      let newQty = item.qty + change;
+      
+      if (newQty <= 0) {
+        await deleteDoc(doc(db, "cart", item.id));
+      } else {
+        await updateDoc(doc(db, "cart", item.id), {
+          qty: newQty
+        });
+      }
+      
+      render();
+    };
+    
+    window.removeItem = async function(index) {
+      let item = cartDocs[index];
+      await deleteDoc(doc(db, "cart", item.id));
+      render();
+    };
+    
+    window.checkout = async function() {
+      
+      if (cartDocs.length === 0) {
+        alert("Cart is empty");
+        return;
+      }
+      
+      let total = 0;
+      cartDocs.forEach(item => {
+        total += item.price * item.qty;
+      });
+      
+      await addDoc(collection(db, "orders"), {
+        items: cartDocs,
+        total: total,
+        createdAt: serverTimestamp()
+      });
+      
+      // Clear cart
+      for (let item of cartDocs) {
+        await deleteDoc(doc(db, "cart", item.id));
+      }
+      
+      alert("Order Placed Successfully 🔥");
+      render();
+    };
+    
+    window.go = function(page) {
+      window.location.href = page;
+    };
+    
+    render();
+  </script>
+  
+</body>
+
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset PIN</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:linear-gradient(135deg,#5b3df5,#7b5dfc);
+}
+
+.container{
+  background:white;
+  padding:30px 25px;
+  border-radius:20px;
+  width:320px;
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+h2{
+  margin-bottom:20px;
+  color:#5b3df5;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:2px solid #ddd;
+  outline:none;
+  font-size:14px;
+}
+
+input:focus{
+  border-color:#5b3df5;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:12px;
+  background:#5b3df5;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:active{
+  transform:scale(0.97);
+}
+
+.back-btn{
+  background:#ccc;
+  color:#333;
+}
+
+.message{
+  font-size:13px;
+  margin-top:10px;
+  min-height:18px;
+}
+
+.success{ color:#2ecc71; }
+.error{ color:#e74c3c; }
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>🔐 Reset PIN</h2>
+
+  <input type="password" id="oldPin" placeholder="Old PIN" maxlength="4">
+  <input type="password" id="newPin" placeholder="New PIN" maxlength="4">
+  <input type="password" id="confirmPin" placeholder="Confirm PIN" maxlength="4">
+
+  <button onclick="savePin()">Save</button>
+  <button class="back-btn" onclick="goBack()">Back</button>
+
+  <div id="message" class="message"></div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, updateDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+  authDomain: "billingbuddy-551f9.firebaseapp.com",
+  projectId: "billingbuddy-551f9",
+  storageBucket: "billingbuddy-551f9.firebasestorage.app",
+  messagingSenderId: "287026017084",
+  appId: "1:287026017084:web:aae879570ad706e5a2a439"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const message = document.getElementById("message");
+
+// Block page if not logged in
+if(sessionStorage.getItem("loggedIn") !== "true"){
+  window.location.href="login.html";
+}
+
+window.savePin = async function(){
+
+  let oldPin=document.getElementById("oldPin").value.trim();
+  let newPin=document.getElementById("newPin").value.trim();
+  let confirmPin=document.getElementById("confirmPin").value.trim();
+
+  message.className="message";
+  message.innerText="Checking...";
+
+  if(newPin.length!==4 || confirmPin.length!==4){
+    showError("PIN must be 4 digits");
+    return;
+  }
+
+  if(newPin!==confirmPin){
+    showError("New PIN does not match");
+    return;
+  }
+
+  try{
+    const docRef = doc(db,"settings","admin");
+    const docSnap = await getDoc(docRef);
+
+    if(docSnap.exists()){
+      let savedPin = docSnap.data().pin;
+
+      if(oldPin !== savedPin){
+        showError("Wrong Old PIN");
+        return;
+      }
+
+      await updateDoc(docRef,{
+        pin:newPin
+      });
+
+      message.classList.add("success");
+      message.innerText="PIN Updated Successfully ✓";
+
+      setTimeout(()=>{
+        window.location.href="login.html";
+      },1000);
+
+    }else{
+      showError("Admin not configured");
+    }
+
+  }catch(error){
+    showError("Connection Error");
+  }
+
+};
+
+function showError(text){
+  message.classList.add("error");
+  message.innerText=text;
+}
+
+window.goBack = function(){
+  window.location.href="login.html";
+};
+
+</script>
+
+</body>
+</html>

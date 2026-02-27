@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transaction Records</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  background:#f2f3f7;
+  padding-bottom:140px;
+}
+
+/* HEADER */
+.header{
+  background:#5b3df5;
+  color:white;
+  padding:18px;
+  font-size:20px;
+  font-weight:600;
+  text-align:center;
+  position:sticky;
+  top:0;
+}
+
+/* SUMMARY */
+.summary{
+  background:white;
+  margin:15px;
+  padding:15px;
+  border-radius:16px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.05);
+  text-align:center;
+}
+
+.balance{
+  font-size:22px;
+  font-weight:700;
+  margin-top:5px;
+}
+
+/* RECORD CARD */
+.record{
+  background:white;
+  margin:15px;
+  padding:18px;
+  border-radius:16px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.05);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  transition:0.2s;
+}
+
+.record:active{
+  transform:scale(0.98);
+}
+
+.title{
+  font-size:14px;
+  color:#444;
+}
+
+.amount{
+  font-size:15px;
+  font-weight:600;
+}
+
+.green{
+  color:#2ecc71;
+}
+
+.red{
+  color:#e74c3c;
+}
+
+.delete{
+  background:none;
+  border:none;
+  color:#999;
+  font-size:12px;
+  cursor:pointer;
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.bottom-nav div{
+  text-align:center;
+  font-size:12px;
+  color:#888;
+  cursor:pointer;
+}
+
+.bottom-nav .active{
+  color:#5b3df5;
+  font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">📊 Transaction Records</div>
+
+<div class="summary">
+  Total Balance
+  <div class="balance" id="balance">₹ 0</div>
+</div>
+
+<div id="recordList"></div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <div onclick="go('index.html')">🏠<br>Home</div>
+  <div onclick="go('clients.html')">👥<br>Clients</div>
+  <div onclick="go('inventory.html')">📦<br>Inventory</div>
+  <div onclick="go('orders.html')">📋<br>Orders</div>
+  <div class="active">📊<br>Records</div>
+</div>
+
+<script>
+let records = [
+  {title:"Invoice #1023", amount:2000},
+  {title:"Purchase Order #55", amount:-1500}
+];
+
+function render(){
+  let list = document.getElementById("recordList");
+  let balance = 0;
+  list.innerHTML = "";
+
+  records.forEach((r,index)=>{
+    balance += r.amount;
+
+    list.innerHTML += `
+    <div class="record">
+      <div>
+        <div class="title">${r.title}</div>
+        <button class="delete" onclick="deleteRecord(${index})">Delete</button>
+      </div>
+      <div class="amount ${r.amount>=0 ? 'green':'red'}">
+        ${r.amount>=0?'+':''} ₹ ${r.amount}
+      </div>
+    </div>
+    `;
+  });
+
+  document.getElementById("balance").innerText = "₹ " + balance;
+}
+
+function deleteRecord(index){
+  if(confirm("Delete this record?")){
+    records.splice(index,1);
+    render();
+  }
+}
+
+function go(page){
+  window.location.href = page;
+}
+
+render();
+</script>
+
+</body>
+</html>

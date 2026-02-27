@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Items</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  background:#f4f6fb;
+  padding-bottom:140px;
+}
+
+/* HEADER */
+.header{
+  background:#5b3df5;
+  color:white;
+  padding:18px;
+  font-size:20px;
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.header button{
+  background:white;
+  color:#5b3df5;
+  border:none;
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:13px;
+}
+
+/* FORM */
+.form{
+  background:white;
+  margin:15px;
+  padding:15px;
+  border-radius:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+.form input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:14px;
+}
+
+.add-btn{
+  width:100%;
+  padding:10px;
+  background:#f39c12;
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+}
+
+/* ITEM CARD */
+.item{
+  background:white;
+  margin:15px;
+  padding:15px;
+  border-radius:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+.item-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.item-name{
+  font-weight:600;
+  font-size:15px;
+}
+
+.item-price{
+  font-size:14px;
+  color:#555;
+  margin-top:4px;
+}
+
+/* ACTIONS */
+.actions{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+}
+
+.btn{
+  flex:1;
+  padding:8px;
+  border:none;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+}
+
+.edit{
+  background:#f1c40f;
+  color:white;
+}
+
+.delete{
+  background:#e74c3c;
+  color:white;
+}
+
+.btn:active{
+  transform:scale(0.95);
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.bottom-nav div{
+  text-align:center;
+  font-size:12px;
+  color:#888;
+  cursor:pointer;
+}
+
+.bottom-nav .active{
+  color:#5b3df5;
+  font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <span>📦 Items</span>
+  <button onclick="go('index.html')">Back</button>
+</div>
+
+<div class="form">
+  <input id="name" placeholder="Item Name">
+  <input id="price" type="number" placeholder="Price">
+  <button class="add-btn" onclick="addItem()">Add Item</button>
+</div>
+
+<div id="list"></div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <div onclick="go('index.html')">🏠<br>Home</div>
+  <div onclick="go('clients.html')">👥<br>Clients</div>
+  <div class="active">📦<br>Items</div>
+  <div onclick="go('orders.html')">🧾<br>Orders</div>
+  <div onclick="go('records.html')">📊<br>Records</div>
+</div>
+
+<script>
+let items=[];
+
+function addItem(){
+  let name=document.getElementById("name").value;
+  let price=document.getElementById("price").value;
+
+  if(!name || !price){
+    alert("Fill all fields");
+    return;
+  }
+
+  items.push({name,price});
+  document.getElementById("name").value="";
+  document.getElementById("price").value="";
+  render();
+}
+
+function render(){
+  let list=document.getElementById("list");
+  list.innerHTML="";
+
+  items.forEach((i,index)=>{
+    list.innerHTML+=`
+      <div class="item">
+        <div class="item-top">
+          <div>
+            <div class="item-name">${i.name}</div>
+            <div class="item-price">₹ ${i.price}</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn edit" onclick="editItem(${index})">Edit</button>
+          <button class="btn delete" onclick="deleteItem(${index})">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function editItem(index){
+  let newName=prompt("Edit name:",items[index].name);
+  let newPrice=prompt("Edit price:",items[index].price);
+
+  if(newName && newPrice){
+    items[index]={name:newName,price:newPrice};
+    render();
+  }
+}
+
+function deleteItem(index){
+  if(confirm("Delete this item?")){
+    items.splice(index,1);
+    render();
+  }
+}
+
+function go(page){
+  window.location.href=page;
+}
+</script>
+
+</body>
+</html>

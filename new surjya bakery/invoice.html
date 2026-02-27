@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+}
+
+body{
+  background:#f2f3f7;
+  padding-bottom:140px;
+}
+
+/* HEADER */
+.header{
+  background:#5b3df5;
+  color:white;
+  padding:18px;
+  font-size:20px;
+  font-weight:600;
+  text-align:center;
+  position:sticky;
+  top:0;
+}
+
+/* FORM */
+.form{
+  background:white;
+  margin:15px;
+  padding:15px;
+  border-radius:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+.form input{
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  font-size:14px;
+}
+
+.add-btn{
+  width:100%;
+  padding:10px;
+  background:#6ecf8b;
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-size:15px;
+  font-weight:600;
+}
+
+/* TABLE */
+.table-box{
+  margin:15px;
+  background:white;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:10px;
+  font-size:14px;
+  text-align:center;
+}
+
+th{
+  background:#f4f4f4;
+}
+
+tr:not(:last-child){
+  border-bottom:1px solid #eee;
+}
+
+/* DELETE BUTTON */
+.delete-btn{
+  background:#e74c3c;
+  color:white;
+  border:none;
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+}
+
+/* TOTAL */
+.total{
+  margin:15px;
+  font-size:18px;
+  font-weight:700;
+  text-align:right;
+}
+
+/* BACK BUTTON */
+.back-btn{
+  margin:15px;
+  padding:10px;
+  background:#555;
+  color:white;
+  border:none;
+  border-radius:8px;
+  width:calc(100% - 30px);
+}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.bottom-nav div{
+  text-align:center;
+  font-size:12px;
+  color:#888;
+  cursor:pointer;
+}
+
+.bottom-nav .active{
+  color:#5b3df5;
+  font-weight:600;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🧾 Create Invoice</div>
+
+<div class="form">
+  <input id="item" placeholder="Item Name">
+  <input id="qty" type="number" placeholder="Quantity">
+  <input id="price" type="number" placeholder="Price">
+  <button class="add-btn" onclick="addItem()">Add Item</button>
+</div>
+
+<div class="table-box">
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="invoiceItems"></tbody>
+  </table>
+</div>
+
+<div class="total">Total: ₹ <span id="totalAmount">0</span></div>
+
+<button class="back-btn" onclick="go('index.html')">Back</button>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <div onclick="go('index.html')">🏠<br>Home</div>
+  <div onclick="go('clients.html')">👥<br>Clients</div>
+  <div onclick="go('inventory.html')">📦<br>Inventory</div>
+  <div onclick="go('orders.html')">📋<br>Orders</div>
+  <div class="active">🧾<br>Invoice</div>
+</div>
+
+<script>
+let total = 0;
+
+function addItem(){
+  let item = document.getElementById("item").value;
+  let qty = parseFloat(document.getElementById("qty").value);
+  let price = parseFloat(document.getElementById("price").value);
+
+  if(!item || !qty || !price){
+    alert("Fill all fields");
+    return;
+  }
+
+  let itemTotal = qty * price;
+  total += itemTotal;
+
+  document.getElementById("invoiceItems").innerHTML +=
+  `<tr>
+    <td>${item}</td>
+    <td>${qty}</td>
+    <td>₹ ${itemTotal}</td>
+    <td><button class="delete-btn" onclick="removeItem(this, ${itemTotal})">X</button></td>
+  </tr>`;
+
+  document.getElementById("totalAmount").innerText = total;
+
+  document.getElementById("item").value="";
+  document.getElementById("qty").value="";
+  document.getElementById("price").value="";
+}
+
+function removeItem(btn, amount){
+  btn.parentElement.parentElement.remove();
+  total -= amount;
+  document.getElementById("totalAmount").innerText = total;
+}
+
+function go(page){
+  window.location.href = page;
+}
+</script>
+
+</body>
+</html>
