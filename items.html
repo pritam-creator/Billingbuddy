@@ -1,150 +1,119 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Items</title>
+<title>Items - Surjya Bakery</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}
+body{background:#f4f6fb;padding-bottom:120px;}
 
-body{
-  background:#f4f6fb;
-  padding-bottom:140px;
-}
-
-/* HEADER */
 .header{
-  background:#5b3df5;
-  color:white;
-  padding:18px;
-  font-size:20px;
-  font-weight:600;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+background:linear-gradient(135deg,#ff9966,#ff5e62);
+color:white;
+padding:18px;
+font-size:20px;
+font-weight:600;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
 .header button{
-  background:white;
-  color:#5b3df5;
-  border:none;
-  padding:6px 12px;
-  border-radius:20px;
-  font-size:13px;
+background:white;
+color:#ff5e62;
+border:none;
+padding:6px 12px;
+border-radius:20px;
+font-size:12px;
+font-weight:600;
+cursor:pointer;
 }
 
-/* FORM */
 .form{
-  background:white;
-  margin:15px;
-  padding:15px;
-  border-radius:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+background:white;
+margin:15px;
+padding:15px;
+border-radius:16px;
+box-shadow:0 4px 12px rgba(0,0,0,0.05);
 }
 
 .form input{
-  width:100%;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:8px;
-  border:1px solid #ddd;
-  font-size:14px;
+width:100%;
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
+border:1px solid #ddd;
+font-size:14px;
 }
 
 .add-btn{
-  width:100%;
-  padding:10px;
-  background:#f39c12;
-  color:white;
-  border:none;
-  border-radius:10px;
-  font-weight:600;
+width:100%;
+padding:10px;
+background:linear-gradient(135deg,#ff9966,#ff5e62);
+color:white;
+border:none;
+border-radius:10px;
+font-weight:600;
+cursor:pointer;
 }
 
-/* ITEM CARD */
 .item{
-  background:white;
-  margin:15px;
-  padding:15px;
-  border-radius:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+background:white;
+margin:15px;
+padding:15px;
+border-radius:16px;
+box-shadow:0 4px 12px rgba(0,0,0,0.05);
 }
 
-.item-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.item-name{
-  font-weight:600;
-  font-size:15px;
-}
-
-.item-price{
-  font-size:14px;
-  color:#555;
-  margin-top:4px;
-}
-
-/* ACTIONS */
 .actions{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
+margin-top:10px;
+display:flex;
+gap:8px;
 }
 
 .btn{
-  flex:1;
-  padding:8px;
-  border:none;
-  border-radius:8px;
-  font-size:13px;
-  font-weight:600;
+flex:1;
+padding:8px;
+border:none;
+border-radius:8px;
+font-size:13px;
+font-weight:600;
+color:white;
+cursor:pointer;
 }
 
-.edit{
-  background:#f1c40f;
-  color:white;
+.edit{background:#f1c40f;}
+.delete{background:#e74c3c;}
+.cart{background:#2ecc71;}
+
+.floating-cart{
+position:fixed;
+bottom:80px;
+right:20px;
+background:linear-gradient(135deg,#ff9966,#ff5e62);
+color:white;
+padding:16px;
+border-radius:50%;
+font-size:18px;
+box-shadow:0 6px 15px rgba(0,0,0,0.2);
+cursor:pointer;
 }
 
-.delete{
-  background:#e74c3c;
-  color:white;
-}
-
-.btn:active{
-  transform:scale(0.95);
-}
-
-/* BOTTOM NAV */
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-around;
-  padding:10px 0;
-  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
-}
-
-.bottom-nav div{
-  text-align:center;
-  font-size:12px;
-  color:#888;
-  cursor:pointer;
-}
-
-.bottom-nav .active{
-  color:#5b3df5;
-  font-weight:600;
+.cart-count{
+position:absolute;
+top:-5px;
+right:-5px;
+background:#2ecc71;
+color:white;
+font-size:12px;
+width:20px;
+height:20px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
 }
 </style>
 </head>
@@ -152,88 +121,155 @@ body{
 <body>
 
 <div class="header">
-  <span>📦 Items</span>
-  <button onclick="go('index.html')">Back</button>
+<span>📦 Items</span>
+<button onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
 <div class="form">
-  <input id="name" placeholder="Item Name">
-  <input id="price" type="number" placeholder="Price">
-  <button class="add-btn" onclick="addItem()">Add Item</button>
+<input id="name" placeholder="Item Name">
+<input id="price" type="number" placeholder="Price">
+<button class="add-btn" onclick="addItem()">Add Item</button>
 </div>
 
 <div id="list"></div>
 
-<!-- Bottom Nav -->
-<div class="bottom-nav">
-  <div onclick="go('index.html')">🏠<br>Home</div>
-  <div onclick="go('clients.html')">👥<br>Clients</div>
-  <div class="active">📦<br>Items</div>
-  <div onclick="go('orders.html')">🧾<br>Orders</div>
-  <div onclick="go('records.html')">📊<br>Records</div>
+<div class="floating-cart" onclick="window.location.href='cart.html'">
+🛒
+<div class="cart-count" id="cartCount">0</div>
 </div>
 
-<script>
-let items=[];
+<script type="module">
 
-function addItem(){
-  let name=document.getElementById("name").value;
-  let price=document.getElementById("price").value;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+  authDomain: "billingbuddy-551f9.firebaseapp.com",
+  projectId: "billingbuddy-551f9",
+  storageBucket: "billingbuddy-551f9.firebasestorage.app",
+  messagingSenderId: "287026017084",
+  appId: "1:287026017084:web:aae879570ad706e5a2a439"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* AUTH CHECK */
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.replace("index.html");
+  } else {
+    loadItems();
+    updateCartCount();
+  }
+});
+
+/* ADD ITEM */
+window.addItem = async function(){
+  const user = auth.currentUser;
+  if(!user) return;
+
+  let name = document.getElementById("name").value.trim();
+  let price = document.getElementById("price").value;
 
   if(!name || !price){
     alert("Fill all fields");
     return;
   }
 
-  items.push({name,price});
+  await addDoc(collection(db,"items"),{
+    name: name,
+    price: Number(price),
+    ownerId: user.uid
+  });
+
   document.getElementById("name").value="";
   document.getElementById("price").value="";
-  render();
+  loadItems();
 }
 
-function render(){
-  let list=document.getElementById("list");
+/* LOAD ONLY USER ITEMS */
+async function loadItems(){
+  const user = auth.currentUser;
+  const list = document.getElementById("list");
   list.innerHTML="";
 
-  items.forEach((i,index)=>{
-    list.innerHTML+=`
-      <div class="item">
-        <div class="item-top">
-          <div>
-            <div class="item-name">${i.name}</div>
-            <div class="item-price">₹ ${i.price}</div>
-          </div>
-        </div>
+  const q = query(collection(db,"items"), where("ownerId","==",user.uid));
+  const snapshot = await getDocs(q);
 
-        <div class="actions">
-          <button class="btn edit" onclick="editItem(${index})">Edit</button>
-          <button class="btn delete" onclick="deleteItem(${index})">Delete</button>
-        </div>
+  snapshot.forEach((docSnap)=>{
+    const data = docSnap.data();
+
+    const div = document.createElement("div");
+    div.className="item";
+    div.innerHTML = `
+      <div><b>${data.name}</b><br>₹ ${data.price}</div>
+      <div class="actions">
+        <button class="btn edit">Edit</button>
+        <button class="btn delete">Delete</button>
+        <button class="btn cart">Add</button>
       </div>
     `;
+
+    const btns = div.querySelectorAll("button");
+
+    btns[0].onclick = () => editItem(docSnap.id,data.name,data.price);
+    btns[1].onclick = () => deleteItem(docSnap.id);
+    btns[2].onclick = () => addToCart(data.name,data.price);
+
+    list.appendChild(div);
   });
 }
 
-function editItem(index){
-  let newName=prompt("Edit name:",items[index].name);
-  let newPrice=prompt("Edit price:",items[index].price);
+/* DELETE */
+async function deleteItem(id){
+  if(confirm("Delete item?")){
+    await deleteDoc(doc(db,"items",id));
+    loadItems();
+  }
+}
+
+/* EDIT */
+async function editItem(id,name,price){
+  let newName = prompt("Edit name:",name);
+  let newPrice = prompt("Edit price:",price);
 
   if(newName && newPrice){
-    items[index]={name:newName,price:newPrice};
-    render();
+    await updateDoc(doc(db,"items",id),{
+      name:newName,
+      price:Number(newPrice)
+    });
+    loadItems();
   }
 }
 
-function deleteItem(index){
-  if(confirm("Delete this item?")){
-    items.splice(index,1);
-    render();
-  }
+/* ADD TO CART */
+async function addToCart(name,price){
+  const user = auth.currentUser;
+  if(!user) return;
+
+  await addDoc(collection(db,"cart"),{
+    name:name,
+    price:Number(price),
+    userId:user.uid
+  });
+
+  updateCartCount();
 }
 
-function go(page){
-  window.location.href=page;
+/* CART COUNT */
+async function updateCartCount(){
+  const user = auth.currentUser;
+  const q = query(collection(db,"cart"), where("userId","==",user.uid));
+  const snapshot = await getDocs(q);
+  document.getElementById("cartCount").innerText = snapshot.size;
 }
+
 </script>
 
 </body>
