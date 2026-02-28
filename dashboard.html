@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard</title>
+<title>Dashboard - Surjya Bakery</title>
 
 <style>
 *{
@@ -15,40 +15,71 @@
 
 body{
   background:#f2f3f7;
-  padding-bottom:100px;
+  padding-bottom:110px;
 }
 
 /* HEADER */
 .header{
-  background:#5b3df5;
+  background:linear-gradient(135deg,#ff9966,#ff5e62);
   color:white;
-  padding:18px;
+  padding:20px;
   text-align:center;
   position:sticky;
   top:0;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
 
 .header h2{
-  margin-bottom:8px;
+  margin-bottom:6px;
+}
+
+.sub-info{
+  font-size:13px;
+  opacity:0.9;
+  margin-bottom:10px;
 }
 
 .logout-btn{
   background:white;
-  color:#5b3df5;
+  color:#ff5e62;
   border:none;
-  padding:8px 16px;
+  padding:8px 18px;
   border-radius:20px;
   font-weight:600;
   cursor:pointer;
+  transition:0.2s;
 }
 
 .logout-btn:active{
   transform:scale(0.95);
 }
 
+/* STATS */
+.stats{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:15px 20px;
+}
+
+.stat-card{
+  flex:1;
+  background:white;
+  padding:15px;
+  border-radius:15px;
+  text-align:center;
+  box-shadow:0 6px 15px rgba(0,0,0,0.05);
+  font-size:14px;
+}
+
+.stat-card h3{
+color:#ff5e62;
+  margin-top:5px;
+}
+
 /* GRID */
 .container{
-  padding:20px;
+  padding:10px 20px 20px;
 }
 
 .grid{
@@ -66,7 +97,12 @@ body{
   cursor:pointer;
   font-size:16px;
   font-weight:600;
-  transition:0.2s;
+  transition:0.25s;
+}
+
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 10px 20px rgba(0,0,0,0.08);
 }
 
 .card:active{
@@ -90,10 +126,11 @@ body{
   font-size:12px;
   color:#888;
   cursor:pointer;
+  transition:0.2s;
 }
 
 .bottom-nav .active{
-  color:#5b3df5;
+ color:#ff5e62;
   font-weight:600;
 }
 
@@ -107,7 +144,24 @@ body{
 
 <div class="header">
   <h2>🍞 Surjya Bakery</h2>
+  <div class="sub-info" id="greeting"></div>
   <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats">
+  <div class="stat-card">
+    Today Sales
+    <h3>₹0</h3>
+  </div>
+  <div class="stat-card">
+    Orders
+    <h3>0</h3>
+  </div>
+  <div class="stat-card">
+    Clients
+    <h3>0</h3>
+  </div>
 </div>
 
 <div class="container">
@@ -131,13 +185,34 @@ body{
 </div>
 
 <script>
+
+// Greeting + Live Date
+function updateGreeting(){
+  const now = new Date();
+  const hour = now.getHours();
+  let greet = "Good Evening";
+
+  if(hour < 12) greet = "Good Morning ☀️";
+  else if(hour < 18) greet = "Good Afternoon 🌤️";
+
+  const date = now.toLocaleDateString();
+  const time = now.toLocaleTimeString();
+
+  document.getElementById("greeting").innerText =
+    greet + " | " + date + " | " + time;
+}
+
+setInterval(updateGreeting,1000);
+updateGreeting();
+
 function go(page){
   window.location.href = page;
 }
 
 function logout(){
   if(confirm("Are you sure you want to logout?")){
-    window.location.href="login.html";
+    sessionStorage.removeItem("loggedIn");
+    window.location.href="index.html";
   }
 }
 </script>

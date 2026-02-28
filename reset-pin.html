@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reset PIN</title>
+<title>Surjya Bakery - Reset PIN</title>
 
 <style>
 *{
@@ -18,52 +18,56 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  background:linear-gradient(135deg,#5b3df5,#7b5dfc);
+  background:linear-gradient(135deg,#ff9966,#ff5e62);
 }
 
-.container{
+.reset-box{
   background:white;
-  padding:30px 25px;
-  border-radius:20px;
-  width:320px;
+  padding:40px 25px;
+  border-radius:22px;
   text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  width:320px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.15);
 }
 
 h2{
-  margin-bottom:20px;
-  color:#5b3df5;
+  margin-bottom:25px;
+  color:#ff5e62;
+  font-weight:700;
 }
 
 input{
   width:100%;
-  padding:12px;
+  padding:13px;
   margin:8px 0;
-  border-radius:10px;
-  border:2px solid #ddd;
+  border-radius:14px;
+  border:2px solid #eee;
   outline:none;
-  font-size:14px;
+  font-size:15px;
+  transition:0.2s;
 }
 
 input:focus{
-  border-color:#5b3df5;
+  border-color:#ff5e62;
+  box-shadow:0 0 8px rgba(255,94,98,0.3);
 }
 
 button{
   width:100%;
-  padding:12px;
+  padding:13px;
   margin-top:10px;
   border:none;
-  border-radius:12px;
-  background:#5b3df5;
+  border-radius:14px;
+  background:linear-gradient(135deg,#ff9966,#ff5e62);
   color:white;
+  font-size:15px;
   font-weight:600;
   cursor:pointer;
-  transition:0.2s;
+  transition:0.3s;
 }
 
-button:active{
-  transform:scale(0.97);
+button:hover{
+  opacity:0.9;
 }
 
 .back-btn{
@@ -72,12 +76,12 @@ button:active{
 }
 
 .message{
+  margin-top:12px;
   font-size:13px;
-  margin-top:10px;
   min-height:18px;
 }
 
-.success{ color:#2ecc71; }
+.success{ color:green; }
 .error{ color:#e74c3c; }
 
 </style>
@@ -85,27 +89,34 @@ button:active{
 
 <body>
 
-<div class="container">
+<div class="reset-box">
   <h2>🔐 Reset PIN</h2>
 
   <input type="password" id="oldPin" placeholder="Old PIN" maxlength="4">
   <input type="password" id="newPin" placeholder="New PIN" maxlength="4">
-  <input type="password" id="confirmPin" placeholder="Confirm PIN" maxlength="4">
+  <input type="password" id="confirmPin" placeholder="Confirm New PIN" maxlength="4">
 
-  <button onclick="savePin()">Save</button>
-  <button class="back-btn" onclick="goBack()">Back</button>
+  <button onclick="savePin()">Update PIN</button>
+  <button class="back-btn" onclick="goBack()">Back to Login</button>
 
   <div id="message" class="message"></div>
 </div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
 import { getFirestore, doc, getDoc, updateDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* 🔐 LOGIN CHECK */
+if(sessionStorage.getItem("loggedIn") !== "true"){
+  window.location.replace("login.html");
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+  apiKey: "YOUR_KEY",
   authDomain: "billingbuddy-551f9.firebaseapp.com",
   projectId: "billingbuddy-551f9",
   storageBucket: "billingbuddy-551f9.firebasestorage.app",
@@ -117,26 +128,23 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const message = document.getElementById("message");
 
-// Block page if not logged in
-if(sessionStorage.getItem("loggedIn") !== "true"){
-  window.location.href="login.html";
-}
-
+/* 🔄 SAVE PIN FUNCTION */
 window.savePin = async function(){
 
-  let oldPin=document.getElementById("oldPin").value.trim();
-  let newPin=document.getElementById("newPin").value.trim();
-  let confirmPin=document.getElementById("confirmPin").value.trim();
+  const oldPinValue = document.getElementById("oldPin").value.trim();
+  const newPinValue = document.getElementById("newPin").value.trim();
+  const confirmPinValue = document.getElementById("confirmPin").value.trim();
 
   message.className="message";
   message.innerText="Checking...";
+  message.style.color="#555";
 
-  if(newPin.length!==4 || confirmPin.length!==4){
+  if(newPinValue.length !== 4){
     showError("PIN must be 4 digits");
     return;
   }
 
-  if(newPin!==confirmPin){
+  if(newPinValue !== confirmPinValue){
     showError("New PIN does not match");
     return;
   }
@@ -145,42 +153,41 @@ window.savePin = async function(){
     const docRef = doc(db,"settings","admin");
     const docSnap = await getDoc(docRef);
 
-    if(docSnap.exists()){
-      let savedPin = docSnap.data().pin;
-
-      if(oldPin !== savedPin){
-        showError("Wrong Old PIN");
-        return;
-      }
-
-      await updateDoc(docRef,{
-        pin:newPin
-      });
-
-      message.classList.add("success");
-      message.innerText="PIN Updated Successfully ✓";
-
-      setTimeout(()=>{
-        window.location.href="login.html";
-      },1000);
-
-    }else{
+    if(!docSnap.exists()){
       showError("Admin not configured");
+      return;
     }
 
+    const savedPin = String(docSnap.data().pin);
+
+    if(oldPinValue !== savedPin){
+      showError("Wrong Old PIN");
+      return;
+    }
+
+    await updateDoc(docRef,{ pin:newPinValue });
+
+    message.classList.add("success");
+    message.innerText="PIN Updated Successfully ✓";
+
+    setTimeout(()=>{
+      window.location.replace("login.html");
+    },1000);
+
   }catch(error){
+    console.error(error);
     showError("Connection Error");
   }
-
 };
 
 function showError(text){
-  message.classList.add("error");
+  message.className="message error";
   message.innerText=text;
 }
 
+/* 🔙 BACK BUTTON */
 window.goBack = function(){
-  window.location.href="login.html";
+  window.location.replace("login.html");
 };
 
 </script>
