@@ -110,13 +110,9 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔐 LOGIN CHECK */
-if(sessionStorage.getItem("loggedIn") !== "true"){
-  window.location.replace("login.html");
-}
 
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
+  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
   authDomain: "billingbuddy-551f9.firebaseapp.com",
   projectId: "billingbuddy-551f9",
   storageBucket: "billingbuddy-551f9.firebasestorage.app",
@@ -171,7 +167,7 @@ window.savePin = async function(){
     message.innerText="PIN Updated Successfully ✓";
 
     setTimeout(()=>{
-      window.location.replace("login.html");
+      window.location.replace("index.html");
     },1000);
 
   }catch(error){
@@ -187,7 +183,7 @@ function showError(text){
 
 /* 🔙 BACK BUTTON */
 window.goBack = function(){
-  window.location.replace("login.html");
+  window.location.replace("index.html");
 };
 
 </script>

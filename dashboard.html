@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,8 +30,9 @@ body{
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
 
-.header h2{
-  margin-bottom:6px;
+.logo{
+  width:70px;
+  margin-bottom:8px;
 }
 
 .sub-info{
@@ -47,7 +49,6 @@ body{
   border-radius:20px;
   font-weight:600;
   cursor:pointer;
-  transition:0.2s;
 }
 
 .logout-btn:active{
@@ -73,7 +74,7 @@ body{
 }
 
 .stat-card h3{
-color:#ff5e62;
+  color:#ff5e62;
   margin-top:5px;
 }
 
@@ -97,12 +98,6 @@ color:#ff5e62;
   cursor:pointer;
   font-size:16px;
   font-weight:600;
-  transition:0.25s;
-}
-
-.card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 10px 20px rgba(0,0,0,0.08);
 }
 
 .card:active{
@@ -126,16 +121,11 @@ color:#ff5e62;
   font-size:12px;
   color:#888;
   cursor:pointer;
-  transition:0.2s;
 }
 
 .bottom-nav .active{
- color:#ff5e62;
+  color:#ff5e62;
   font-weight:600;
-}
-
-.bottom-nav div:active{
-  transform:scale(0.95);
 }
 </style>
 </head>
@@ -143,50 +133,79 @@ color:#ff5e62;
 <body>
 
 <div class="header">
+  <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
   <h2>🍞 Surjya Bakery</h2>
   <div class="sub-info" id="greeting"></div>
-  <button class="logout-btn" onclick="logout()">Logout</button>
+  <button class="logout-btn" id="logoutBtn">Logout</button>
 </div>
 
-<!-- Quick Stats -->
 <div class="stats">
   <div class="stat-card">
     Today Sales
-    <h3>₹0</h3>
+    <h3 id="todaySales">₹0</h3>
   </div>
   <div class="stat-card">
     Orders
-    <h3>0</h3>
+    <h3 id="ordersCount">0</h3>
   </div>
   <div class="stat-card">
     Clients
-    <h3>0</h3>
+    <h3 id="clientsCount">0</h3>
   </div>
 </div>
 
 <div class="container">
   <div class="grid">
-    <div class="card" onclick="go('items.html')">📦 Items</div>
-    <div class="card" onclick="go('invoice.html')">🧾 Invoice</div>
-    <div class="card" onclick="go('clients.html')">👥 Clients</div>
-    <div class="card" onclick="go('inventory.html')">🏪 Inventory</div>
-    <div class="card" onclick="go('orders.html')">📋 Orders</div>
-    <div class="card" onclick="go('records.html')">📊 Records</div>
+    <div class="card" data-page="items.html">📦 Items</div>
+    <div class="card" data-page="invoice.html">🧾 Invoice</div>
+    <div class="card" data-page="clients.html">👥 Clients</div>
+    <div class="card" data-page="inventory.html">🏪 Inventory</div>
+    <div class="card" data-page="orders.html">📋 Orders</div>
+    <div class="card" data-page="records.html">📊 Records</div>
   </div>
 </div>
 
-<!-- Bottom Navigation -->
 <div class="bottom-nav">
-  <div class="active" onclick="go('index.html')">🏠<br>Home</div>
-  <div onclick="go('clients.html')">👥<br>Clients</div>
-  <div onclick="go('inventory.html')">📦<br>Inventory</div>
-  <div onclick="go('orders.html')">🧾<br>Orders</div>
-  <div onclick="go('records.html')">📊<br>Records</div>
+  <div class="active" data-page="dashboard.html">🏠<br>Home</div>
+  <div data-page="clients.html">👥<br>Clients</div>
+  <div data-page="inventory.html">📦<br>Inventory</div>
+  <div data-page="orders.html">🧾<br>Orders</div>
+  <div data-page="records.html">📊<br>Records</div>
 </div>
 
-<script>
+<script type="module">
+/* Logout (100% Working) */
+document.getElementById("logoutBtn")
+.addEventListener("click",()=>{
+  if(confirm("Are you sure you want to logout?")){
+    sessionStorage.removeItem("loggedIn");
+    window.location.replace("index.html");
+  }
+});
 
-// Greeting + Live Date
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* LOGIN CHECK */
+if (sessionStorage.getItem("loggedIn") !== "true") {
+  window.location.replace("index.html");
+}
+
+/* FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+  authDomain: "billingbuddy-551f9.firebaseapp.com",
+  projectId: "billingbuddy-551f9",
+  storageBucket: "billingbuddy-551f9.firebasestorage.app",
+  messagingSenderId: "287026017084",
+  appId: "1:287026017084:web:aae879570ad706e5a2a439"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* Greeting */
 function updateGreeting(){
   const now = new Date();
   const hour = now.getHours();
@@ -195,26 +214,56 @@ function updateGreeting(){
   if(hour < 12) greet = "Good Morning ☀️";
   else if(hour < 18) greet = "Good Afternoon 🌤️";
 
-  const date = now.toLocaleDateString();
-  const time = now.toLocaleTimeString();
-
   document.getElementById("greeting").innerText =
-    greet + " | " + date + " | " + time;
+    greet + " | " +
+    now.toLocaleDateString() + " | " +
+    now.toLocaleTimeString();
 }
 
 setInterval(updateGreeting,1000);
 updateGreeting();
 
-function go(page){
-  window.location.href = page;
-}
+/* Load Stats */
+async function loadDashboard(){
 
-function logout(){
-  if(confirm("Are you sure you want to logout?")){
-    sessionStorage.removeItem("loggedIn");
-    window.location.href="index.html";
+  try{
+    const today = new Date().toISOString().split("T")[0];
+
+    const salesQuery = query(
+      collection(db,"sales"),
+      where("date","==",today)
+    );
+
+    const salesSnap = await getDocs(salesQuery);
+
+    let total = 0;
+    salesSnap.forEach(doc=>{
+      total += Number(doc.data().total || 0);
+    });
+
+    document.getElementById("todaySales").innerText = "₹" + total;
+
+    const ordersSnap = await getDocs(collection(db,"orders"));
+    document.getElementById("ordersCount").innerText = ordersSnap.size;
+
+    const clientsSnap = await getDocs(collection(db,"clients"));
+    document.getElementById("clientsCount").innerText = clientsSnap.size;
+
+  }catch(err){
+    console.error("Dashboard Load Error:", err);
   }
 }
+
+loadDashboard();
+
+/* Navigation (All Cards + Bottom Nav) */
+document.querySelectorAll("[data-page]").forEach(el=>{
+  el.addEventListener("click",()=>{
+    window.location.href = el.getAttribute("data-page");
+  });
+});
+
+
 </script>
 
 </body>
