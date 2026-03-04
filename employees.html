@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee & Attendance - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 10px; cursor: pointer; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); text-align: center; }
+
+        .add-emp-form { background: rgba(255,255,255,0.15); padding: 20px; border-radius: 20px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.3); }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 10px; border: none; background: rgba(255,255,255,0.2); color: #fff; outline: none; min-width: 150px; }
+        .btn-add { background: #2ecc71; color: white; border: none; padding: 10px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+        .emp-card { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .emp-info h3 { margin-bottom: 5px; color: #f1c40f; }
+        .emp-info p { font-size: 13px; opacity: 0.8; }
+        
+        .attendance-btns { display: flex; gap: 10px; align-items: center; }
+        .btn-p { background: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-a { background: #ff4d6d; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-adv { background: #f39c12; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-del { background: none; border: none; color: #ff4d6d; font-size: 18px; cursor: pointer; margin-left: 10px; }
+
+        .salary-badge { background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: 10px; text-align: right; }
+        .salary-badge span { display: block; font-size: 11px; opacity: 0.7; }
+        .salary-badge b { font-size: 18px; color: #2ecc71; }
+
+        @media (max-width: 600px) { .emp-card { flex-direction: column; text-align: center; } .salary-badge { text-align: center; width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <button class="back-btn" onclick="location.href='dashboard.html'"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <h2>Bakery Employees</h2>
+        <div id="currentDate" style="font-weight: bold;"></div>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <p>Total Staff</p>
+            <h2 id="totalEmp">0</h2>
+        </div>
+        <div class="stat-card">
+            <p>Today's Presents</p>
+            <h2 id="todayPresents">0</h2>
+        </div>
+    </div>
+
+    <div class="add-emp-form">
+        <p>Add New Worker</p>
+        <div class="input-group">
+            <input type="text" id="empName" placeholder="Full Name">
+            <input type="number" id="empWage" placeholder="Daily Wage (e.g. 500)">
+            <button class="btn-add" onclick="addEmployee()">Add Worker</button>
+        </div>
+    </div>
+
+    <div id="employeeList">
+        </div>
+</div>
+
+<script>
+    // Logic: 
+    // Salary = (Present Days * Daily Wage) - Advance
+    
+    let employees = JSON.parse(localStorage.getItem("bakery_staff")) || [];
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("currentDate").innerText = new Date().toDateString();
+
+    function renderEmployees() {
+        const list = document.getElementById("employeeList");
+        list.innerHTML = "";
+        let presentsToday = 0;
+
+        employees.forEach((emp, index) => {
+            // Check if already marked today
+            const isPresentToday = emp.attendance && emp.attendance.includes(today);
+            if(isPresentToday) presentsToday++;
+
+            const presentCount = emp.attendance ? emp.attendance.length : 0;
+            const netSalary = (presentCount * emp.wage) - (emp.advance || 0);
+
+            const card = document.createElement("div");
+            card.className = "emp-card";
+            card.innerHTML = `
+                <div class="emp-info">
+                    <h3>${emp.name}</h3>
+                    <p>Wage: ₹${emp.wage} | Presents: ${presentCount} days</p>
+                    <p>Advance: <span style="color:#ff4d6d">₹${emp.advance || 0}</span></p>
+                </div>
+                
+                <div class="attendance-btns">
+                    <button class="btn-p" onclick="markAttendance(${index})" ${isPresentToday ? 'disabled style="opacity:0.5"' : ''}>
+                        ${isPresentToday ? 'Present ✓' : 'Mark Present'}
+                    </button>
+                    <button class="btn-adv" onclick="addAdvance(${index})">₹ Advance</button>
+                    <button class="btn-del" onclick="deleteEmp(${index})"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+
+                <div class="salary-badge">
+                    <span>Net Payable Salary</span>
+                    <b>₹${netSalary > 0 ? netSalary : 0}</b>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+
+        document.getElementById("totalEmp").innerText = employees.length;
+        document.getElementById("todayPresents").innerText = presentsToday;
+    }
+
+    function addEmployee() {
+        const name = document.getElementById("empName").value;
+        const wage = document.getElementById("empWage").value;
+
+        if(!name || !wage) return alert("Details bhariye!");
+
+        employees.push({
+            name: name,
+            wage: parseInt(wage),
+            advance: 0,
+            attendance: [] // Stores dates like ["2023-10-01", "2023-10-02"]
+        });
+
+        saveAndRefresh();
+        document.getElementById("empName").value = "";
+        document.getElementById("empWage").value = "";
+    }
+
+    function markAttendance(index) {
+        if(!employees[index].attendance) employees[index].attendance = [];
+        
+        if(!employees[index].attendance.includes(today)) {
+            employees[index].attendance.push(today);
+            saveAndRefresh();
+        }
+    }
+
+    function addAdvance(index) {
+        let amount = prompt(`Enter advance amount for ${employees[index].name}:`);
+        if(amount && !isNaN(amount)) {
+            employees[index].advance = (employees[index].advance || 0) + parseInt(amount);
+            saveAndRefresh();
+        }
+    }
+
+    function deleteEmp(index) {
+        if(confirm("Worker ka data delete kardein?")) {
+            employees.splice(index, 1);
+            saveAndRefresh();
+        }
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem("bakery_staff", JSON.stringify(employees));
+        renderEmployees();
+    }
+
+    renderEmployees();
+</script>
+
+</body>
+</html>

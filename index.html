@@ -6,203 +6,58 @@
 <title>New Surjya Bakery - Login</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-}
+/* ... (Style Section) ... */
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{min-height:100vh;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);background-size:400% 400%;animation:bgMove 12s ease infinite;position:relative;padding:20px;}
+@keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 
-html,body{
-  width:100%;
-  overflow-x:hidden;
-}
+.login-box, .reset-box{position:relative;z-index:1;backdrop-filter:blur(25px);background:rgba(255,255,255,0.15);padding:40px 30px;border-radius:22px;width:100%;max-width:360px;border:1px solid rgba(255,255,255,0.25);box-shadow:0 20px 50px rgba(0,0,0,0.3);text-align:center;transition:0.4s ease;}
 
-body{
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);
-  background-size:400% 400%;
-  animation:bgMove 12s ease infinite;
-  position:relative;
-  padding:20px;
-}
+.logo{width:110px;height:110px;border-radius:50%;padding:10px;background:rgba(255,255,255,0.3);box-shadow:0 0 30px rgba(255,255,255,0.4);margin-bottom:20px;}
+h2{margin-bottom:22px;color:#fff;font-weight:600;}
 
-@keyframes bgMove{
-  0%{background-position:0% 50%;}
-  50%{background-position:100% 50%;}
-  100%{background-position:0% 50%;}
-}
+.pin-container{display:flex;justify-content:center;gap:12px;margin-bottom:22px;}
+.pin-input, .reset-input{width:60px;height:65px;border-radius:14px;border:1px solid rgba(255,255,255,0.4);text-align:center;font-size:22px;font-weight:600;outline:none;background:rgba(255,255,255,0.2);color:#fff;transition:0.3s;}
+.reset-input{ width: 100%; height: 50px; margin-bottom: 15px; font-size: 16px; border-radius: 12px;}
 
-body::before, body::after{
-  content:"";
-  position:absolute;
-  width:350px;
-  height:350px;
-  background:rgba(255,255,255,0.12);
-  border-radius:50%;
-  filter:blur(90px);
-  z-index:0;
-  pointer-events:none;
-}
+button{width:100%;padding:13px;border:none;border-radius:12px;background:rgba(255,255,255,0.25);color:white;font-size:15px;font-weight:600;cursor:pointer;transition:0.3s;}
+button:hover{background:rgba(255,255,255,0.4);}
 
-body::before{ top:-80px; left:-80px; }
-body::after{ bottom:-100px; right:-100px; }
+.forgot-link{margin-top: 15px; display: block; color: #fff; font-size: 13px; text-decoration: none; opacity: 0.8; cursor: pointer;}
+.message{margin-top:14px;font-size:13px;min-height:18px;color:#fff;}
+.hidden { display: none; }
 
-.login-box{
-  position:relative;
-  z-index:1;
-  backdrop-filter:blur(25px);
-  background:rgba(255,255,255,0.15);
-  padding:40px 30px;
-  border-radius:22px;
-  width:100%;
-  max-width:360px;
-  border:1px solid rgba(255,255,255,0.25);
-  box-shadow:0 20px 50px rgba(0,0,0,0.3);
-  text-align:center;
-  transition:0.4s ease;
-}
-
-.logo-wrapper{
-  display:flex;
-  justify-content:center;
-  margin-bottom:20px;
-}
-
-.logo{
-  width:110px;
-  height:110px;
-  border-radius:50%;
-  padding:10px;
-  background:rgba(255,255,255,0.3);
-  box-shadow:0 0 30px rgba(255,255,255,0.4);
-  animation:glow 2s infinite alternate;
-}
-
-@keyframes glow{
-  from{ box-shadow:0 0 15px rgba(255,255,255,0.4); }
-  to{ box-shadow:0 0 40px rgba(255,255,255,0.8); }
-}
-
-h2{
-  margin-bottom:22px;
-  color:#fff;
-  font-weight:600;
-}
-
-.pin-container{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  margin-bottom:22px;
-}
-
-.pin-input{
-  width:60px;
-  height:65px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,0.4);
-  text-align:center;
-  font-size:22px;
-  font-weight:600;
-  outline:none;
-  background:rgba(255,255,255,0.2);
-  color:#fff;
-  transition:0.3s;
-}
-
-.pin-input:focus{
-  border-color:#fff;
-  box-shadow:0 0 12px rgba(255,255,255,0.6);
-}
-
-button{
-  width:100%;
-  padding:13px;
-  border:none;
-  border-radius:12px;
-  background:rgba(255,255,255,0.25);
-  color:white;
-  font-size:15px;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-button:hover{
-  background:rgba(255,255,255,0.4);
-}
-
-button:disabled{
-  opacity:0.6;
-  cursor:not-allowed;
-}
-
-.message{
-  margin-top:14px;
-  font-size:13px;
-  min-height:18px;
-  color:#fff;
-}
-
-.transition-overlay{
-  position:fixed;
-  inset:0;
-  backdrop-filter:blur(20px);
-  background:rgba(255,255,255,0.2);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:9999;
-  opacity:0;
-  pointer-events:none;
-  transition:0.4s ease;
-}
-
-.transition-overlay.active{
-  opacity:1;
-  pointer-events:all;
-}
-
-.big-logo{
-  width:170px;
-  height:170px;
-  border-radius:50%;
-  animation:zoomBounce 1.2s ease forwards;
-  box-shadow:0 0 40px rgba(255,255,255,0.8);
-}
-
-@keyframes zoomBounce{
-  0%{ transform:scale(0.7); opacity:0; }
-  30%{ transform:scale(1.3); opacity:1; }
-  60%{ transform:scale(0.95); }
-  80%{ transform:scale(1.1); }
-  100%{ transform:scale(1); }
-}
+/* Transition Overlay */
+.transition-overlay{position:fixed;inset:0;backdrop-filter:blur(20px);background:rgba(255,255,255,0.2);display:flex;justify-content:center;align-items:center;z-index:9999;opacity:0;pointer-events:none;transition:0.4s ease;}
+.transition-overlay.active{opacity:1;pointer-events:all;}
+.big-logo{width:170px;height:170px;border-radius:50%;animation:zoomBounce 1.2s ease forwards;}
+@keyframes zoomBounce{0%{transform:scale(0.7);opacity:0;}30%{transform:scale(1.3);opacity:1;}100%{transform:scale(1);}}
 </style>
 </head>
 
 <body>
 
 <div class="login-box" id="loginBox">
-  <div class="logo-wrapper">
-    <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-  </div>
-
+  <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
   <h2>New Surjya Bakery</h2>
-
   <div class="pin-container">
     <input maxlength="1" class="pin-input" type="password" inputmode="numeric">
     <input maxlength="1" class="pin-input" type="password" inputmode="numeric">
     <input maxlength="1" class="pin-input" type="password" inputmode="numeric">
     <input maxlength="1" class="pin-input" type="password" inputmode="numeric">
   </div>
-
   <button type="button" id="loginBtn">Login</button>
+  <span class="forgot-link" onclick="toggleView('reset')">Change PIN?</span>
   <div class="message" id="message"></div>
+</div>
+
+<div class="reset-box hidden" id="resetBox">
+  <h2>Update PIN</h2>
+  <input type="password" id="oldPin" class="reset-input" maxlength="4" placeholder="Enter Old 4-Digit PIN" inputmode="numeric">
+  <input type="password" id="newPin" class="reset-input" maxlength="4" placeholder="Enter New 4-Digit PIN" inputmode="numeric">
+  <button type="button" id="resetBtn">Update Now</button>
+  <span class="forgot-link" onclick="toggleView('login')">Back to Login</span>
+  <div class="message" id="resetMessage"></div>
 </div>
 
 <div class="transition-overlay" id="transition">
@@ -210,14 +65,11 @@ button:disabled{
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ===== Firebase Config ===== */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "YOUR_API_KEY", // Replace with your key
   authDomain: "billingbuddy-551f9.firebaseapp.com",
   projectId: "billingbuddy-551f9",
   appId: "1:287026017084:web:aae879570ad706e5a2a439"
@@ -226,99 +78,108 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===== Elements ===== */
-const inputs=document.querySelectorAll(".pin-input");
-const message=document.getElementById("message");
-const loginBtn=document.getElementById("loginBtn");
-const overlay=document.getElementById("transition");
-const loginBox=document.getElementById("loginBox");
+const inputs = document.querySelectorAll(".pin-input");
+const message = document.getElementById("message");
+const loginBtn = document.getElementById("loginBtn");
+const overlay = document.getElementById("transition");
+const loginBox = document.getElementById("loginBox");
+const resetBox = document.getElementById("resetBox");
 
-let loggingIn=false;
-
-/* ===== Session Check ===== */
-/* Already logged in check */
-if (sessionStorage.getItem("loggedIn") === "true") {
-  window.location.href = "dashboard.html";
+// Toggle between Login and Reset
+window.toggleView = (view) => {
+    if(view === 'reset'){
+        loginBox.classList.add('hidden');
+        resetBox.classList.remove('hidden');
+    } else {
+        resetBox.classList.add('hidden');
+        loginBox.classList.remove('hidden');
+    }
 }
 
-/* ===== Input Control ===== */
-inputs.forEach((input,index)=>{
-
-  input.addEventListener("input",()=>{
-    input.value=input.value.replace(/\D/g,'');
-    if(input.value && index<3){
-      inputs[index+1].focus();
+/* ===== Auto-Login & PIN Inputs ===== */
+inputs.forEach((input, index) => {
+  input.addEventListener("input", () => {
+    input.value = input.value.replace(/\D/g, '');
+    if (input.value && index < 3) {
+      inputs[index + 1].focus();
+    }
+    
+    // Check for Auto-Login
+    let fullPin = "";
+    inputs.forEach(i => fullPin += i.value);
+    if (fullPin.length === 4) {
+      login();
     }
   });
 
-  input.addEventListener("keydown",(e)=>{
-    if(e.key==="Backspace" && !input.value && index>0){
-      inputs[index-1].focus();
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !input.value && index > 0) {
+      inputs[index - 1].focus();
     }
   });
-
 });
 
-/* ===== Login Click ===== */
-loginBtn.addEventListener("click", login);
-
 /* ===== Login Function ===== */
-async function login(){
+async function login() {
+  let pin = "";
+  inputs.forEach(i => pin += i.value);
+  if (pin.length !== 4) return;
 
-  if(loggingIn) return;
+  message.style.color = "#fff";
+  message.innerText = "Checking PIN...";
 
-  let pin="";
-  inputs.forEach(i=>pin+=i.value);
-
-  if(pin.length!==4){
-    showError("Enter 4 digit PIN");
-    return;
-  }
-
-  loggingIn=true;
-  loginBtn.disabled=true;
-  message.style.color="#fff";
-  message.innerText="Checking...";
-
-  try{
-
-    const docRef=doc(db,"settings","admin");
-    const docSnap=await getDoc(docRef);
-
-    if(!docSnap.exists()){
-      throw new Error("Admin not configured");
+  try {
+    const docSnap = await getDoc(doc(db, "settings", "admin"));
+    if (docSnap.exists() && pin === String(docSnap.data().pin)) {
+      localStorage.setItem("loggedIn", "true");
+      loginBox.style.opacity = "0";
+      setTimeout(() => overlay.classList.add("active"), 300);
+      setTimeout(() => window.location.replace("dashboard.html"), 1500);
+    } else {
+      throw new Error("Wrong PIN!");
     }
-
-    if(pin===String(docSnap.data().pin)){
-
-      localStorage.setItem("loggedIn","true");
-
-      loginBox.style.opacity="0";
-      loginBox.style.transform="scale(0.95)";
-
-      setTimeout(()=>overlay.classList.add("active"),300);
-      setTimeout(()=>window.location.replace("dashboard.html"),1500);
-
-    }else{
-      throw new Error("Wrong PIN");
-    }
-
-  }catch(error){
-    showError(error.message || "Connection Error");
+  } catch (e) {
+    message.innerText = e.message;
+    message.style.color = "#ff4d6d";
+    inputs.forEach(i => i.value = "");
+    inputs[0].focus();
   }
 }
 
-/* ===== Error Handler ===== */
-function showError(text){
-  loggingIn=false;
-  loginBtn.disabled=false;
-  message.innerText=text;
-  message.style.color="#ff4d6d";
-  inputs.forEach(i=>i.value="");
-  inputs[0].focus();
-}
+/* ===== Reset PIN Logic (Old PIN to New PIN) ===== */
+document.getElementById("resetBtn").addEventListener("click", async () => {
+    const oldPinInput = document.getElementById("oldPin").value;
+    const newPinInput = document.getElementById("newPin").value;
+    const rMsg = document.getElementById("resetMessage");
 
+    if(oldPinInput.length !== 4 || newPinInput.length !== 4){
+        rMsg.style.color = "#ff4d6d";
+        rMsg.innerText = "Enter 4-digit PINs";
+        return;
+    }
+
+    rMsg.style.color = "#fff";
+    rMsg.innerText = "Verifying...";
+
+    try {
+        const adminRef = doc(db, "settings", "admin");
+        const docSnap = await getDoc(adminRef);
+        
+        if(oldPinInput === String(docSnap.data().pin)){
+            await updateDoc(adminRef, { pin: newPinInput });
+            rMsg.style.color = "#2ecc71";
+            rMsg.innerText = "Success! PIN Updated.";
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            throw new Error("Old PIN is incorrect!");
+        }
+    } catch(e) {
+        rMsg.style.color = "#ff4d6d";
+        rMsg.innerText = e.message;
+    }
+});
+
+loginBtn.addEventListener("click", login);
 </script>
-
 </body>
 </html>
