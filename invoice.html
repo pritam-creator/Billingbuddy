@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Invoice - Surjya Bakery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Surjya Bakery - Premium Invoice</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -11,12 +11,20 @@
     <style>
         /* ===== GLOBAL THEME ===== */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+        
         body{
             background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
             background-size: 400% 400%;
             animation: bgMove 15s ease infinite;
-            color: #fff; min-height: 100vh; overflow-x: hidden;
+            color: #fff; min-height: 100vh;
         }
+
+        /* ❌ NO-ZOOM CSS: Har input 16px hona chaiye ❌ */
+        input, select, textarea, button {
+            font-size: 16px !important; 
+            touch-action: manipulation;
+        }
+
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 
         .app{ display: flex; min-height: 100vh; }
@@ -29,16 +37,9 @@
             padding: 20px 15px; display: flex; flex-direction: column;
             position: fixed; height: 100%; z-index: 1000;
         }
-        .menu{ list-style: none; margin-top: 20px; }
-        .menu li{
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
-        }
-        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
-        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
 
         /* MAIN CONTENT */
-        .content{ flex: 1; padding: 30px; margin-left: 260px; }
+        .content{ flex: 1; padding: 25px; margin-left: 260px; }
 
         .glass-card{
             background: rgba(255,255,255,0.15); backdrop-filter: blur(20px);
@@ -46,34 +47,32 @@
             padding: 20px; margin-bottom: 20px;
         }
 
-        input, select{
+        input {
             width: 100%; padding: 12px; border-radius: 10px; border: none;
-            background: rgba(255,255,255,0.2); color: white; outline: none; margin-top: 5px; font-size: 16px;
+            background: rgba(255,255,255,0.2); color: white; outline: none; margin-top: 5px;
         }
-        option { background: #764ba2; color: white; }
 
-        .grid-3{ display: grid; grid-template-columns: 2.5fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        /* Design Selector */
+        .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .tpl-btn { 
+            padding: 10px; background: rgba(255,255,255,0.1); border: 2px solid transparent;
+            border-radius: 12px; text-align: center; cursor: pointer; font-size: 13px;
+        }
+        .tpl-btn.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.2); }
+
+        .grid-input{ display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
         
         table{ width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td{ padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
-        .btn{ padding: 12px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
-        .btn-add{ background: #2ecc71; color: white; height: 45px; }
-        .btn-save{ background: #3498db; color: white; width: 100%; margin-top: 10px; }
-        .btn-share{ background: #fff; color: #764ba2; width: 100%; margin-top: 10px; }
-
-        /* Template Selector Style */
-        .template-picker { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
-        .template-opt { 
-            flex: 0 0 100px; padding: 8px; background: rgba(255,255,255,0.1); 
-            border: 2px solid transparent; border-radius: 10px; text-align: center; cursor: pointer; font-size: 12px;
-        }
-        .template-opt.active { border-color: #2ecc71; background: rgba(46, 204, 113, 0.2); }
+        .btn-main{ width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .save-btn{ background: #3498db; color: white; }
+        .share-btn{ background: #fff; color: #764ba2; }
 
         @media(max-width: 768px){
             .sidebar{ display: none; }
             .content{ margin-left: 0; padding: 15px; }
-            .grid-3{ grid-template-columns: 1fr; }
+            .grid-input{ grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -81,165 +80,129 @@
 
 <div class="app">
     <aside class="sidebar">
-        <h3 style="text-align: center; margin-bottom: 20px;">SURJYA BAKERY</h3>
-        <ul class="menu">
-            <li onclick="location.href='dashboard.html'"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
-            <li class="active"><i class="fa-solid fa-file-invoice"></i> Invoice</li>
-            <li onclick="location.href='orders.html'"><i class="fa-solid fa-list"></i> Orders</li>
-            <li onclick="location.href='employees.html'"><i class="fa-solid fa-users"></i> Employees</li>
+        <h3 style="text-align: center; margin-bottom: 30px;">SURJYA BAKERY</h3>
+        <ul style="list-style: none;">
+            <li style="padding: 12px; cursor: pointer;" onclick="location.href='dashboard.html'"><i class="fa-solid fa-house"></i> Dashboard</li>
+            <li style="padding: 12px; background: rgba(255,255,255,0.2); border-radius: 10px;"><i class="fa-solid fa-file-invoice"></i> Invoice</li>
         </ul>
     </aside>
 
     <main class="content">
-        <header style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <button class="btn" style="background:rgba(255,255,255,0.2); color:#fff;" onclick="location.href='dashboard.html'"><i class="fa-solid fa-arrow-left"></i> Back</button>
-            <h2 id="invNo">Invoice #...</h2>
-        </header>
+        <h2 style="margin-bottom: 20px;">Create Invoice</h2>
 
-        <p style="margin-bottom: 10px; font-size: 14px; opacity: 0.8;">Choose Design:</p>
-        <div class="template-picker" id="tplPicker">
-            <div class="template-opt active" onclick="selectTpl('modern', this)">Modern Blue</div>
-            <div class="template-opt" onclick="selectTpl('classic', this)">Professional</div>
-            <div class="template-opt" onclick="selectTpl('minimal', this)">Minimal Earth</div>
+        <p style="font-size: 14px; margin-bottom: 10px; opacity: 0.9;">Choose PDF Style:</p>
+        <div class="tpl-grid">
+            <div class="tpl-btn active" onclick="setTpl('bluesky', this)">BlueSky</div>
+            <div class="tpl-btn" onclick="setTpl('classic', this)">East Repair</div>
+            <div class="tpl-btn" onclick="setTpl('simple', this)">Simple</div>
         </div>
 
         <div class="glass-card">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <input id="custName" placeholder="Customer Name">
-                <input id="custPhone" placeholder="Phone Number">
-            </div>
+            <input id="custName" placeholder="Client Name">
+            <input id="custAddr" placeholder="Client Address">
         </div>
 
-        <div class="glass-card grid-3">
-            <input id="itemName" placeholder="Item Name">
-            <input id="itemQty" type="number" placeholder="Qty">
-            <input id="itemPrice" type="number" placeholder="Price">
-            <button class="btn btn-add" onclick="addItem()">Add</button>
+        <div class="glass-card grid-input">
+            <div><input id="iName" placeholder="Item"></div>
+            <div><input id="iQty" type="number" placeholder="Qty"></div>
+            <div><input id="iPrice" type="number" placeholder="Price"></div>
+            <button class="btn-main" style="background:#2ecc71; margin:0; width:50px;" onclick="add()"><i class="fa-solid fa-plus"></i></button>
         </div>
 
         <div class="glass-card" style="padding: 0; overflow: hidden;">
             <table>
-                <thead><tr style="background: rgba(255,255,255,0.1);"><th>Item</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead>
-                <tbody id="cartTable"></tbody>
+                <thead><tr style="background: rgba(255,255,255,0.1);"><th>Item</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
 
-        <div class="glass-card" style="max-width: 400px; margin-left: auto;">
-            <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; color: #2ecc71;">
+        <div style="max-width: 400px; margin-left: auto;">
+            <div class="glass-card" style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold;">
                 <span>Grand Total:</span>
-                <span>₹ <span id="gTotal">0</span></span>
+                <span>₹ <span id="totalText">0</span></span>
             </div>
-            <button class="btn btn-save" onclick="saveData()"><i class="fa-solid fa-floppy-disk"></i> Save Order</button>
-            <button class="btn btn-share" onclick="generateAndShare()"><i class="fa-solid fa-share-nodes"></i> Share & Download</button>
+            <button class="btn-main save-btn" onclick="save()">Save to Records</button>
+            <button class="btn-main share-btn" onclick="sharePDF()"><i class="fa-solid fa-share-nodes"></i> Share Professional PDF</button>
         </div>
     </main>
 </div>
 
 <script>
-    let cart = [];
-    let selectedTemplate = 'modern';
-    let invID = localStorage.getItem("lastInv") ? parseInt(localStorage.getItem("lastInv")) + 1 : 1001;
-    document.getElementById("invNo").innerText = "Invoice #" + invID;
+    let items = [];
+    let template = 'bluesky';
+    let invNo = Math.floor(1000 + Math.random() * 9000);
 
-    function selectTpl(type, el) {
-        selectedTemplate = type;
-        document.querySelectorAll('.template-opt').forEach(opt => opt.classList.remove('active'));
+    function setTpl(t, el) {
+        template = t;
+        document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
     }
 
-    function addItem() {
-        const name = document.getElementById("itemName").value;
-        const qty = document.getElementById("itemQty").value;
-        const price = document.getElementById("itemPrice").value;
-        if(!name || !qty || !price) return alert("Fill all fields");
-        cart.push({ name, qty: parseInt(qty), price: parseFloat(price), total: qty * price });
+    function add() {
+        const n = document.getElementById("iName").value;
+        const q = document.getElementById("iQty").value;
+        const p = document.getElementById("iPrice").value;
+        if(!n || !q || !p) return;
+        items.push({ name: n, qty: q, price: p, total: q*p });
         render();
-        document.getElementById("itemName").value = ""; document.getElementById("itemQty").value = ""; document.getElementById("itemPrice").value = "";
+        document.getElementById("iName").value = ""; document.getElementById("iQty").value = ""; document.getElementById("iPrice").value = "";
     }
 
     function render() {
-        const tbody = document.getElementById("cartTable");
-        tbody.innerHTML = "";
+        const body = document.getElementById("tableBody");
+        body.innerHTML = "";
         let grand = 0;
-        cart.forEach((item, i) => {
+        items.forEach((item, i) => {
             grand += item.total;
-            tbody.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total}</td><td onclick="remove(${i})" style="color:#ff4d6d; cursor:pointer;"><i class="fa-solid fa-trash"></i></td></tr>`;
+            body.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total}</td><td onclick="items.splice(${i},1);render()"><i class="fa-solid fa-trash" style="color:#ff4d6d"></i></td></tr>`;
         });
-        document.getElementById("gTotal").innerText = grand;
+        document.getElementById("totalText").innerText = grand;
     }
 
-    function remove(i) { cart.splice(i, 1); render(); }
-
-    function saveData() {
-        if(cart.length === 0) return alert("Cart empty");
-        const order = { id: invID, customer: document.getElementById("custName").value || "Grahak", total: document.getElementById("gTotal").innerText, date: new Date().toLocaleDateString(), items: cart };
-        let orders = JSON.parse(localStorage.getItem("orders")) || [];
-        orders.push(order);
-        localStorage.setItem("orders", JSON.stringify(orders));
-        localStorage.setItem("lastInv", invID);
-        alert("Order Saved!");
-        location.reload();
-    }
-
-    async function generateAndShare() {
-        if(cart.length === 0) return alert("Cart empty");
+    async function sharePDF() {
+        if(items.length === 0) return alert("Add items first");
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        const cName = document.getElementById("custName").value || "Customer";
-        const totalVal = document.getElementById("gTotal").innerText;
+        const client = document.getElementById("custName").value || "Valued Customer";
+        const addr = document.getElementById("custAddr").value || "San Francisco, CA";
 
-        // --- TEMPLATE LOGIC ---
-        if (selectedTemplate === 'modern') {
-            // BlueSky Style (Gradient/Bold)
-            doc.setFillColor(0, 184, 184); // Cyan-ish
-            doc.rect(0, 0, 210, 40, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22); doc.text("SURJYA BAKERY", 20, 25);
-            doc.setTextColor(0, 0, 0);
-        } else if (selectedTemplate === 'classic') {
-            // East Repair Style (Stars/Simple)
-            doc.setFontSize(26); doc.text("INVOICE", 20, 25);
-            doc.setFontSize(10); doc.text("********************************************************************************", 20, 35);
-        } else {
-            // Minimal Earth Style (Circles/Soft)
-            doc.setFillColor(242, 230, 210); // Beige
-            doc.circle(200, 0, 60, 'F');
-            doc.setFontSize(20); doc.text("INVOICE", 20, 25);
+        if(template === 'bluesky') {
+            // BlueSky Design (Teal Gradient Header)
+            doc.setFillColor(72, 209, 204); doc.rect(0, 0, 210, 50, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.text("INVOICE", 20, 25);
+            doc.setFontSize(10); doc.text("INVOICE NO: " + invNo, 20, 35); doc.text("DATE: " + new Date().toLocaleDateString(), 20, 40);
+            doc.text("BlueSky Creations\n789 Horizon Road\n(555) 234-5678", 140, 20);
+            doc.setTextColor(0, 0, 0); doc.text("INVOICE TO:\n" + client + "\n" + addr, 20, 65);
+        } 
+        else if(template === 'classic') {
+            // East Repair Design (Stars and Clean)
+            doc.setFontSize(30); doc.setTextColor(40, 44, 91); doc.text("INVOICE", 20, 25);
+            doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text("East Repair Inc.\n1912 Harvest Lane\nNew York, NY", 20, 35);
+            doc.text("INVOICE #: US-" + invNo + "\nDATE: " + new Date().toLocaleDateString(), 140, 35);
+            doc.text("****************************************************************************************************", 20, 55);
+            doc.setFont(undefined, 'bold'); doc.text("BILL TO:", 20, 65); doc.setFont(undefined, 'normal'); doc.text(client + "\n" + addr, 20, 70);
         }
 
-        doc.setFontSize(10);
-        doc.text(`Invoice No: #${invID}`, 150, 50);
-        doc.text(`Customer: ${cName}`, 20, 60);
-        doc.text(`Phone: ${document.getElementById("custPhone").value || 'N/A'}`, 20, 65);
-        
-        let y = 80;
-        doc.setFont(undefined, 'bold');
-        doc.text("Description", 20, y); doc.text("Qty", 100, y); doc.text("Amount", 160, y);
+        let y = 95;
+        doc.setFont(undefined, 'bold'); doc.text("Description", 20, y); doc.text("Qty", 100, y); doc.text("Price", 140, y); doc.text("Total", 180, y);
         doc.line(20, y+2, 190, y+2);
         
         doc.setFont(undefined, 'normal');
-        cart.forEach(item => {
-            y += 10;
-            doc.text(item.name, 20, y);
-            doc.text(item.qty.toString(), 100, y);
-            doc.text("Rs. " + item.total, 160, y);
+        items.forEach(it => {
+            y += 10; doc.text(it.name, 20, y); doc.text(it.qty.toString(), 100, y); doc.text(it.price.toString(), 140, y); doc.text(it.total.toString(), 180, y);
         });
 
         doc.line(20, y+5, 190, y+5);
-        doc.setFontSize(14);
-        doc.text("Total Payable: Rs. " + totalVal, 130, y + 15);
-        doc.setFontSize(10);
-        doc.text("Thank you for your business!", 20, y + 25);
+        doc.setFontSize(14); doc.setFont(undefined, 'bold');
+        doc.text("TOTAL: Rs. " + document.getElementById("totalText").innerText, 140, y + 20);
+        
+        doc.setFontSize(18); doc.text("Thank You", 20, y + 40);
 
-        // SHARE & DOWNLOAD
         const pdfBlob = doc.output('blob');
-        const fileName = `Invoice_${invID}.pdf`;
-        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
+        const file = new File([pdfBlob], `Invoice_${invNo}.pdf`, { type: 'application/pdf' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: 'Invoice', text: `Bill for ${cName}` }); } 
-            catch (err) { doc.save(fileName); }
-        } else { doc.save(fileName); }
+            await navigator.share({ files: [file], title: 'Invoice', text: 'Surjya Bakery Bill' });
+        } else { doc.save(`Invoice_${invID}.pdf`); }
     }
 </script>
 </body>
