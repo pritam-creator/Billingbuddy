@@ -1,143 +1,253 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Surjya Bakery - Premium Invoice</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>New Surjya Bakery - Invoice</title>
 
-    <style>
-        /* GLOBAL THEME */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{
-            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-            background-size: 400% 400%;
-            animation: bgMove 15s ease infinite;
-            color: #fff; min-height: 100vh;
-        }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        /* ZOOM PREVENTION */
-        input, select, textarea, button { font-size: 16px !important; touch-action: manipulation; }
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{
+background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
+background-size:400% 400%;
+animation:bgMove 15s ease infinite;
+color:#fff;min-height:100vh;
+}
+@keyframes bgMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
 
-        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-        .app{ display: flex; min-height: 100vh; }
-        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; position: fixed; height: 100%; z-index: 1000; }
-        .content{ flex: 1; padding: 25px; margin-left: 260px; }
-        .glass-card{ background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: none; background: rgba(255,255,255,0.2); color: white; outline: none; margin-top: 5px; }
+.app{display:flex;min-height:100vh;}
+.sidebar{
+width:260px;
+backdrop-filter:blur(20px);
+background:rgba(255,255,255,0.08);
+border-right:1px solid rgba(255,255,255,0.2);
+padding:20px 15px;
+position:fixed;
+height:100%;
+}
+.content{flex:1;padding:25px;margin-left:260px;}
 
-        /* TPL SELECTOR */
-        .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .tpl-btn { padding: 10px; background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 12px; text-align: center; cursor: pointer; font-size: 13px; }
-        .tpl-btn.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.2); }
-        .grid-input{ display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
-        table{ width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td{ padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .btn-main{ width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 15px; } .grid-input{ grid-template-columns: 1fr; } }
-    </style>
+.glass-card{
+background:rgba(255,255,255,0.15);
+backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,0.2);
+border-radius:20px;
+padding:20px;
+margin-bottom:20px;
+}
+
+input{
+width:100%;
+padding:12px;
+border-radius:10px;
+border:none;
+background:rgba(255,255,255,0.2);
+color:white;
+outline:none;
+margin-top:5px;
+}
+
+.grid-input{
+display:grid;
+grid-template-columns:2fr 1fr 1fr auto;
+gap:10px;
+align-items:end;
+}
+
+table{width:100%;border-collapse:collapse;}
+th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);}
+
+.btn-main{
+width:100%;
+padding:14px;
+border:none;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+margin-top:10px;
+}
+
+@media(max-width:768px){
+.sidebar{display:none;}
+.content{margin-left:0;padding:15px;}
+.grid-input{grid-template-columns:1fr;}
+}
+</style>
 </head>
+
 <body>
 <div class="app">
-    <aside class="sidebar">
-        <h3 style="text-align: center; margin-bottom: 30px;">SURJYA BAKERY</h3>
-        <ul style="list-style: none;">
-            <li style="padding: 12px; cursor: pointer;" onclick="location.href='dashboard.html'"><i class="fa-solid fa-house"></i> Dashboard</li>
-            <li style="padding: 12px; background: rgba(255,255,255,0.2); border-radius: 10px;"><i class="fa-solid fa-file-invoice"></i> Invoice</li>
-        </ul>
-    </aside>
 
-    <main class="content">
-        <h2 style="margin-bottom: 20px;">Professional Invoice</h2>
-        <div class="tpl-grid">
-            <div class="tpl-btn active" onclick="setTpl('bluesky', this)">BlueSky (Modern)</div>
-            <div class="tpl-btn" onclick="setTpl('classic', this)">East Repair</div>
-            <div class="tpl-btn" onclick="setTpl('abstract', this)">Minimalist</div>
-        </div>
+<aside class="sidebar">
+<h3 style="text-align:center;margin-bottom:30px;">NEW SURJYA BAKERY</h3>
+<ul style="list-style:none;">
+<li style="padding:12px;cursor:pointer;" onclick="window.location.href='dashboard.html'">
+<i class="fa-solid fa-house"></i> Dashboard
+</li>
+<li style="padding:12px;background:rgba(255,255,255,0.2);border-radius:10px;">
+<i class="fa-solid fa-file-invoice"></i> Invoice
+</li>
+</ul>
+</aside>
 
-        <div class="glass-card"><input id="custName" placeholder="Client Name"><input id="custAddr" placeholder="Client Address"></div>
-        <div class="glass-card grid-input">
-            <input id="iName" placeholder="Item Name">
-            <input id="iQty" type="number" placeholder="Qty">
-            <input id="iPrice" type="number" placeholder="Price">
-            <button class="btn-main" style="background:#2ecc71; margin:0; width:50px;" onclick="add()"><i class="fa-solid fa-plus"></i></button>
-        </div>
+<main class="content">
 
-        <div class="glass-card" style="padding: 0; overflow: hidden;">
-            <table><tbody id="tableBody"></tbody></table>
-        </div>
+<h2 style="margin-bottom:20px;">Professional Invoice</h2>
 
-        <div style="max-width: 400px; margin-left: auto;">
-            <div class="glass-card" style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold;">
-                <span>Grand Total:</span><span>₹ <span id="totalText">0</span></span>
-            </div>
-            <button class="btn-main share-btn" style="background: white; color: black;" onclick="sharePDF()"><i class="fa-solid fa-share-nodes"></i> Share Professional PDF</button>
-        </div>
-    </main>
+<div class="glass-card">
+<input id="custName" placeholder="Client Name">
+<input id="custAddr" placeholder="Client Address">
+</div>
+
+<div class="glass-card grid-input">
+<input id="iName" placeholder="Item Name">
+<input id="iQty" type="number" placeholder="Qty">
+<input id="iPrice" type="number" placeholder="Price">
+<button class="btn-main" style="background:#2ecc71;margin:0;width:50px;" onclick="add()">
+<i class="fa-solid fa-plus"></i>
+</button>
+</div>
+
+<div class="glass-card" style="padding:0;">
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Qty</th>
+<th>Total</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<div style="max-width:400px;margin-left:auto;">
+<div class="glass-card" style="display:flex;justify-content:space-between;font-size:20px;font-weight:bold;">
+<span>Grand Total:</span>
+<span>₹ <span id="totalText">0.00</span></span>
+</div>
+
+<button class="btn-main" style="background:white;color:black;" onclick="sharePDF()">
+<i class="fa-solid fa-download"></i> Download Invoice PDF
+</button>
+</div>
+
+</main>
 </div>
 
 <script>
-    let items = [];
-    let template = 'bluesky';
-    let invNo = "SB-" + Math.floor(1000 + Math.random() * 9000);
+let items=[];
+let invNo="NSB-"+Math.floor(1000+Math.random()*9000);
 
-    function setTpl(t, el) { template = t; document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); }
+function add(){
+const n=iName.value.trim();
+const qty=parseFloat(iQty.value);
+const price=parseFloat(iPrice.value);
+if(!n||!qty||!price)return;
 
-    function add() {
-        const n = document.getElementById("iName").value, q = document.getElementById("iQty").value, p = document.getElementById("iPrice").value;
-        if(!n || !q || !p) return;
-        items.push({ name: n, qty: q, price: p, total: q*p }); render();
-        document.getElementById("iName").value = ""; document.getElementById("iQty").value = ""; document.getElementById("iPrice").value = "";
-    }
+items.push({name:n,qty:qty,price:price,total:qty*price});
+render();
+iName.value="";iQty.value="";iPrice.value="";
+}
 
-    function render() {
-        const b = document.getElementById("tableBody"); b.innerHTML = "";
-        let g = 0;
-        items.forEach((it, i) => { g += it.total; b.innerHTML += `<tr><td>${it.name}</td><td>${it.qty}</td><td>₹${it.total}</td><td onclick="items.splice(${i},1);render()"><i class="fa-solid fa-trash" style="color:red"></i></td></tr>`; });
-        document.getElementById("totalText").innerText = g;
-    }
+function render(){
+let g=0;
+tableBody.innerHTML="";
+items.forEach((it,i)=>{
+g+=it.total;
+tableBody.innerHTML+=`
+<tr>
+<td>${it.name}</td>
+<td>${it.qty}</td>
+<td>₹${it.total.toFixed(2)}</td>
+<td onclick="if(confirm('Remove item?')){items.splice(${i},1);render();}">
+<i class="fa-solid fa-trash" style="color:red;cursor:pointer;"></i>
+</td>
+</tr>`;
+});
+totalText.innerText=g.toFixed(2);
+}
 
-    async function sharePDF() {
-        if(items.length === 0) return alert("Items empty!");
-        const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        const client = document.getElementById("custName").value || "Customer";
-        const addr = document.getElementById("custAddr").value || "Client Address";
+async function sharePDF(){
 
-        if(template === 'bluesky') { // BlueSky Reference
-            doc.setFillColor(79, 209, 197); doc.rect(0, 0, 210, 50, 'F');
-            doc.setTextColor(255); doc.setFontSize(26); doc.text("INVOICE", 20, 25);
-            doc.setFontSize(10); doc.text(`NO: ${invNo}`, 20, 35);
-            doc.text("Surjya Bakery\n789 Bakery Lane\nSeaside, India", 140, 20);
-            doc.setTextColor(0); doc.text(`INVOICE TO:\n${client}\n${addr}`, 20, 65);
-        } else if(template === 'classic') { // East Repair Reference
-            doc.setFontSize(30); doc.setTextColor(40, 44, 91); doc.text("INVOICE", 20, 25);
-            doc.setFontSize(10); doc.setTextColor(0); doc.text("Surjya Bakery Inc.\n1912 Harvest Lane\nNew Delhi", 20, 35);
-            doc.text(`INVOICE #: ${invNo}\nDATE: ${new Date().toLocaleDateString()}`, 140, 35);
-            doc.text("****************************************************************************************************", 20, 55);
-            doc.text(`BILL TO: ${client}\n${addr}`, 20, 70);
-        } else { // Abstract Minimal
-            doc.setFillColor(235, 220, 180); doc.circle(200, 0, 80, 'F');
-            doc.setFontSize(22); doc.text("INVOICE", 20, 30);
-            doc.setFontSize(10); doc.text(`BILLED TO:\n${client}\n${addr}`, 130, 40);
-        }
+if(items.length===0)return alert("Items empty!");
+if(!custName.value.trim())return alert("Enter client name!");
 
-        let y = 95;
-        doc.setFont(undefined, 'bold'); doc.text("Description", 20, y); doc.text("Qty", 100, y); doc.text("Total", 170, y);
-        doc.line(20, y+2, 190, y+2);
-        doc.setFont(undefined, 'normal');
-        items.forEach(it => { y += 10; doc.text(it.name, 20, y); doc.text(it.qty.toString(), 100, y); doc.text("Rs. "+it.total, 170, y); });
-        
-        doc.setFont(undefined, 'bold'); doc.setFontSize(14); doc.text("TOTAL: Rs. " + document.getElementById("totalText").innerText, 130, y + 20);
-        
-        const pdfBlob = doc.output('blob');
-        const file = new File([pdfBlob], "Invoice.pdf", { type: 'application/pdf' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'Invoice' });
-        } else { doc.save("Invoice.pdf"); }
-    }
+const {jsPDF}=window.jspdf;
+const doc=new jsPDF();
+const pageWidth=doc.internal.pageSize.getWidth();
+
+// HEADER BACKGROUND
+doc.setFillColor(72,187,180);
+doc.rect(0,0,pageWidth,60,'F');
+
+// LOGO
+const img=new Image();
+img.src="logo.png";
+await new Promise(resolve=>{img.onload=resolve;});
+doc.addImage(img,'PNG',150,10,40,40);
+
+// TITLE
+doc.setFontSize(28);
+doc.setTextColor(255);
+doc.text("INVOICE",20,35);
+
+// COMPANY INFO
+doc.setTextColor(0);
+doc.setFontSize(11);
+doc.text("New Surjya Bakery",20,75);
+doc.text("Churaibari, North Tripura - 799262",20,82);
+doc.text("Phone: 7085662649",20,89);
+
+doc.text("Invoice No: "+invNo,140,75);
+doc.text("Date: "+new Date().toLocaleDateString(),140,82);
+
+// BILL TO
+doc.setFont(undefined,'bold');
+doc.text("Bill To:",20,105);
+doc.setFont(undefined,'normal');
+doc.text(custName.value,20,112);
+doc.text(custAddr.value||"",20,119);
+
+// TABLE
+let y=135;
+doc.setFont(undefined,'bold');
+doc.text("Item",20,y);
+doc.text("Qty",110,y);
+doc.text("Price",135,y);
+doc.text("Total",165,y);
+doc.line(20,y+2,190,y+2);
+doc.setFont(undefined,'normal');
+
+items.forEach(it=>{
+y+=12;
+if(y>270){doc.addPage();y=20;}
+doc.text(it.name,20,y);
+doc.text(it.qty.toString(),110,y);
+doc.text(it.price.toFixed(2),135,y);
+doc.text(it.total.toFixed(2),165,y);
+});
+
+y+=15;
+doc.setFont(undefined,'bold');
+doc.setFontSize(14);
+doc.text("Grand Total: ₹ "+totalText.innerText,120,y);
+
+doc.setFontSize(16);
+doc.setTextColor(100);
+doc.text("Thank You For Your Business!",20,280);
+
+doc.save("New_Surjya_Bakery_Invoice.pdf");
+}
 </script>
+
 </body>
 </html>
