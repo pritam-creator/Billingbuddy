@@ -1,180 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orders</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Orders - Surjya Bakery</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
+    <style>
+        /* ===== CONSISTENT THEME ===== */
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 
-body{
-  background:#f2f3f7;
-  padding-bottom:140px;
-}
+        body{
+            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
+            background-size: 400% 400%;
+            animation: bgMove 15s ease infinite;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-/* HEADER */
-.header{
-  background:#5b3df5;
-  color:white;
-  padding:18px;
-  font-size:20px;
-  font-weight:600;
-  text-align:center;
-  position:sticky;
-  top:0;
-}
+        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 
-/* ORDER CARD */
-.order{
-  background:white;
-  margin:15px;
-  padding:18px;
-  border-radius:16px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.05);
-  transition:0.2s;
-}
+        .app{ display: flex; height: 100vh; }
 
-.order:active{
-  transform:scale(0.98);
-}
+        /* SIDEBAR (Desktop Only) */
+        .sidebar{
+            width: 260px;
+            backdrop-filter: blur(20px);
+            background: rgba(255,255,255,0.08);
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: 0.3s ease;
+            z-index: 1000;
+        }
 
-.order h3{
-  margin-bottom:6px;
-  font-size:16px;
-}
+        .menu{ list-style: none; margin-top: 20px; }
+        .menu li{
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
+        }
+        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
+        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
 
-.client{
-  font-size:14px;
-  color:#555;
-  margin-bottom:6px;
-}
+        /* MAIN CONTENT */
+        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 120px; }
 
-.status{
-  font-size:13px;
-  font-weight:600;
-}
+        /* HEADER */
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; margin-top: 75px;}
+        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 
-.delivered{
-  color:#2ecc71;
-}
+        /* ORDER GRID */
+        .orders-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; 
+        }
 
-.pending{
-  color:#e67e22;
-}
+        /* ORDER CARD */
+        .order-card{
+            background: rgba(255,255,255,0.12);
+            padding: 20px;
+            border-radius: 22px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            animation: fadeUp 0.5s ease;
+            position: relative;
+        }
 
-/* ACTIONS */
-.actions{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
-}
+        @keyframes fadeUp{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
 
-.btn{
-  flex:1;
-  padding:8px;
-  border:none;
-  border-radius:8px;
-  font-size:13px;
-  font-weight:600;
-}
+        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .order-id { font-weight: 800; font-size: 18px; color: #fff; }
+        .order-date { font-size: 11px; opacity: 0.6; display: block; margin-top: 4px; }
 
-.view{
-  background:#3498db;
-  color:white;
-}
+        /* STATUS BADGES */
+        .status-badge {
+            font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 50px; text-transform: uppercase;
+        }
+        .status-pending { background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.4); }
+        .status-preparing { background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.4); }
+        .status-delivered { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4); }
 
-.delete{
-  background:#e74c3c;
-  color:white;
-}
+        .order-total { font-size: 20px; font-weight: 700; margin: 15px 0; color: #fff; }
 
-.btn:active{
-  transform:scale(0.95);
-}
+        /* ACTIONS */
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { 
+            padding: 10px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; 
+            transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-view { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-status { background: #3498db; color: white; }
+        .btn-delete { background: rgba(231, 76, 60, 0.2); color: #ff6b81; grid-column: span 2; }
+        .btn:active { transform: scale(0.95); }
 
-/* BOTTOM NAV */
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-around;
-  padding:10px 0;
-  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
-}
+        /* EMPTY STATE */
+        .empty-state { grid-column: 1/-1; text-align: center; padding: 100px 0; opacity: 0.5; }
+        .empty-state i { font-size: 60px; margin-bottom: 15px; }
 
-.bottom-nav div{
-  text-align:center;
-  font-size:12px;
-  color:#888;
-  cursor:pointer;
-}
+        /* BOTTOM NAV (Mobile Only) */
+        .bottom-nav{
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
+            display: none; justify-content: space-around; padding: 12px; z-index: 1000;
+        }
+        .nav-item { text-align: center; color: white; opacity: 0.6; cursor: pointer; font-size: 20px; }
+        .nav-item.active { opacity: 1; }
 
-.bottom-nav .active{
-  color:#5b3df5;
-  font-weight:600;
-}
-</style>
+        @media(max-width: 768px){
+            .sidebar{ display: none; }
+            .content{ margin-left: 0; padding: 20px; }
+            .bottom-nav{ display: flex; }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="header">📋 Orders</div>
+<div class="app">
+    <aside class="sidebar">
+        <div style="padding: 10px; text-align: center;">
+            <h3 style="letter-spacing: 1px;">SURJYA BAKERY</h3>
+        </div>
+        <ul class="menu">
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
+            <li onclick="go('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
+            <li class="active"><i class="fa-solid fa-list"></i> Orders</li>
+            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+        </ul>
+    </aside>
 
-<!-- ORDER 1 -->
-<div class="order">
-  <h3>Order #501</h3>
-  <div class="client">Rahul Traders</div>
-  <div class="status delivered">Delivered</div>
+    <main class="content">
+        <header class="top-header">
+            <button class="back-btn" onclick="go('dashboard.html')">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <h2>📋 Manage Orders</h2>
+            <div style="width: 40px;"></div> 
+        </header>
 
-  <div class="actions">
-    <button class="btn view" onclick="viewOrder(501)">View</button>
-    <button class="btn delete" onclick="deleteOrder(501)">Delete</button>
-  </div>
+        <div class="orders-grid" id="ordersList">
+            </div>
+    </main>
 </div>
 
-<!-- ORDER 2 -->
-<div class="order">
-  <h3>Order #502</h3>
-  <div class="client">Sunita Store</div>
-  <div class="status pending">Pending</div>
-
-  <div class="actions">
-    <button class="btn view" onclick="viewOrder(502)">View</button>
-    <button class="btn delete" onclick="deleteOrder(502)">Delete</button>
-  </div>
-</div>
-
-<!-- Bottom Nav -->
-<div class="bottom-nav">
-  <div onclick="go('index.html')">🏠<br>Home</div>
-  <div onclick="go('clients.html')">👥<br>Clients</div>
-  <div onclick="go('inventory.html')">📦<br>Inventory</div>
-  <div class="active">📋<br>Orders</div>
-  <div onclick="go('records.html')">📊<br>Records</div>
-</div>
+<nav class="bottom-nav">
+    <div class="nav-item" onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i></div>
+    <div class="nav-item" onclick="go('items.html')"><i class="fa-solid fa-box"></i></div>
+    <div class="nav-item active"><i class="fa-solid fa-list"></i></div>
+    <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
+</nav>
 
 <script>
-function go(page){
-  window.location.href = page;
-}
+    /* 🔐 SESSION PROTECTION */
+    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
 
-function viewOrder(id){
-  alert("Open Order #" + id + " details page 🔥");
-}
+    function getOrders(){
+        return JSON.parse(localStorage.getItem("orders")) || [];
+    }
 
-function deleteOrder(id){
-  if(confirm("Delete Order #" + id + " ?")){
-    alert("Order deleted (demo)");
-  }
-}
+    function renderOrders(){
+        let orders = getOrders();
+        const list = document.getElementById("ordersList");
+
+        if(orders.length === 0){
+            list.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-clipboard-question"></i>
+                    <h3>No orders yet</h3>
+                </div>`;
+            return;
+        }
+
+        list.innerHTML = "";
+        // Sort: Newest First
+        orders.sort((a,b) => b.id - a.id);
+
+        orders.forEach((order, index) => {
+            const status = order.status || "Pending";
+            let statusClass = "status-pending";
+            if(status === "Preparing") statusClass = "status-preparing";
+            if(status === "Delivered") statusClass = "status-delivered";
+
+            const card = document.createElement("div");
+            card.className = "order-card";
+            card.innerHTML = `
+                <div class="order-header">
+                    <div>
+                        <span class="order-id">#${order.id}</span>
+                        <span class="order-date">${order.date || 'Today'}</span>
+                    </div>
+                    <span class="status-badge ${statusClass}">${status}</span>
+                </div>
+                
+                <div class="order-total">₹ ${order.total}</div>
+                
+                <div class="actions">
+                    <button class="btn btn-view" onclick="viewOrder('${order.id}')">
+                        <i class="fa-solid fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-status" onclick="changeStatus('${order.id}')">
+                        <i class="fa-solid fa-rotate"></i> Next Step
+                    </button>
+                    <button class="btn btn-delete" onclick="deleteOrder('${order.id}')">
+                        <i class="fa-solid fa-trash"></i> Delete Order
+                    </button>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    function viewOrder(id){
+        let orders = getOrders();
+        const order = orders.find(o => o.id == id);
+        if(!order) return;
+
+        let details = `📦 Order #${id}\n------------------\n`;
+        order.items.forEach(item => {
+            details += `• ${item.name} (${item.qty}) - ₹${item.price * item.qty}\n`;
+        });
+        details += `\nTotal: ₹${order.total}`;
+        alert(details);
+    }
+
+    function changeStatus(id){
+        let orders = getOrders();
+        const orderIndex = orders.findIndex(o => o.id == id);
+        if(orderIndex === -1) return;
+
+        const cycle = ["Pending", "Preparing", "Delivered"];
+        let currentStatus = orders[orderIndex].status || "Pending";
+        let nextIndex = (cycle.indexOf(currentStatus) + 1) % cycle.length;
+        
+        orders[orderIndex].status = cycle[nextIndex];
+        localStorage.setItem("orders", JSON.stringify(orders));
+        renderOrders();
+    }
+
+    function deleteOrder(id){
+        if(!confirm("Delete this order forever?")) return;
+        let orders = getOrders();
+        orders = orders.filter(o => o.id != id);
+        localStorage.setItem("orders", JSON.stringify(orders));
+        renderOrders();
+    }
+
+    function go(page){ window.location.href = page; }
+    
+    function logout() {
+        localStorage.removeItem("loggedIn");
+        window.location.replace("index.html");
+    }
+
+    renderOrders();
 </script>
 
 </body>

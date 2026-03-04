@@ -1,210 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventory</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Inventory - Surjya Bakery</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
+    <style>
+        /* ===== CONSISTENT THEME (Admin Panel Style) ===== */
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 
-body{
-  background:#f2f3f7;
-  padding-bottom:140px;
-}
+        body{
+            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
+            background-size: 400% 400%;
+            animation: bgMove 15s ease infinite;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-/* HEADER */
-.header{
-  background:#5b3df5;
-  color:white;
-  padding:18px;
-  font-size:20px;
-  font-weight:600;
-  text-align:center;
-  position:sticky;
-  top:0;
-}
+        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 
-/* ITEM CARD */
-.item{
-  background:white;
-  margin:15px;
-  padding:18px;
-  border-radius:16px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.05);
-}
+        .app{ display: flex; height: 100vh; }
 
-.item-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
+        /* SIDEBAR */
+        .sidebar{
+            width: 260px;
+            backdrop-filter: blur(20px);
+            background: rgba(255,255,255,0.08);
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: 0.3s ease;
+            z-index: 1000;
+        }
 
-.item h3{
-  font-size:16px;
-}
+        .menu{ list-style: none; margin-top: 20px; }
+        .menu li{
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
+        }
+        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
+        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
 
-.stock{
-  margin-top:6px;
-  font-size:14px;
-  color:#555;
-}
+        /* MAIN CONTENT */
+        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 120px; }
 
-.low{
-  color:#e74c3c;
-  font-weight:600;
-  font-size:13px;
-}
+        /* TOP HEADER & SEARCH */
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-top: 75px; }
+        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        
+        .search-container {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 15px;
+            margin-top: 25px;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .search-container input {
+            background: none; border: none; color: white; margin-left: 10px; width: 100%; outline: none;
+        }
+        .search-container input::placeholder { color: rgba(255,255,255,0.6); }
 
-/* ACTION BUTTONS */
-.actions{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
-}
+        /* INVENTORY CARDS */
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
+        .item-card{
+            background: rgba(255,255,255,0.12);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: 0.3s; margin-top: 20px;
+        }
+        .item-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.18); }
+        
+        .item-info h3 { font-size: 18px; margin-bottom: 10px; }
+        .stock-badge { 
+            display: inline-block; padding: 4px 12px; border-radius: 20px; 
+            font-size: 13px; font-weight: bold; background: rgba(255,255,255,0.2);
+        }
+        .low-stock { background: rgba(231, 76, 60, 0.2); color: #ff6b81; border: 1px solid rgba(231, 76, 60, 0.3); }
 
-.btn{
-  flex:1;
-  padding:8px;
-  border:none;
-  border-radius:8px;
-  font-size:13px;
-  cursor:pointer;
-}
+        .actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-edit { background: rgba(241, 196, 15, 0.3); color: #f1c40f; }
+        .btn-edit:hover { background: #f1c40f; color: #333; }
+        .btn-del { background: rgba(231, 76, 60, 0.2); color: #ff6b81; }
+        .btn-del:hover { background: #e74c3c; color: #fff; }
 
-.edit{
-  background:#f1c40f;
-  color:white;
-}
+        /* FLOATING ADD BUTTON */
+        .add-btn {
+            position: fixed; bottom: 100px; right: 30px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #fff; color: #764ba2;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 100; transition: 0.3s;
+        }
+        .add-btn:hover { transform: scale(1.1) rotate(90deg); }
 
-.delete{
-  background:#e74c3c;
-  color:white;
-}
+        /* BOTTOM NAV (Mobile Only) */
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
+            display: none; justify-content: space-around; padding: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000;
+        }
+        .nav-item { text-align: center; color: white; opacity: 0.6; cursor: pointer; font-size: 20px; }
+        .nav-item.active { opacity: 1; font-weight: bold; }
+        .nav-item span { display: block; font-size: 10px; margin-top: 4px; }
 
-.btn:active{
-  transform:scale(0.95);
-}
-
-/* ADD BUTTON */
-.add-btn{
-  position:fixed;
-  bottom:90px;
-  right:20px;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  background:#6ecf8b;
-  color:white;
-  font-size:30px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 6px 15px rgba(0,0,0,0.2);
-  cursor:pointer;
-}
-
-.add-btn:active{
-  transform:scale(0.9);
-}
-
-/* BOTTOM NAV */
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-around;
-  padding:10px 0;
-  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
-}
-
-.bottom-nav div{
-  text-align:center;
-  font-size:12px;
-  color:#888;
-  cursor:pointer;
-}
-
-.bottom-nav .active{
-  color:#5b3df5;
-  font-weight:600;
-}
-
-.bottom-nav div:active{
-  transform:scale(0.95);
-}
-</style>
+        @media(max-width: 768px){
+            .sidebar{ display: none; }
+            .content { margin-left: 0; padding: 20px; }
+            .bottom-nav { display: flex; }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="header">📦 Inventory</div>
+<div class="app">
+    <aside class="sidebar">
+        <div style="padding: 10px; text-align: center;">
+            <h3 style="letter-spacing: 1px; font-weight: 800;">SURJYA ADMIN</h3>
+        </div>
+        <ul class="menu">
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
+            <li class="active"><i class="fa-solid fa-warehouse"></i> Inventory</li>
+            <li onclick="go('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
+            <li onclick="go('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
+            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+        </ul>
+    </aside>
 
-<!-- ITEM 1 -->
-<div class="item">
-  <div class="item-top">
-    <h3>Bread</h3>
-  </div>
-  <div class="stock">Stock: 50</div>
+    <main class="content">
+        <header class="top-header">
+            <button class="back-btn" onclick="go('dashboard.html')">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <h2>📦 Inventory Control</h2>
+            <div style="width: 40px;"></div>
+        </header>
 
-  <div class="actions">
-    <button class="btn edit" onclick="editItem('Bread')">Edit</button>
-    <button class="btn delete" onclick="deleteItem('Bread')">Delete</button>
-  </div>
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search stock items..." onkeyup="searchInventory()">
+        </div>
+
+        <div class="inventory-grid" id="inventoryList">
+            </div>
+    </main>
+
+    <div class="add-btn" onclick="addItem()">
+        <i class="fa-solid fa-plus"></i>
+    </div>
 </div>
 
-<!-- ITEM 2 -->
-<div class="item">
-  <div class="item-top">
-    <h3>Cake</h3>
-  </div>
-  <div class="stock">
-    Stock: 5 <span class="low">(Low Stock)</span>
-  </div>
-
-  <div class="actions">
-    <button class="btn edit" onclick="editItem('Cake')">Edit</button>
-    <button class="btn delete" onclick="deleteItem('Cake')">Delete</button>
-  </div>
-</div>
-
-<!-- ADD BUTTON -->
-<div class="add-btn" onclick="addItem()">+</div>
-
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <div onclick="go('index.html')">🏠<br>Home</div>
-  <div onclick="go('clients.html')">👥<br>Clients</div>
-  <div class="active">📦<br>Inventory</div>
-  <div onclick="go('orders.html')">🧾<br>Orders</div>
-  <div onclick="go('records.html')">📊<br>Records</div>
-</div>
+<nav class="bottom-nav">
+    <div class="nav-item" onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i><span>Home</span></div>
+    <div class="nav-item" onclick="go('items.html')"><i class="fa-solid fa-box"></i><span>Items</span></div>
+    <div class="nav-item active"><i class="fa-solid fa-warehouse"></i><span>Stock</span></div>
+    <div class="nav-item" onclick="go('orders.html')"><i class="fa-solid fa-list-check"></i><span>Orders</span></div>
+</nav>
 
 <script>
-function go(page){
-  window.location.href = page;
-}
+    /* 🔐 SESSION PROTECTION */
+    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
 
-function addItem(){
-  alert("Add Item Page Next Step Me Banayenge 🔥");
-}
+    // Sample Inventory Data (Can be linked to items.html data)
+    let inventory = JSON.parse(localStorage.getItem("inventory")) || [
+        { name: "Bread", stock: 50 },
+        { name: "Cake", stock: 5 },
+        { name: "Cookies", stock: 12 },
+        { name: "Milk Bun", stock: 2 }
+    ];
 
-function editItem(name){
-  alert("Edit Item: " + name);
-}
+    function renderInventory(filter = "") {
+        const list = document.getElementById("inventoryList");
+        list.innerHTML = "";
 
-function deleteItem(name){
-  if(confirm("Delete " + name + " ?")){
-    alert(name + " deleted (demo)");
-  }
-}
+        const filteredItems = inventory.filter(item => 
+            item.name.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        filteredItems.forEach((item, index) => {
+            const isLow = item.stock < 10;
+            const card = document.createElement("div");
+            card.className = "item-card";
+            card.innerHTML = `
+                <div class="item-info">
+                    <h3>${item.name}</h3>
+                    <div class="stock-badge ${isLow ? 'low-stock' : ''}">
+                        Stock: ${item.stock} ${isLow ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}
+                    </div>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-edit" onclick="editStock(${index})">
+                        <i class="fa-solid fa-pen"></i> Update
+                    </button>
+                    <button class="btn btn-del" onclick="deleteItem(${index})">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+        localStorage.setItem("inventory", JSON.stringify(inventory));
+    }
+
+    function searchInventory() {
+        const term = document.getElementById("searchInput").value;
+        renderInventory(term);
+    }
+
+    function addItem() {
+        const name = prompt("Enter new item name:");
+        if (!name) return;
+        const stock = prompt("Enter initial stock quantity:", "0");
+        if (stock === null) return;
+
+        inventory.push({ name: name, stock: parseInt(stock) || 0 });
+        renderInventory();
+    }
+
+    function editStock(index) {
+        const newStock = prompt(`Update stock for ${inventory[index].name}:`, inventory[index].stock);
+        if (newStock !== null) {
+            inventory[index].stock = parseInt(newStock) || 0;
+            renderInventory();
+        }
+    }
+
+    function deleteItem(index) {
+        if (confirm(`Remove ${inventory[index].name} from inventory?`)) {
+            inventory.splice(index, 1);
+            renderInventory();
+        }
+    }
+
+    function go(page) { window.location.href = page; }
+
+    function logout() {
+        localStorage.removeItem("loggedIn");
+        window.location.replace("index.html");
+    }
+
+    // Initial render
+    renderInventory();
 </script>
 
 </body>

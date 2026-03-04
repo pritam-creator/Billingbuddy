@@ -1,269 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - Surjya Bakery</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - New Surjya Bakery</title>
 
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-body{
-  background:#f2f3f7;
-  padding-bottom:110px;
-}
+    <style>
+        /* ===== GLOBAL STYLES ===== */
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+        }
 
-/* HEADER */
-.header{
-  background:linear-gradient(135deg,#ff9966,#ff5e62);
-  color:white;
-  padding:20px;
-  text-align:center;
-  position:sticky;
-  top:0;
-  box-shadow:0 4px 12px rgba(0,0,0,0.1);
-}
+        body{
+            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
+            background-size: 400% 400%;
+            animation: bgMove 15s ease infinite;
+            transition: 0.3s ease;
+            color: #fff;
+            min-height: 100vh;
+        }
 
-.logo{
-  width:70px;
-  margin-bottom:8px;
-}
+        @keyframes bgMove{
+            0%{background-position:0% 50%;}
+            50%{background-position:100% 50%;}
+            100%{background-position:0% 50%;}
+        }
 
-.sub-info{
-  font-size:13px;
-  opacity:0.9;
-  margin-bottom:10px;
-}
+        .app{ display: flex; height: 100vh; overflow: hidden; }
 
-.logout-btn{
-  background:white;
-  color:#ff5e62;
-  border:none;
-  padding:8px 18px;
-  border-radius:20px;
-  font-weight:600;
-  cursor:pointer;
-}
+        /* ===== SIDEBAR ===== */
+        .sidebar{
+            width: 260px;
+            backdrop-filter: blur(20px);
+            background: rgba(255,255,255,0.08);
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
 
-.logout-btn:active{
-  transform:scale(0.95);
-}
+        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
+        .profile-info h4 { font-size: 16px; font-weight: 600; }
+        .profile-info p{ font-size: 12px; opacity: 0.7; }
 
-/* STATS */
-.stats{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:15px 20px;
-}
+        .menu{ list-style: none; flex-grow: 1; }
 
-.stat-card{
-  flex:1;
-  background:white;
-  padding:15px;
-  border-radius:15px;
-  text-align:center;
-  box-shadow:0 6px 15px rgba(0,0,0,0.05);
-  font-size:14px;
-}
+        .menu li{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 5px;
+            font-size: 15px;
+            opacity: 0.8;
+        }
 
-.stat-card h3{
-  color:#ff5e62;
-  margin-top:5px;
-}
+        .menu li:hover{ 
+            background: rgba(255,255,255,0.15); 
+            opacity: 1;
+            transform: translateX(5px);
+        }
 
-/* GRID */
-.container{
-  padding:10px 20px 20px;
-}
+        /* Active Page Style */
+        .menu li.active{
+            background: rgba(255,255,255,0.25);
+            border-left: 4px solid #fff;
+            opacity: 1;
+            font-weight: bold;
+        }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:15px;
-}
+        /* ===== MAIN CONTENT ===== */
+        .content{
+            flex: 1;
+            padding: 30px;
+            margin-left: 260px;
+            overflow-y: auto;
+            transition: 0.3s;
+        }
 
-.card{
-  background:white;
-  padding:25px 15px;
-  border-radius:18px;
-  text-align:center;
-  box-shadow:0 6px 15px rgba(0,0,0,0.05);
-  cursor:pointer;
-  font-size:16px;
-  font-weight:600;
-}
+        .top-header{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
 
-.card:active{
-  transform:scale(0.96);
-}
+        .header-left{ display: flex; align-items: center; gap: 15px; }
+        #menuBtn { 
+            font-size: 22px; 
+            cursor: pointer; 
+            display: none; /* Desktop pe hidden */
+        }
 
-/* BOTTOM NAV */
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-around;
-  padding:10px 0;
-  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
-}
+        .greeting{ font-size: 14px; opacity: 0.8; margin-top: 4px; }
 
-.bottom-nav div{
-  text-align:center;
-  font-size:12px;
-  color:#888;
-  cursor:pointer;
-}
+        .action-buttons{ display: flex; gap: 12px; }
 
-.bottom-nav .active{
-  color:#ff5e62;
-  font-weight:600;
-}
-</style>
+        .btn{
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            color: white;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover{ background: rgba(255,255,255,0.35); transform: translateY(-2px); }
+
+        /* ===== CARDS ===== */
+        .cards{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card{
+            background: rgba(255,255,255,0.12);
+            padding: 25px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: 0.3s;
+        }
+
+        .card:hover{ transform: translateY(-8px); background: rgba(255,255,255,0.18); }
+        .card i{ font-size: 28px; margin-bottom: 15px; color: #fff; }
+        .card h3{ font-size: 24px; margin-bottom: 5px; }
+        .card p{ opacity: 0.8; font-size: 14px; }
+
+        /* ===== UTILS ===== */
+        .overlay{
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            z-index: 900;
+        }
+
+        .overlay.active{ opacity: 1; pointer-events: all; }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media(max-width: 768px){
+            .sidebar{ left: -260px; }
+            .sidebar.active{ left: 0; }
+            .content{ margin-left: 0; padding: 20px; }
+            #menuBtn { display: block; }
+        }
+
+        /* ===== DARK MODE OVERRIDE ===== */
+        body.dark{ background: #0f172a; }
+        body.dark .sidebar{ background: rgba(15,23,42,0.95); }
+        body.dark .card{ background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.05); }
+        body.dark .btn{ background: rgba(148,163,184,0.15); }
+
+        .logo{
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+            animation: glow 2s infinite alternate;
+            object-fit: cover;
+        }
+
+        @keyframes glow{
+            from{ box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+            to{ box-shadow: 0 0 30px rgba(255,255,255,0.6); }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="header">
-  <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-  <h2>🍞 Surjya Bakery</h2>
-  <div class="sub-info" id="greeting"></div>
-  <button class="logout-btn" id="logoutBtn">Logout</button>
+<script>
+    /* SESSION PROTECTION */
+    if(localStorage.getItem("loggedIn") !== "true"){
+        window.location.replace("index.html");
+    }
+</script>
+
+<div class="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4>Surjya Bakery</h4>
+                <p>Admin Panel</p>
+            </div>
+        </div>
+
+        <ul class="menu" id="mainMenu">
+            <li data-page="dashboard.html" onclick="goPage('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li data-page="items.html" onclick="goPage('items.html')"><i class="fa-solid fa-box"></i> Items</li>
+            <li data-page="invoice.html" onclick="goPage('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
+            <li data-page="clients.html" onclick="goPage('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
+            <li data-page="inventory.html" onclick="goPage('inventory.html')"><i class="fa-solid fa-warehouse"></i> Inventory</li>
+            <li data-page="orders.html" onclick="goPage('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
+            <li data-page="records.html" onclick="goPage('records.html')"><i class="fa-solid fa-chart-column"></i> Records</li>
+        </ul>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <div class="greeting" id="greeting">Loading...</div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" id="darkToggle" title="Toggle Theme">🌙</button>
+                <button class="btn" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </header>
+
+        <div class="cards">
+            <div class="card">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                <h3 id="todaySales">₹0</h3>
+                <p>Today Sales</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-receipt"></i>
+                <h3 id="ordersCount">0</h3>
+                <p>Total Orders</p>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-users"></i>
+                <h3 id="clientsCount">0</h3>
+                <p>Total Clients</p>
+            </div>
+        </div>
+        
+        </main>
 </div>
 
-<div class="stats">
-  <div class="stat-card">
-    Today Sales
-    <h3 id="todaySales">₹0</h3>
-  </div>
-  <div class="stat-card">
-    Orders
-    <h3 id="ordersCount">0</h3>
-  </div>
-  <div class="stat-card">
-    Clients
-    <h3 id="clientsCount">0</h3>
-  </div>
-</div>
+<script>
+    /* DARK MODE LOGIC */
+    const darkToggle = document.getElementById("darkToggle");
+    const isDark = localStorage.getItem("darkMode") === "true";
 
-<div class="container">
-  <div class="grid">
-    <div class="card" data-page="items.html">📦 Items</div>
-    <div class="card" data-page="invoice.html">🧾 Invoice</div>
-    <div class="card" data-page="clients.html">👥 Clients</div>
-    <div class="card" data-page="inventory.html">🏪 Inventory</div>
-    <div class="card" data-page="orders.html">📋 Orders</div>
-    <div class="card" data-page="records.html">📊 Records</div>
-  </div>
-</div>
+    if(isDark){
+        document.body.classList.add("dark");
+        darkToggle.innerText = "☀️";
+    }
 
-<div class="bottom-nav">
-  <div class="active" data-page="dashboard.html">🏠<br>Home</div>
-  <div data-page="clients.html">👥<br>Clients</div>
-  <div data-page="inventory.html">📦<br>Inventory</div>
-  <div data-page="orders.html">🧾<br>Orders</div>
-  <div data-page="records.html">📊<br>Records</div>
-</div>
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const currentlyDark = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", currentlyDark);
+        darkToggle.innerText = currentlyDark ? "☀️" : "🌙";
+    };
 
-<script type="module">
-/* Logout (100% Working) */
-document.getElementById("logoutBtn")
-.addEventListener("click",()=>{
-  if(confirm("Are you sure you want to logout?")){
-    sessionStorage.removeItem("loggedIn");
-    window.location.replace("index.html");
-  }
-});
+    /* SIDEBAR & OVERLAY LOGIC */
+    const menuBtn = document.getElementById("menuBtn");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, query, where }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    menuBtn.onclick = () => {
+        sidebar.classList.add("active");
+        overlay.classList.add("active");
+    };
 
-/* LOGIN CHECK */
-if (sessionStorage.getItem("loggedIn") !== "true") {
-  window.location.replace("index.html");
+    overlay.onclick = () => {
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
+    };
+
+    /* NAVIGATION & ACTIVE STATE */
+    function goPage(page){
+        window.location.href = page;
+    }
+
+    function setActivePage() {
+        const path = window.location.pathname;
+        const page = path.split("/").pop() || "dashboard.html";
+        const menuItems = document.querySelectorAll(".menu li");
+        
+        menuItems.forEach(item => {
+            if(item.getAttribute("data-page") === page) {
+                item.classList.add("active");
+                // Update Header Title based on active page
+                document.getElementById("pageTitle").innerText = item.innerText.trim();
+            } else {
+                item.classList.remove("active");
+            }
+        });
+    }
+
+    /* GREETING & CLOCK */
+    function updateGreeting(){
+        const now = new Date();
+        const hour = now.getHours();
+        let greet = "Good Evening 🌙";
+
+        if(hour < 12) greet = "Good Morning ☀️";
+        else if(hour < 18) greet = "Good Afternoon 🌤️";
+
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        document.getElementById("greeting").innerText = 
+            `${greet} | ${now.toLocaleDateString(undefined, options)} | ${now.toLocaleTimeString()}`;
+    }
+    function updateDashboard() {
+    // Orders ka data uthao
+    const orders = JSON.parse(localStorage.getItem("orders")) || [];
+    const totalOrders = orders.length;
+    
+    // Total Sales calculate karo
+    const sales = orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
+    
+    // UI update karo
+    document.getElementById("dash-orders").innerText = totalOrders;
+    document.getElementById("dash-sales").innerText = "₹ " + sales.toLocaleString();
 }
 
-/* FIREBASE CONFIG */
-const firebaseConfig = {
-  apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
-  authDomain: "billingbuddy-551f9.firebaseapp.com",
-  projectId: "billingbuddy-551f9",
-  storageBucket: "billingbuddy-551f9.firebasestorage.app",
-  messagingSenderId: "287026017084",
-  appId: "1:287026017084:web:aae879570ad706e5a2a439"
-};
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    /* LOGOUT */
+    document.getElementById("logoutBtn").onclick = () => {
+        if(confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem("loggedIn");
+            window.location.replace("index.html");
+        }
+    };
 
-/* Greeting */
-function updateGreeting(){
-  const now = new Date();
-  const hour = now.getHours();
-  let greet = "Good Evening";
-
-  if(hour < 12) greet = "Good Morning ☀️";
-  else if(hour < 18) greet = "Good Afternoon 🌤️";
-
-  document.getElementById("greeting").innerText =
-    greet + " | " +
-    now.toLocaleDateString() + " | " +
-    now.toLocaleTimeString();
-}
-
-setInterval(updateGreeting,1000);
-updateGreeting();
-
-/* Load Stats */
-async function loadDashboard(){
-
-  try{
-    const today = new Date().toISOString().split("T")[0];
-
-    const salesQuery = query(
-      collection(db,"sales"),
-      where("date","==",today)
-    );
-
-    const salesSnap = await getDocs(salesQuery);
-
-    let total = 0;
-    salesSnap.forEach(doc=>{
-      total += Number(doc.data().total || 0);
-    });
-
-    document.getElementById("todaySales").innerText = "₹" + total;
-
-    const ordersSnap = await getDocs(collection(db,"orders"));
-    document.getElementById("ordersCount").innerText = ordersSnap.size;
-
-    const clientsSnap = await getDocs(collection(db,"clients"));
-    document.getElementById("clientsCount").innerText = clientsSnap.size;
-
-  }catch(err){
-    console.error("Dashboard Load Error:", err);
-  }
-}
-
-loadDashboard();
-
-/* Navigation (All Cards + Bottom Nav) */
-document.querySelectorAll("[data-page]").forEach(el=>{
-  el.addEventListener("click",()=>{
-    window.location.href = el.getAttribute("data-page");
-  });
-});
-
-
+    // Initialize functions
+    window.onload = () => {
+        setActivePage();
+        setInterval(updateGreeting, 1000);
+        updateGreeting();
+    };
 </script>
 
 </body>

@@ -1,182 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transaction Records</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Records - Surjya Bakery</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-}
+    <style>
+        /* ===== CONSISTENT THEME ===== */
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 
-body{
-  background:#f2f3f7;
-  padding-bottom:140px;
-}
+        body{
+            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
+            background-size: 400% 400%;
+            animation: bgMove 15s ease infinite;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-/* HEADER */
-.header{
-  background:#5b3df5;
-  color:white;
-  padding:18px;
-  font-size:20px;
-  font-weight:600;
-  text-align:center;
-  position:sticky;
-  top:0;
-}
+        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 
-/* SUMMARY */
-.summary{
-  background:white;
-  margin:15px;
-  padding:15px;
-  border-radius:16px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.05);
-  text-align:center;
-}
+        .app{ display: flex; height: 100vh; }
 
-.balance{
-  font-size:22px;
-  font-weight:700;
-  margin-top:5px;
-}
+        /* SIDEBAR */
+        .sidebar{
+            width: 260px; backdrop-filter: blur(20px);
+            background: rgba(255,255,255,0.08);
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding: 20px 15px; display: flex; flex-direction: column;
+            position: fixed; height: 100%; z-index: 1000;
+        }
 
-/* RECORD CARD */
-.record{
-  background:white;
-  margin:15px;
-  padding:18px;
-  border-radius:16px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.05);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  transition:0.2s;
-}
+        .menu{ list-style: none; margin-top: 20px; }
+        .menu li{
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
+        }
+        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
+        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
 
-.record:active{
-  transform:scale(0.98);
-}
+        /* MAIN CONTENT */
+        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
 
-.title{
-  font-size:14px;
-  color:#444;
-}
+        /* TOP HEADER */
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; margin-top: 75px;}
+        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; }
 
-.amount{
-  font-size:15px;
-  font-weight:600;
-}
+        /* SUMMARY BOX */
+        .summary-card{
+            background: rgba(255,255,255,0.15); padding: 30px; border-radius: 25px;
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2);
+            text-align: center; margin-bottom: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .summary-card h3{ font-size: 14px; opacity: 0.8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
+        .balance{ font-size: 32px; font-weight: 800; }
 
-.green{
-  color:#2ecc71;
-}
+        /* TRANSACTION RECORDS */
+        .records-container { display: flex; flex-direction: column; gap: 15px; }
+        
+        .record-item{
+            background: rgba(255,255,255,0.12); padding: 18px 22px; border-radius: 20px;
+            backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.3s; animation: fadeUp 0.5s ease;
+        }
+        .record-item:hover { background: rgba(255,255,255,0.18); transform: scale(1.01); }
 
-.red{
-  color:#e74c3c;
-}
+        @keyframes fadeUp{ from{opacity:0; transform:translateY(15px);} to{opacity:1; transform:translateY(0);} }
 
-.delete{
-  background:none;
-  border:none;
-  color:#999;
-  font-size:12px;
-  cursor:pointer;
-}
+        .record-info h4 { font-size: 16px; margin-bottom: 4px; }
+        .record-info span { font-size: 12px; opacity: 0.6; }
 
-/* BOTTOM NAV */
-.bottom-nav{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-around;
-  padding:10px 0;
-  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
-}
+        .amount-tag { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .income { color: #2ecc71; }
+        .expense { color: #ff4d4d; }
 
-.bottom-nav div{
-  text-align:center;
-  font-size:12px;
-  color:#888;
-  cursor:pointer;
-}
+        .btn-del-small { 
+            background: none; border: none; color: rgba(255,255,255,0.4); 
+            cursor: pointer; margin-left: 15px; transition: 0.3s;
+        }
+        .btn-del-small:hover { color: #ff4d4d; }
 
-.bottom-nav .active{
-  color:#5b3df5;
-  font-weight:600;
-}
-</style>
+        /* FLOATING ACTION BUTTON */
+        .fab {
+            position: fixed; bottom: 100px; right: 30px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #fff; color: #764ba2;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 100;
+        }
+
+        /* BOTTOM NAV (Mobile) */
+        .bottom-nav{
+            position: fixed; bottom: 20px; left: 20px; right: 20px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
+            display: none; justify-content: space-around; padding: 12px; z-index: 1000;
+        }
+
+        @media(max-width: 768px){
+            .sidebar{ display: none; }
+            .content{ margin-left: 0; padding: 20px; }
+            .bottom-nav{ display: flex; }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="header">📊 Transaction Records</div>
+<div class="app">
+    <aside class="sidebar">
+        <div style="padding: 10px; text-align: center;">
+            <h3 style="letter-spacing: 1px;">SURJYA ADMIN</h3>
+        </div>
+        <ul class="menu">
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
+            <li onclick="go('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
+            <li class="active"><i class="fa-solid fa-chart-pie"></i> Records</li>
+            <li onclick="go('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
+            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+        </ul>
+    </aside>
 
-<div class="summary">
-  Total Balance
-  <div class="balance" id="balance">₹ 0</div>
+    <main class="content">
+        <header class="top-header">
+            <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <h2>📊 Cash Flow</h2>
+            <div style="width: 40px;"></div>
+        </header>
+
+        <div class="summary-card">
+            <h3>Net Profit / Balance</h3>
+            <div class="balance" id="balanceDisplay">₹ 0</div>
+        </div>
+
+        <div class="records-container" id="recordList">
+            </div>
+    </main>
+
+    <div class="fab" onclick="addManualRecord()">
+        <i class="fa-solid fa-plus"></i>
+    </div>
 </div>
 
-<div id="recordList"></div>
-
-<!-- Bottom Nav -->
-<div class="bottom-nav">
-  <div onclick="go('index.html')">🏠<br>Home</div>
-  <div onclick="go('clients.html')">👥<br>Clients</div>
-  <div onclick="go('inventory.html')">📦<br>Inventory</div>
-  <div onclick="go('orders.html')">📋<br>Orders</div>
-  <div class="active">📊<br>Records</div>
-</div>
+<nav class="bottom-nav">
+    <div onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i></div>
+    <div onclick="go('invoice.html')"><i class="fa-solid fa-receipt"></i></div>
+    <div style="color: #fff;"><i class="fa-solid fa-chart-pie"></i></div>
+    <div onclick="go('clients.html')"><i class="fa-solid fa-users"></i></div>
+</nav>
 
 <script>
-let records = [
-  {title:"Invoice #1023", amount:2000},
-  {title:"Purchase Order #55", amount:-1500}
-];
+    /* 🔐 SESSION PROTECTION */
+    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
 
-function render(){
-  let list = document.getElementById("recordList");
-  let balance = 0;
-  list.innerHTML = "";
+    // Load Records from LocalStorage
+    let records = JSON.parse(localStorage.getItem("bakeryRecords")) || [
+        {title: "Invoice #SB-101", amount: 2000, date: "2024-05-20", type: "income"},
+        {title: "Raw Material Purchase", amount: -1500, date: "2024-05-19", type: "expense"}
+    ];
 
-  records.forEach((r,index)=>{
-    balance += r.amount;
+    function render(){
+        const list = document.getElementById("recordList");
+        let totalBalance = 0;
+        list.innerHTML = "";
 
-    list.innerHTML += `
-    <div class="record">
-      <div>
-        <div class="title">${r.title}</div>
-        <button class="delete" onclick="deleteRecord(${index})">Delete</button>
-      </div>
-      <div class="amount ${r.amount>=0 ? 'green':'red'}">
-        ${r.amount>=0?'+':''} ₹ ${r.amount}
-      </div>
-    </div>
-    `;
-  });
+        // Sort: Newest transaction first
+        records.sort((a,b) => new Date(b.date) - new Date(a.date));
 
-  document.getElementById("balance").innerText = "₹ " + balance;
-}
+        records.forEach((r, index) => {
+            totalBalance += r.amount;
+            const isIncome = r.amount >= 0;
 
-function deleteRecord(index){
-  if(confirm("Delete this record?")){
-    records.splice(index,1);
+            list.innerHTML += `
+                <div class="record-item">
+                    <div class="record-info">
+                        <h4>${r.title}</h4>
+                        <span><i class="fa-regular fa-calendar"></i> ${r.date}</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div class="amount-tag ${isIncome ? 'income' : 'expense'}">
+                            ${isIncome ? '+' : ''} ₹${r.amount.toLocaleString()}
+                        </div>
+                        <button class="btn-del-small" onclick="deleteRecord(${index})">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        document.getElementById("balanceDisplay").innerText = "₹ " + totalBalance.toLocaleString();
+        document.getElementById("balanceDisplay").style.color = totalBalance >= 0 ? "#2ecc71" : "#ff4d4d";
+        
+        localStorage.setItem("bakeryRecords", JSON.stringify(records));
+    }
+
+    function addManualRecord(){
+        const title = prompt("Entry Name (e.g. Electricity Bill or Shop Sales):");
+        if(!title) return;
+        
+        const amount = prompt("Enter Amount (Use '-' for Expense, e.g. -500):");
+        if(amount === null) return;
+
+        const entry = {
+            title: title,
+            amount: parseFloat(amount) || 0,
+            date: new Date().toISOString().split('T')[0],
+            type: parseFloat(amount) >= 0 ? "income" : "expense"
+        };
+
+        records.push(entry);
+        render();
+    }
+
+    function deleteRecord(index){
+        if(confirm("Delete this transaction?")){
+            records.splice(index, 1);
+            render();
+        }
+    }
+
+    function go(page){ window.location.href = page; }
+    
+    function logout() {
+        localStorage.removeItem("loggedIn");
+        window.location.replace("index.html");
+    }
+
     render();
-  }
-}
-
-function go(page){
-  window.location.href = page;
-}
-
-render();
 </script>
 
 </body>

@@ -2,88 +2,145 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Surjya Bakery - Reset PIN</title>
 
 <style>
 *{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system,BlinkMacSystemFont,sans-serif;
 }
 
 body{
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:linear-gradient(135deg,#ff9966,#ff5e62);
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);
+background-size:400% 400%;
+animation:bgMove 12s ease infinite;
+color:white;
+position:relative;
+overflow:hidden;
 }
 
+@keyframes bgMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+/* Glow effect */
+body::before, body::after{
+content:"";
+position:absolute;
+width:350px;
+height:350px;
+background:rgba(255,255,255,0.12);
+border-radius:50%;
+filter:blur(100px);
+z-index:0;
+}
+
+body::before{top:-120px;left:-120px;}
+body::after{bottom:-120px;right:-120px;}
+
+/* RESET BOX */
 .reset-box{
-  background:white;
-  padding:40px 25px;
-  border-radius:22px;
-  text-align:center;
-  width:320px;
-  box-shadow:0 20px 40px rgba(0,0,0,0.15);
+position:relative;
+z-index:1;
+width:340px;
+padding:40px 25px;
+border-radius:28px;
+backdrop-filter:blur(30px);
+background:rgba(255,255,255,0.18);
+border:1px solid rgba(255,255,255,0.3);
+text-align:center;
+box-shadow:0 20px 45px rgba(0,0,0,0.35);
+animation:fadeUp 0.7s ease;
+}
+
+@keyframes fadeUp{
+from{opacity:0;transform:translateY(30px);}
+to{opacity:1;transform:translateY(0);}
 }
 
 h2{
-  margin-bottom:25px;
-  color:#ff5e62;
-  font-weight:700;
+margin-bottom:25px;
+font-weight:700;
+font-size:22px;
 }
 
+/* INPUTS */
 input{
-  width:100%;
-  padding:13px;
-  margin:8px 0;
-  border-radius:14px;
-  border:2px solid #eee;
-  outline:none;
-  font-size:15px;
-  transition:0.2s;
+width:100%;
+padding:14px;
+margin:8px 0;
+border-radius:16px;
+border:none;
+outline:none;
+font-size:15px;
+background:rgba(255,255,255,0.25);
+color:white;
+transition:0.3s;
+}
+
+input::placeholder{
+color:rgba(255,255,255,0.8);
 }
 
 input:focus{
-  border-color:#ff5e62;
-  box-shadow:0 0 8px rgba(255,94,98,0.3);
+background:rgba(255,255,255,0.35);
+box-shadow:0 0 12px rgba(255,255,255,0.3);
 }
 
+/* BUTTONS */
 button{
-  width:100%;
-  padding:13px;
-  margin-top:10px;
-  border:none;
-  border-radius:14px;
-  background:linear-gradient(135deg,#ff9966,#ff5e62);
-  color:white;
-  font-size:15px;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.3s;
+width:100%;
+padding:14px;
+margin-top:10px;
+border:none;
+border-radius:16px;
+font-size:15px;
+font-weight:600;
+cursor:pointer;
+transition:0.3s;
 }
 
-button:hover{
-  opacity:0.9;
+button:first-of-type{
+background:rgba(46,204,113,0.9);
+color:white;
+}
+
+button:first-of-type:active{
+transform:scale(0.95);
 }
 
 .back-btn{
-  background:#ccc;
-  color:#333;
+background:rgba(255,255,255,0.25);
+color:white;
 }
 
+.back-btn:active{
+transform:scale(0.95);
+}
+
+/* MESSAGE */
 .message{
-  margin-top:12px;
-  font-size:13px;
-  min-height:18px;
+margin-top:14px;
+font-size:13px;
+min-height:18px;
 }
 
-.success{ color:green; }
-.error{ color:#e74c3c; }
+.success{
+color:#2ecc71;
+}
 
+.error{
+color:#ff4d4d;
+}
 </style>
 </head>
 
@@ -110,7 +167,6 @@ from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
   authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -124,7 +180,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const message = document.getElementById("message");
 
-/* 🔄 SAVE PIN FUNCTION */
 window.savePin = async function(){
 
   const oldPinValue = document.getElementById("oldPin").value.trim();
@@ -133,7 +188,7 @@ window.savePin = async function(){
 
   message.className="message";
   message.innerText="Checking...";
-  message.style.color="#555";
+  message.style.color="#ccc";
 
   if(newPinValue.length !== 4){
     showError("PIN must be 4 digits");
@@ -181,7 +236,6 @@ function showError(text){
   message.innerText=text;
 }
 
-/* 🔙 BACK BUTTON */
 window.goBack = function(){
   window.location.replace("index.html");
 };
