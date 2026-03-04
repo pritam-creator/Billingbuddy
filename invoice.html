@@ -21,7 +21,6 @@ color:#fff;min-height:100vh;
 50%{background-position:100% 50%;}
 100%{background-position:0% 50%;}
 }
-
 .app{display:flex;min-height:100vh;}
 .sidebar{
 width:260px;
@@ -33,7 +32,6 @@ position:fixed;
 height:100%;
 }
 .content{flex:1;padding:25px;margin-left:260px;}
-
 .glass-card{
 background:rgba(255,255,255,0.15);
 backdrop-filter:blur(20px);
@@ -42,7 +40,6 @@ border-radius:20px;
 padding:20px;
 margin-bottom:20px;
 }
-
 input{
 width:100%;
 padding:12px;
@@ -53,17 +50,14 @@ color:white;
 outline:none;
 margin-top:5px;
 }
-
 .grid-input{
 display:grid;
 grid-template-columns:2fr 1fr 1fr auto;
 gap:10px;
 align-items:end;
 }
-
 table{width:100%;border-collapse:collapse;}
 th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);}
-
 .btn-main{
 width:100%;
 padding:14px;
@@ -73,7 +67,6 @@ font-weight:bold;
 cursor:pointer;
 margin-top:10px;
 }
-
 @media(max-width:768px){
 .sidebar{display:none;}
 .content{margin-left:0;padding:15px;}
@@ -110,7 +103,7 @@ margin-top:10px;
 <input id="iName" placeholder="Item Name">
 <input id="iQty" type="number" placeholder="Qty">
 <input id="iPrice" type="number" placeholder="Price">
-<button class="btn-main" style="background:#2ecc71;margin:0;width:50px;" onclick="add()">
+<button class="btn-main" style="background:#2ecc71;margin:0;" onclick="addItem()">
 <i class="fa-solid fa-plus"></i>
 </button>
 </div>
@@ -121,6 +114,7 @@ margin-top:10px;
 <tr>
 <th>Item</th>
 <th>Qty</th>
+<th>Price</th>
 <th>Total</th>
 <th>Action</th>
 </tr>
@@ -147,33 +141,59 @@ margin-top:10px;
 let items=[];
 let invNo="NSB-"+Math.floor(1000+Math.random()*9000);
 
-function add(){
-const n=iName.value.trim();
+const custName=document.getElementById("custName");
+const custAddr=document.getElementById("custAddr");
+const iName=document.getElementById("iName");
+const iQty=document.getElementById("iQty");
+const iPrice=document.getElementById("iPrice");
+const tableBody=document.getElementById("tableBody");
+const totalText=document.getElementById("totalText");
+
+function addItem(){
+const name=iName.value.trim();
 const qty=parseFloat(iQty.value);
 const price=parseFloat(iPrice.value);
-if(!n||!qty||!price)return;
 
-items.push({name:n,qty:qty,price:price,total:qty*price});
+if(!name || isNaN(qty) || isNaN(price) || qty<=0 || price<=0){
+alert("Enter valid item details");
+return;
+}
+
+items.push({name,qty,price,total:qty*price});
 render();
-iName.value="";iQty.value="";iPrice.value="";
+
+iName.value="";
+iQty.value="";
+iPrice.value="";
 }
 
 function render(){
-let g=0;
+let grand=0;
 tableBody.innerHTML="";
-items.forEach((it,i)=>{
-g+=it.total;
+
+items.forEach((it,index)=>{
+grand+=it.total;
+
 tableBody.innerHTML+=`
 <tr>
 <td>${it.name}</td>
 <td>${it.qty}</td>
+<td>₹${it.price.toFixed(2)}</td>
 <td>₹${it.total.toFixed(2)}</td>
-<td onclick="if(confirm('Remove item?')){items.splice(${i},1);render();}">
+<td onclick="removeItem(${index})">
 <i class="fa-solid fa-trash" style="color:red;cursor:pointer;"></i>
 </td>
 </tr>`;
 });
-totalText.innerText=g.toFixed(2);
+
+totalText.innerText=grand.toFixed(2);
+}
+
+function removeItem(index){
+if(confirm("Remove item?")){
+items.splice(index,1);
+render();
+}
 }
 
 async function sharePDF(){
@@ -184,23 +204,29 @@ if(!custName.value.trim())return alert("Enter client name!");
 const {jsPDF}=window.jspdf;
 const doc=new jsPDF();
 const pageWidth=doc.internal.pageSize.getWidth();
+const pageHeight=doc.internal.pageSize.getHeight();
 
-// HEADER BACKGROUND
+// Header
 doc.setFillColor(72,187,180);
 doc.rect(0,0,pageWidth,60,'F');
 
-// LOGO
+// Safe Logo Load
+try{
 const img=new Image();
 img.src="logo.png";
-await new Promise(resolve=>{img.onload=resolve;});
+await new Promise((resolve,reject)=>{
+img.onload=resolve;
+img.onerror=reject;
+});
 doc.addImage(img,'PNG',150,10,40,40);
+}catch(e){}
 
-// TITLE
+// Title
 doc.setFontSize(28);
 doc.setTextColor(255);
 doc.text("INVOICE",20,35);
 
-// COMPANY INFO
+// Company Info
 doc.setTextColor(0);
 doc.setFontSize(11);
 doc.text("New Surjya Bakery",20,75);
@@ -210,14 +236,14 @@ doc.text("Phone: 7085662649",20,89);
 doc.text("Invoice No: "+invNo,140,75);
 doc.text("Date: "+new Date().toLocaleDateString(),140,82);
 
-// BILL TO
+// Bill To
 doc.setFont(undefined,'bold');
 doc.text("Bill To:",20,105);
 doc.setFont(undefined,'normal');
 doc.text(custName.value,20,112);
 doc.text(custAddr.value||"",20,119);
 
-// TABLE
+// Table
 let y=135;
 doc.setFont(undefined,'bold');
 doc.text("Item",20,y);
@@ -241,9 +267,10 @@ doc.setFont(undefined,'bold');
 doc.setFontSize(14);
 doc.text("Grand Total: ₹ "+totalText.innerText,120,y);
 
-doc.setFontSize(16);
+// Footer dynamic
+doc.setFontSize(14);
 doc.setTextColor(100);
-doc.text("Thank You For Your Business!",20,280);
+doc.text("Thank You For Your Business!",20,pageHeight-10);
 
 doc.save("New_Surjya_Bakery_Invoice.pdf");
 }
