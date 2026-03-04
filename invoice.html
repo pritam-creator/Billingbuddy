@@ -9,9 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        /* ===== GLOBAL THEME ===== */
+        /* GLOBAL THEME */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        
         body{
             background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
             background-size: 400% 400%;
@@ -19,65 +18,29 @@
             color: #fff; min-height: 100vh;
         }
 
-        /* ❌ NO-ZOOM CSS: Har input 16px hona chaiye ❌ */
-        input, select, textarea, button {
-            font-size: 16px !important; 
-            touch-action: manipulation;
-        }
+        /* ZOOM PREVENTION */
+        input, select, textarea, button { font-size: 16px !important; touch-action: manipulation; }
 
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-
         .app{ display: flex; min-height: 100vh; }
-
-        /* SIDEBAR */
-        .sidebar{
-            width: 260px; backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.08);
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding: 20px 15px; display: flex; flex-direction: column;
-            position: fixed; height: 100%; z-index: 1000;
-        }
-
-        /* MAIN CONTENT */
+        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; position: fixed; height: 100%; z-index: 1000; }
         .content{ flex: 1; padding: 25px; margin-left: 260px; }
+        .glass-card{ background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: none; background: rgba(255,255,255,0.2); color: white; outline: none; margin-top: 5px; }
 
-        .glass-card{
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 20px;
-            padding: 20px; margin-bottom: 20px;
-        }
-
-        input {
-            width: 100%; padding: 12px; border-radius: 10px; border: none;
-            background: rgba(255,255,255,0.2); color: white; outline: none; margin-top: 5px;
-        }
-
-        /* Design Selector */
+        /* TPL SELECTOR */
         .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .tpl-btn { 
-            padding: 10px; background: rgba(255,255,255,0.1); border: 2px solid transparent;
-            border-radius: 12px; text-align: center; cursor: pointer; font-size: 13px;
-        }
+        .tpl-btn { padding: 10px; background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 12px; text-align: center; cursor: pointer; font-size: 13px; }
         .tpl-btn.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.2); }
-
         .grid-input{ display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
-        
         table{ width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td{ padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
-
         .btn-main{ width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .save-btn{ background: #3498db; color: white; }
-        .share-btn{ background: #fff; color: #764ba2; }
-
-        @media(max-width: 768px){
-            .sidebar{ display: none; }
-            .content{ margin-left: 0; padding: 15px; }
-            .grid-input{ grid-template-columns: 1fr; }
-        }
+        
+        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 15px; } .grid-input{ grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-
 <div class="app">
     <aside class="sidebar">
         <h3 style="text-align: center; margin-bottom: 30px;">SURJYA BAKERY</h3>
@@ -88,41 +51,30 @@
     </aside>
 
     <main class="content">
-        <h2 style="margin-bottom: 20px;">Create Invoice</h2>
-
-        <p style="font-size: 14px; margin-bottom: 10px; opacity: 0.9;">Choose PDF Style:</p>
+        <h2 style="margin-bottom: 20px;">Professional Invoice</h2>
         <div class="tpl-grid">
-            <div class="tpl-btn active" onclick="setTpl('bluesky', this)">BlueSky</div>
+            <div class="tpl-btn active" onclick="setTpl('bluesky', this)">BlueSky (Modern)</div>
             <div class="tpl-btn" onclick="setTpl('classic', this)">East Repair</div>
-            <div class="tpl-btn" onclick="setTpl('simple', this)">Simple</div>
+            <div class="tpl-btn" onclick="setTpl('abstract', this)">Minimalist</div>
         </div>
 
-        <div class="glass-card">
-            <input id="custName" placeholder="Client Name">
-            <input id="custAddr" placeholder="Client Address">
-        </div>
-
+        <div class="glass-card"><input id="custName" placeholder="Client Name"><input id="custAddr" placeholder="Client Address"></div>
         <div class="glass-card grid-input">
-            <div><input id="iName" placeholder="Item"></div>
-            <div><input id="iQty" type="number" placeholder="Qty"></div>
-            <div><input id="iPrice" type="number" placeholder="Price"></div>
+            <input id="iName" placeholder="Item Name">
+            <input id="iQty" type="number" placeholder="Qty">
+            <input id="iPrice" type="number" placeholder="Price">
             <button class="btn-main" style="background:#2ecc71; margin:0; width:50px;" onclick="add()"><i class="fa-solid fa-plus"></i></button>
         </div>
 
         <div class="glass-card" style="padding: 0; overflow: hidden;">
-            <table>
-                <thead><tr style="background: rgba(255,255,255,0.1);"><th>Item</th><th>Qty</th><th>Total</th><th></th></tr></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
+            <table><tbody id="tableBody"></tbody></table>
         </div>
 
         <div style="max-width: 400px; margin-left: auto;">
             <div class="glass-card" style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold;">
-                <span>Grand Total:</span>
-                <span>₹ <span id="totalText">0</span></span>
+                <span>Grand Total:</span><span>₹ <span id="totalText">0</span></span>
             </div>
-            <button class="btn-main save-btn" onclick="save()">Save to Records</button>
-            <button class="btn-main share-btn" onclick="sharePDF()"><i class="fa-solid fa-share-nodes"></i> Share Professional PDF</button>
+            <button class="btn-main share-btn" style="background: white; color: black;" onclick="sharePDF()"><i class="fa-solid fa-share-nodes"></i> Share Professional PDF</button>
         </div>
     </main>
 </div>
@@ -130,79 +82,61 @@
 <script>
     let items = [];
     let template = 'bluesky';
-    let invNo = Math.floor(1000 + Math.random() * 9000);
+    let invNo = "SB-" + Math.floor(1000 + Math.random() * 9000);
 
-    function setTpl(t, el) {
-        template = t;
-        document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-    }
+    function setTpl(t, el) { template = t; document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active')); el.classList.add('active'); }
 
     function add() {
-        const n = document.getElementById("iName").value;
-        const q = document.getElementById("iQty").value;
-        const p = document.getElementById("iPrice").value;
+        const n = document.getElementById("iName").value, q = document.getElementById("iQty").value, p = document.getElementById("iPrice").value;
         if(!n || !q || !p) return;
-        items.push({ name: n, qty: q, price: p, total: q*p });
-        render();
+        items.push({ name: n, qty: q, price: p, total: q*p }); render();
         document.getElementById("iName").value = ""; document.getElementById("iQty").value = ""; document.getElementById("iPrice").value = "";
     }
 
     function render() {
-        const body = document.getElementById("tableBody");
-        body.innerHTML = "";
-        let grand = 0;
-        items.forEach((item, i) => {
-            grand += item.total;
-            body.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total}</td><td onclick="items.splice(${i},1);render()"><i class="fa-solid fa-trash" style="color:#ff4d6d"></i></td></tr>`;
-        });
-        document.getElementById("totalText").innerText = grand;
+        const b = document.getElementById("tableBody"); b.innerHTML = "";
+        let g = 0;
+        items.forEach((it, i) => { g += it.total; b.innerHTML += `<tr><td>${it.name}</td><td>${it.qty}</td><td>₹${it.total}</td><td onclick="items.splice(${i},1);render()"><i class="fa-solid fa-trash" style="color:red"></i></td></tr>`; });
+        document.getElementById("totalText").innerText = g;
     }
 
     async function sharePDF() {
-        if(items.length === 0) return alert("Add items first");
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const client = document.getElementById("custName").value || "Valued Customer";
-        const addr = document.getElementById("custAddr").value || "San Francisco, CA";
+        if(items.length === 0) return alert("Items empty!");
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        const client = document.getElementById("custName").value || "Customer";
+        const addr = document.getElementById("custAddr").value || "Client Address";
 
-        if(template === 'bluesky') {
-            // BlueSky Design (Teal Gradient Header)
-            doc.setFillColor(72, 209, 204); doc.rect(0, 0, 210, 50, 'F');
-            doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.text("INVOICE", 20, 25);
-            doc.setFontSize(10); doc.text("INVOICE NO: " + invNo, 20, 35); doc.text("DATE: " + new Date().toLocaleDateString(), 20, 40);
-            doc.text("BlueSky Creations\n789 Horizon Road\n(555) 234-5678", 140, 20);
-            doc.setTextColor(0, 0, 0); doc.text("INVOICE TO:\n" + client + "\n" + addr, 20, 65);
-        } 
-        else if(template === 'classic') {
-            // East Repair Design (Stars and Clean)
+        if(template === 'bluesky') { // BlueSky Reference
+            doc.setFillColor(79, 209, 197); doc.rect(0, 0, 210, 50, 'F');
+            doc.setTextColor(255); doc.setFontSize(26); doc.text("INVOICE", 20, 25);
+            doc.setFontSize(10); doc.text(`NO: ${invNo}`, 20, 35);
+            doc.text("Surjya Bakery\n789 Bakery Lane\nSeaside, India", 140, 20);
+            doc.setTextColor(0); doc.text(`INVOICE TO:\n${client}\n${addr}`, 20, 65);
+        } else if(template === 'classic') { // East Repair Reference
             doc.setFontSize(30); doc.setTextColor(40, 44, 91); doc.text("INVOICE", 20, 25);
-            doc.setFontSize(10); doc.setTextColor(0,0,0); doc.text("East Repair Inc.\n1912 Harvest Lane\nNew York, NY", 20, 35);
-            doc.text("INVOICE #: US-" + invNo + "\nDATE: " + new Date().toLocaleDateString(), 140, 35);
+            doc.setFontSize(10); doc.setTextColor(0); doc.text("Surjya Bakery Inc.\n1912 Harvest Lane\nNew Delhi", 20, 35);
+            doc.text(`INVOICE #: ${invNo}\nDATE: ${new Date().toLocaleDateString()}`, 140, 35);
             doc.text("****************************************************************************************************", 20, 55);
-            doc.setFont(undefined, 'bold'); doc.text("BILL TO:", 20, 65); doc.setFont(undefined, 'normal'); doc.text(client + "\n" + addr, 20, 70);
+            doc.text(`BILL TO: ${client}\n${addr}`, 20, 70);
+        } else { // Abstract Minimal
+            doc.setFillColor(235, 220, 180); doc.circle(200, 0, 80, 'F');
+            doc.setFontSize(22); doc.text("INVOICE", 20, 30);
+            doc.setFontSize(10); doc.text(`BILLED TO:\n${client}\n${addr}`, 130, 40);
         }
 
         let y = 95;
-        doc.setFont(undefined, 'bold'); doc.text("Description", 20, y); doc.text("Qty", 100, y); doc.text("Price", 140, y); doc.text("Total", 180, y);
+        doc.setFont(undefined, 'bold'); doc.text("Description", 20, y); doc.text("Qty", 100, y); doc.text("Total", 170, y);
         doc.line(20, y+2, 190, y+2);
-        
         doc.setFont(undefined, 'normal');
-        items.forEach(it => {
-            y += 10; doc.text(it.name, 20, y); doc.text(it.qty.toString(), 100, y); doc.text(it.price.toString(), 140, y); doc.text(it.total.toString(), 180, y);
-        });
-
-        doc.line(20, y+5, 190, y+5);
-        doc.setFontSize(14); doc.setFont(undefined, 'bold');
-        doc.text("TOTAL: Rs. " + document.getElementById("totalText").innerText, 140, y + 20);
+        items.forEach(it => { y += 10; doc.text(it.name, 20, y); doc.text(it.qty.toString(), 100, y); doc.text("Rs. "+it.total, 170, y); });
         
-        doc.setFontSize(18); doc.text("Thank You", 20, y + 40);
-
+        doc.setFont(undefined, 'bold'); doc.setFontSize(14); doc.text("TOTAL: Rs. " + document.getElementById("totalText").innerText, 130, y + 20);
+        
         const pdfBlob = doc.output('blob');
-        const file = new File([pdfBlob], `Invoice_${invNo}.pdf`, { type: 'application/pdf' });
+        const file = new File([pdfBlob], "Invoice.pdf", { type: 'application/pdf' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'Invoice', text: 'Surjya Bakery Bill' });
-        } else { doc.save(`Invoice_${invID}.pdf`); }
+            await navigator.share({ files: [file], title: 'Invoice' });
+        } else { doc.save("Invoice.pdf"); }
     }
 </script>
 </body>
