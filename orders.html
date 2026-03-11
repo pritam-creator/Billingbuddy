@@ -1,268 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-
-    <title>Orders - Surjya Bakery</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Orders Cloud - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ===== CONSISTENT THEME ===== */
+        /* (Styles same as your provided CSS for brand consistency) */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-
-        body{
-            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-            background-size: 400% 400%;
-            animation: bgMove 15s ease infinite;
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
-        }
-
+        body{ background: linear-gradient(135deg,#1e293b,#0f172a,#1e1b4b); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-
         .app{ display: flex; height: 100vh; }
+        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px 15px; display: flex; flex-direction: column; }
+        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
+        .logo{ width: 40px; height: 40px; border-radius: 10px; }
+        .menu{ list-style: none; flex-grow: 1; }
+        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; cursor: pointer; opacity: 0.7; font-size: 14px; margin-bottom: 5px; }
+        .menu li:hover, .menu li.active{ background: #3b82f6; opacity: 1; }
+        .content{ flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .top-header{ width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        .header-main { display: flex; justify-content: space-between; align-items: center; }
+        .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+        .stat-card { background: rgba(30, 41, 59, 0.7); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-card span { font-size: 10px; color: #94a3b8; text-transform: uppercase; display: block; }
+        .tabs { display: flex; gap: 8px; overflow-x: auto; width: 100%; scrollbar-width: none; }
+        .tab { background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 12px; font-size: 13px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
+        .tab.active { background: #3b82f6; border-color: #3b82f6; font-weight: bold; }
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; width: 100%; max-width: 900px; }
+        .order-card{ background: rgba(30, 41, 59, 0.7); padding: 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .order-total { font-size: 24px; font-weight: 800; margin: 10px 0; color: #fff; }
+        .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .btn { padding: 10px 5px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .status-badge { font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: 50px; text-transform: uppercase; }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-preparing { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .status-delivered { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 
-        /* SIDEBAR (Desktop Only) */
-        .sidebar{
-            width: 260px;
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.08);
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding: 20px 15px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100%;
-            transition: 0.3s ease;
-            z-index: 1000;
-        }
-
-        .menu{ list-style: none; margin-top: 20px; }
-        .menu li{
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
-        }
-        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
-        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
-
-        /* MAIN CONTENT */
-        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 120px; }
-
-        /* HEADER */
-       .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        /* ORDER GRID */
-        .orders-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 20px; 
-        }
-
-        /* ORDER CARD */
-        .order-card{
-            background: rgba(255,255,255,0.12);
-            padding: 20px;
-            border-radius: 22px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            animation: fadeUp 0.5s ease;
-            position: relative;
-        }
-
-        @keyframes fadeUp{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
-
-        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        .order-id { font-weight: 800; font-size: 18px; color: #fff; }
-        .order-date { font-size: 11px; opacity: 0.6; display: block; margin-top: 4px; }
-
-        /* STATUS BADGES */
-        .status-badge {
-            font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 50px; text-transform: uppercase;
-        }
-        .status-pending { background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.4); }
-        .status-preparing { background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.4); }
-        .status-delivered { background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4); }
-
-        .order-total { font-size: 20px; font-weight: 700; margin: 15px 0; color: #fff; }
-
-        /* ACTIONS */
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { 
-            padding: 10px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; 
-            transition: 0.3s; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        .btn-view { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-status { background: #3498db; color: white; }
-        .btn-delete { background: rgba(231, 76, 60, 0.2); color: #ff6b81; grid-column: span 2; }
-        .btn:active { transform: scale(0.95); }
-
-        /* EMPTY STATE */
-        .empty-state { grid-column: 1/-1; text-align: center; padding: 100px 0; opacity: 0.5; }
-        .empty-state i { font-size: 60px; margin-bottom: 15px; }
-
-        /* BOTTOM NAV (Mobile Only) */
-        .bottom-nav{
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(25px);
-            border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
-            display: none; justify-content: space-around; padding: 12px; z-index: 1000;
-        }
-        .nav-item { text-align: center; color: white; opacity: 0.6; cursor: pointer; font-size: 20px; }
-        .nav-item.active { opacity: 1; }
-
-        @media(max-width: 768px){
-            .sidebar{ display: none; }
-            .content{ margin-left: 0; padding: 20px; }
-            .bottom-nav{ display: flex; }
-        }
+        /* INVOICE MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #fff; color: #333; width: 100%; max-width: 400px; border-radius: 15px; overflow: hidden; position: relative; }
+        .invoice-body { padding: 25px; font-size: 14px; }
+        .invoice-header { text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 15px; }
+        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 15px; } .orders-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
-
 <body>
 
 <div class="app">
     <aside class="sidebar">
-        <div style="padding: 10px; text-align: center;">
-            <h3 style="letter-spacing: 1px;">SURJYA BAKERY</h3>
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>Order Manager</p></div>
         </div>
         <ul class="menu">
             <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
             <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
-            <li onclick="go('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
-            <li class="active"><i class="fa-solid fa-list"></i> Orders</li>
-            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+            <li onclick="go('pos.html')"><i class="fa-solid fa-receipt"></i> Billing</li>
+            <li class="active"><i class="fa-solid fa-list-check"></i> Orders</li>
+            <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <button class="back-btn" onclick="go('dashboard.html')">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-            <h2>📋 Manage Orders</h2>
-            <div style="width: 40px;"></div> 
+            <div class="header-main">
+                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 style="font-size: 18px;">Manage Cloud Orders</h2>
+                <div></div>
+            </div>
+            
+            <div class="stats-bar">
+                <div class="stat-card"><span>Total</span><b id="statToday">0</b></div>
+                <div class="stat-card"><span>Live</span><b id="statPending" style="color:#f59e0b">0</b></div>
+                <div class="stat-card"><span>Revenue</span><b id="statTotal">₹0</b></div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="filterBy('All', this)">All</div>
+                <div class="tab" onclick="filterBy('Pending', this)">Pending</div>
+                <div class="tab" onclick="filterBy('Preparing', this)">Preparing</div>
+                <div class="tab" onclick="filterBy('Delivered', this)">Delivered</div>
+            </div>
         </header>
 
-        <div class="orders-grid" id="ordersList">
-            </div>
+        <div class="orders-grid" id="ordersList"></div>
     </main>
 </div>
 
-<nav class="bottom-nav">
-    <div class="nav-item" onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i></div>
-    <div class="nav-item" onclick="go('items.html')"><i class="fa-solid fa-box"></i></div>
-    <div class="nav-item active"><i class="fa-solid fa-list"></i></div>
-    <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
-</nav>
+<div id="invoiceModal" class="modal">
+    <div class="modal-content">
+        <div class="invoice-body" id="invoiceData"></div>
+        <button style="width:100%; padding:15px; border:none; background:#333; color:white; font-weight:bold; cursor:pointer;" onclick="window.print()">Print Invoice</button>
+        <button style="width:100%; padding:10px; border:none; background:#eee; cursor:pointer;" onclick="closeInvoice()">Close</button>
+    </div>
+</div>
 
 <script>
-    /* 🔐 SESSION PROTECTION */
-    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    function getOrders(){
-        return JSON.parse(localStorage.getItem("orders")) || [];
+    let currentFilter = "All";
+
+    // --- LIVE SYNC ORDERS ---
+    function init() {
+        db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+            renderOrders(snap);
+        });
     }
 
-    function renderOrders(){
-        let orders = getOrders();
+    function renderOrders(snap) {
         const list = document.getElementById("ordersList");
-
-        if(orders.length === 0){
-            list.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-clipboard-question"></i>
-                    <h3>No orders yet</h3>
-                </div>`;
-            return;
-        }
-
         list.innerHTML = "";
-        // Sort: Newest First
-        orders.sort((a,b) => b.id - a.id);
+        
+        let countToday = 0, countLive = 0, revenue = 0;
 
-        orders.forEach((order, index) => {
+        snap.forEach(doc => {
+            const order = doc.data();
+            const id = doc.id;
             const status = order.status || "Pending";
-            let statusClass = "status-pending";
-            if(status === "Preparing") statusClass = "status-preparing";
-            if(status === "Delivered") statusClass = "status-delivered";
+            const total = parseFloat(order.total) || 0;
+
+            // Stats Logic
+            countToday++;
+            if(status !== "Delivered") countLive++;
+            revenue += total;
+
+            // Filter Logic
+            if(currentFilter !== "All" && status !== currentFilter) return;
+
+            const statusClass = status === "Preparing" ? "status-preparing" : (status === "Delivered" ? "status-delivered" : "status-pending");
 
             const card = document.createElement("div");
-            card.className = "order-card";
+            card.className = `order-card`;
             card.innerHTML = `
-                <div class="order-header">
-                    <div>
-                        <span class="order-id">#${order.id}</span>
-                        <span class="order-date">${order.date || 'Today'}</span>
-                    </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <div><b>#${order.orderId || id.slice(0,5)}</b><br><small style="opacity:0.6">${order.date}</small></div>
                     <span class="status-badge ${statusClass}">${status}</span>
                 </div>
-                
-                <div class="order-total">₹ ${order.total}</div>
-                
-                <div class="actions">
-                    <button class="btn btn-view" onclick="viewOrder('${order.id}')">
-                        <i class="fa-solid fa-eye"></i> View
-                    </button>
-                    <button class="btn btn-status" onclick="changeStatus('${order.id}')">
-                        <i class="fa-solid fa-rotate"></i> Next Step
-                    </button>
-                    <button class="btn btn-delete" onclick="deleteOrder('${order.id}')">
-                        <i class="fa-solid fa-trash"></i> Delete Order
-                    </button>
-                </div>
-            `;
+                <div class="order-total">₹ ${total.toFixed(2)}</div>
+                <div class="order-actions">
+                    <button class="btn" style="background:rgba(255,255,255,0.1); color:white" onclick="viewOrder('${id}')">View</button>
+                    <button class="btn" style="background:#3b82f6; color:white" onclick="nextStatus('${id}', '${status}')">Next</button>
+                    <button class="btn" style="background:#22c55e; color:white" onclick="sendWA('${id}')">WA</button>
+                    <button class="btn" style="background:rgba(239,68,68,0.1); color:#ef4444; grid-column:span 3" onclick="cancelOrder('${id}')">Cancel Order</button>
+                </div>`;
             list.appendChild(card);
         });
+
+        document.getElementById("statToday").innerText = countToday;
+        document.getElementById("statPending").innerText = countLive;
+        document.getElementById("statTotal").innerText = "₹" + revenue.toLocaleString();
     }
 
-    function viewOrder(id){
-        let orders = getOrders();
-        const order = orders.find(o => o.id == id);
-        if(!order) return;
-
-        let details = `📦 Order #${id}\n------------------\n`;
-        order.items.forEach(item => {
-            details += `• ${item.name} (${item.qty}) - ₹${item.price * item.qty}\n`;
-        });
-        details += `\nTotal: ₹${order.total}`;
-        alert(details);
-    }
-
-    function changeStatus(id){
-        let orders = getOrders();
-        const orderIndex = orders.findIndex(o => o.id == id);
-        if(orderIndex === -1) return;
-
+    async function nextStatus(id, current) {
         const cycle = ["Pending", "Preparing", "Delivered"];
-        let currentStatus = orders[orderIndex].status || "Pending";
-        let nextIndex = (cycle.indexOf(currentStatus) + 1) % cycle.length;
+        let next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+        await db.collection("orders").doc(id).update({ status: next });
+    }
+
+    async function cancelOrder(id) {
+        if(confirm("Delete this order?")) await db.collection("orders").doc(id).delete();
+    }
+
+    function filterBy(status, el) {
+        currentFilter = status;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        // Snapshot will re-trigger render
+        db.collection("orders").get().then(snap => renderOrders(snap));
+    }
+
+    async function viewOrder(id) {
+        const doc = await db.collection("orders").doc(id).get();
+        const order = doc.data();
+        let itemsHTML = (order.items || []).map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align:right">₹${i.price}</td></tr>`).join('');
         
-        orders[orderIndex].status = cycle[nextIndex];
-        localStorage.setItem("orders", JSON.stringify(orders));
-        renderOrders();
+        document.getElementById("invoiceData").innerHTML = `
+            <div class="invoice-header"><h2>SURJYA BAKERY</h2><p>Cloud Invoice #${order.orderId}</p></div>
+            <table style="width:100%; margin:20px 0; border-collapse:collapse;">
+                <tr style="border-bottom:1px solid #eee"><th>Item</th><th>Qty</th><th style="text-align:right">Price</th></tr>
+                ${itemsHTML}
+            </table>
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px;">
+                <span>TOTAL</span><span>₹${order.total}</span>
+            </div>
+        `;
+        document.getElementById("invoiceModal").style.display = "flex";
     }
 
-    function deleteOrder(id){
-        if(!confirm("Delete this order forever?")) return;
-        let orders = getOrders();
-        orders = orders.filter(o => o.id != id);
-        localStorage.setItem("orders", JSON.stringify(orders));
-        renderOrders();
+    function sendWA(id) {
+        db.collection("orders").doc(id).get().then(doc => {
+            const o = doc.data();
+            window.open(`https://wa.me/?text=Surjya Bakery: Order #${o.orderId} status is now ${o.status}. Total: ₹${o.total}`);
+        });
     }
 
-    function go(page){ window.location.href = page; }
-    
-    function logout() {
-        localStorage.removeItem("loggedIn");
-        window.location.replace("index.html");
-    }
-
-    renderOrders();
+    function closeInvoice() { document.getElementById("invoiceModal").style.display = "none"; }
+    function go(p) { window.location.href = p; }
+    window.onload = init;
 </script>
-
 </body>
 </html>

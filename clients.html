@@ -1,246 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-
-    <title>Clients - New Surjya Bakery</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Clients - Surjya Bakery Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        /* ===== CONSISTENT THEME (Matches Dashboard) ===== */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-
-        body{
-            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-            background-size: 400% 400%;
-            animation: bgMove 15s ease infinite;
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
-        }
-
+        /* (Puraana Stylesheet waise hi rahega) */
+        .card:active { transform: scale(0.95); transition: 0.1s; }
+        body { animation: fadeIn 0.5s ease-in-out; background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
         .app{ display: flex; height: 100vh; }
+        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
+        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
+        .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .menu{ list-style: none; flex-grow: 1; }
+        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 14px; }
+        .menu li:hover, .menu li.active{ background: rgba(255,255,255,0.2); opacity: 1; }
+        .menu li.active{ border-left: 4px solid #fff; font-weight: bold; }
+        .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .back-btn { width: 35px; height: 35px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+        .search-container { margin-bottom: 20px; background: rgba(255,255,255,0.15); padding: 10px 15px; border-radius: 12px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.2); }
+        .search-container input { background: transparent; border: none; color: white; margin-left: 10px; outline: none; width: 100%; }
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .summary-mini{ background: rgba(255,255,255,0.12); padding: 15px; border-radius: 15px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.15); text-align: center; }
+        .summary-mini h3 { font-size: 11px; opacity: 0.7; text-transform: uppercase; margin-bottom: 5px; }
+        .summary-mini .total { font-size: 20px; font-weight: bold; color: #fff; }
+        #clientList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+        .card{ background: rgba(255,255,255,0.1); padding: 18px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 10px; transition: 0.2s; position: relative; overflow: hidden; cursor: pointer; }
+        .card::before { content: ''; position: absolute; left: 0; top: 0; width: 5px; height: 100%; }
+        .card.is-due::before { background: #ff6b81; }
+        .card.is-clear::before { background: #2ecc71; }
+        .due-tag{ font-size: 13px; font-weight: bold; padding: 5px 12px; border-radius: 8px; }
+        .pending { color: #ff6b81; background: rgba(255,107,129,0.2); }
+        .clear { color: #2ecc71; background: rgba(46,204,113,0.2); }
+        .card-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 5px; }
+        .action-btn { padding: 10px 5px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; background: rgba(255,255,255,0.1); color: white; transition: 0.2s; }
+        .btn-pay { background: #2ecc71 !important; font-weight: bold; }
+        .delete-icon { position: absolute; top: 15px; right: 10px; color: #ff6b81; cursor: pointer; opacity: 0.3; padding: 5px; z-index: 20; }
+        #fullLedgerPage { display: none; }
+        .ledger-header { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; color: #fff; }
+        .ledger-table th { text-align: left; padding: 12px; border-bottom: 2px solid rgba(255,255,255,0.2); opacity: 0.7; }
+        .ledger-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e272e; padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid rgba(255,255,255,0.1); }
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 11px; opacity: 0.6; margin-bottom: 4px; }
+        .input-group input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 10px; color: white; outline: none; }
+        .add-btn{ position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: #fff; color: #764ba2; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); cursor: pointer; z-index: 100; }
 
-        /* SIDEBAR (Desktop Only) */
-        .sidebar{
-            width: 260px;
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.08);
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding: 20px 15px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100%;
-            transition: 0.3s ease;
-            z-index: 1000;
-        }
-
-        .menu{ list-style: none; margin-top: 20px; }
-        .menu li{
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
-        }
-        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
-        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
-
-        /* MAIN CONTENT */
-        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 120px; }
-
-        /* HEADER */
-        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-
-        /* SUMMARY BOX */
-        .summary{
-            background: rgba(255,255,255,0.15);
-            padding: 25px;
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2);
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        .summary h3{ font-size: 14px; opacity: 0.8; margin-bottom: 5px; }
-        .total{ font-size: 28px; font-weight: 700; color: #fff; }
-
-        /* CLIENT CARDS */
-        #clientList { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        
-        .card{
-            background: rgba(255,255,255,0.12);
-            padding: 20px;
-            border-radius: 18px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.15);
-            transition: 0.3s;
-            position: relative;
-        }
-        .card:hover{ transform: translateY(-5px); background: rgba(255,255,255,0.18); }
-        .card h3{ font-size: 18px; margin-bottom: 10px; }
-        
-        .pending{ color: #ff6b81; font-weight: 600; background: rgba(255,107,129,0.1); padding: 4px 10px; border-radius: 6px; }
-        .clear{ color: #2ecc71; font-weight: 600; background: rgba(46,204,113,0.1); padding: 4px 10px; border-radius: 6px; }
-
-        .delete-btn{ 
-            margin-top: 15px; width: 100%; padding: 8px; border: none; 
-            background: rgba(231,76,60,0.2); color: #fff; border-radius: 8px; 
-            cursor: pointer; transition: 0.3s; 
-        }
-        .delete-btn:hover{ background: rgba(231,76,60,0.8); }
-
-        /* FLOATING ADD BUTTON */
-        .add-btn{
-            position: fixed; bottom: 100px; right: 30px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background: #fff; color: #764ba2;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            cursor: pointer; z-index: 100; transition: 0.3s;
-        }
-        .add-btn:hover{ transform: scale(1.1) rotate(90deg); }
-
-        /* BOTTOM NAV (Mobile Only) */
-        .bottom-nav{
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(25px);
-            border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
-            display: none; justify-content: space-around; padding: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000;
-        }
-        .nav-item{ text-align: center; color: white; opacity: 0.6; cursor: pointer; font-size: 20px; }
-        .nav-item.active{ opacity: 1; font-weight: bold; }
-        .nav-item span{ display: block; font-size: 10px; margin-top: 4px; }
-
-        @media(max-width: 768px){
-            .sidebar{ display: none; }
-            .content{ margin-left: 0; padding: 20px; }
-            .bottom-nav{ display: flex; }
-        }
+        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 15px; } }
     </style>
 </head>
 
 <body>
 
 <div class="app">
-    <aside class="sidebar">
-        <div style="padding: 10px; text-align: center;">
-            <h3 style="letter-spacing: 1px; font-weight: 800;">NEW SURJYA</h3>
+    <aside class="sidebar" id="adminSidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin Panel</p></div>
         </div>
         <ul class="menu">
             <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
             <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
-            <li onclick="go('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
-            <li class="active"><i class="fa-solid fa-users"></i> Clients</li>
+            <li onclick="go('cart.html')"><i class="fa-solid fa-cart-shopping"></i> Cart</li>
+            <li class="active" onclick="go('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
             <li onclick="go('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
-            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+            <li onclick="go('ledger.html')"><i class="fa-solid fa-book-bookmark"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
-        <header class="top-header">
-            <button class="back-btn" onclick="go('dashboard.html')">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </button>
-            <h2>👥 Client Directory</h2>
-            <div style="width: 40px;"></div>
-        </header>
+        <div id="adminMainView">
+            <header class="top-header">
+                <div class="header-left"><div class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-chevron-left"></i></div><h2 style="font-size: 20px;">👥 Customers</h2></div>
+            </header>
 
-        <div class="summary">
-            <h3>Total Outstanding Balance</h3>
-            <div class="total" id="totalAmount">₹ 0</div>
+            <div class="search-container">
+                <i class="fa-solid fa-magnifying-glass" style="opacity: 0.5;"></i>
+                <input type="text" id="searchInput" placeholder="Search customer..." oninput="renderLocal()">
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-mini"><h3>Total Credit</h3><div class="total" id="totalAmount">₹ 0</div></div>
+                <div class="summary-mini"><h3>Due Accounts</h3><div class="total" id="dueCount">0</div></div>
+            </div>
+
+            <div id="clientList"></div>
         </div>
 
-        <div id="clientList">
+        <div id="fullLedgerPage">
+            <header class="top-header">
+                <div class="header-left"><div class="back-btn" onclick="closeLedger()"><i class="fa-solid fa-arrow-left"></i></div><h2 id="ledgerTitle">History</h2></div>
+                <button class="action-btn btn-pay" onclick="addTransactionFromPage()" style="padding: 10px 20px;">+ Entry</button>
+            </header>
+            <div class="ledger-header">
+                <p id="ledgerPhone"></p>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Current Balance:</span><span id="ledgerBalance">₹ 0</span>
+                </div>
             </div>
+            <div style="background: rgba(255,255,255,0.08); border-radius: 15px; overflow: hidden;">
+                <table class="ledger-table">
+                    <thead><tr><th>Date</th><th>Type</th><th style="text-align: right;">Amount</th></tr></thead>
+                    <tbody id="ledgerBody"></tbody>
+                </table>
+                <div id="noData" style="text-align: center; padding: 40px; opacity: 0.5; display: none;">No transactions found.</div>
+            </div>
+        </div>
     </main>
 
-    <div class="add-btn" onclick="addClient()">
-        <i class="fa-solid fa-user-plus"></i>
+    <div class="add-btn" id="addBtn" onclick="toggleModal(true)"><i class="fa-solid fa-user-plus"></i></div>
+</div>
+
+<div class="modal" id="clientModal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="text-align:center; margin-bottom:20px;">Customer Info</h2>
+        <input type="hidden" id="editId" value="">
+        <div class="input-group"><label>Full Name</label><input type="text" id="custName"></div>
+        <div class="input-group"><label>Phone</label><input type="number" id="custPhone"></div>
+        <div class="input-group" id="dueInputGroup"><label>Opening Due (₹)</label><input type="number" id="custDue" value="0"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+            <button onclick="toggleModal(false)" style="background: rgba(255,255,255,0.1); border: none; padding: 12px; border-radius: 10px; color: white;">Cancel</button>
+            <button onclick="saveClient()" style="background: #2ecc71; border: none; padding: 12px; border-radius: 10px; color: white; font-weight: bold;">Save</button>
+        </div>
     </div>
 </div>
 
-<nav class="bottom-nav">
-    <div class="nav-item" onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i><span>Home</span></div>
-    <div class="nav-item" onclick="go('items.html')"><i class="fa-solid fa-box"></i><span>Items</span></div>
-    <div class="nav-item active"><i class="fa-solid fa-users"></i><span>Clients</span></div>
-    <div class="nav-item" onclick="go('orders.html')"><i class="fa-solid fa-list-check"></i><span>Orders</span></div>
-</nav>
-
 <script>
-    /* 🔐 SESSION PROTECTION */
-    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        storageBucket: "billingbuddy-551f9.firebasestorage.app",
+        messagingSenderId: "287026017084",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
 
-    // Load data from LocalStorage
-    let clients = JSON.parse(localStorage.getItem("clients")) || [
-        {name: "Rahul Traders", due: 4500},
-        {name: "Sunita Store", due: 0}
-    ];
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    db.enablePersistence().catch(() => {});
 
-    function render(){
-        const list = document.getElementById("clientList");
-        let grandTotal = 0;
-        list.innerHTML = "";
+    let clients = [];
+    let ledger = [];
+    let currentClient = null;
 
-        if(clients.length === 0) {
-            list.innerHTML = "<p style='grid-column: 1/-1; text-align: center; opacity: 0.6;'>No clients added yet.</p>";
-        }
-
-        clients.forEach((c, index) => {
-            grandTotal += c.due;
-            const statusClass = c.due > 0 ? 'pending' : 'clear';
-            const statusText = c.due > 0 ? 'Pending' : 'Clear';
-
-            list.innerHTML += `
-                <div class="card">
-                    <h3>${c.name}</h3>
-                    <p class="${statusClass}">₹ ${c.due.toLocaleString()} ${statusText}</p>
-                    <button class="delete-btn" onclick="deleteClient(${index})">
-                        <i class="fa-solid fa-trash-can"></i> Delete
-                    </button>
-                </div>
-            `;
+    // --- REALTIME LISTENER ---
+    function initApp() {
+        // Fetch Clients
+        db.collection("clients").onSnapshot((snapshot) => {
+            clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            localStorage.setItem("clients", JSON.stringify(clients));
+            renderLocal();
         });
 
+        // Fetch Ledger
+        db.collection("ledger").onSnapshot((snapshot) => {
+            ledger = snapshot.docs.map(doc => doc.data());
+            localStorage.setItem("ledger", JSON.stringify(ledger));
+            renderLocal();
+        });
+    }
+
+    function renderLocal() {
+        const list = document.getElementById("clientList");
+        const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+        let grandTotal = 0; let pendingCount = 0;
+        list.innerHTML = "";
+
+        clients.filter(c => c.name.toLowerCase().includes(searchTerm) || (c.phone && c.phone.includes(searchTerm)))
+        .forEach((c) => {
+            // Calculate real-time balance from ledger
+            const clientTransactions = ledger.filter(l => l.name === c.name);
+            let calculatedDue = parseFloat(c.openingDue || 0);
+            
+            clientTransactions.forEach(t => {
+                if (t.type.toLowerCase().includes('payment')) calculatedDue -= parseFloat(t.amount);
+                else calculatedDue += parseFloat(t.amount);
+            });
+
+            grandTotal += calculatedDue; if(calculatedDue > 0) pendingCount++;
+            
+            list.innerHTML += `
+                <div class="card ${calculatedDue <= 0 ? 'is-clear' : 'is-due'}" onclick="openLedger('${c.name}', '${c.phone}', ${calculatedDue})">
+                    <i class="fa-solid fa-trash-can delete-icon" onclick="event.stopPropagation(); deleteClient('${c.id}')"></i>
+                    <div style="display:flex; justify-content: space-between;">
+                        <div><h3>${c.name}</h3><p style="font-size:12px; opacity:0.6;">📞 ${c.phone || 'N/A'}</p></div>
+                        <span class="due-tag ${calculatedDue <= 0 ? 'clear' : 'pending'}">₹${calculatedDue}</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="action-btn btn-pay" onclick="event.stopPropagation(); quickPayment('${c.name}')">Quick Pay</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); toggleModal(true, '${c.id}')">Edit</button>
+                    </div>
+                </div>`;
+        });
         document.getElementById("totalAmount").innerText = "₹ " + grandTotal.toLocaleString();
-        localStorage.setItem("clients", JSON.stringify(clients));
+        document.getElementById("dueCount").innerText = pendingCount;
+        if(currentClient) refreshLedgerTable();
     }
 
-    function addClient(){
-        const name = prompt("Enter Client/Shop Name:");
-        if(!name) return;
-        
-        const dueInput = prompt("Enter Opening Balance (Due):", "0");
-        if(dueInput === null) return;
-        
-        const due = parseFloat(dueInput) || 0;
+    async function saveClient() {
+        const id = document.getElementById("editId").value;
+        const name = document.getElementById("custName").value;
+        const phone = document.getElementById("custPhone").value;
+        const opDue = parseFloat(document.getElementById("custDue").value) || 0;
 
-        clients.push({name: name, due: due});
-        render();
+        if(!name) return alert("Name zaroori hai");
+
+        const clientData = { name, phone, openingDue: opDue };
+
+        if(id) {
+            await db.collection("clients").doc(id).update(clientData);
+        } else {
+            await db.collection("clients").add(clientData);
+        }
+        toggleModal(false);
     }
 
-    function deleteClient(index){
-        if(confirm("Are you sure you want to remove this client?")){
-            clients.splice(index, 1);
-            render();
+    async function deleteClient(id) {
+        if(confirm("Customer delete karein?")) {
+            await db.collection("clients").doc(id).delete();
         }
     }
 
-    function go(page){ window.location.href = page; }
-
-    function logout() {
-        localStorage.removeItem("loggedIn");
-        window.location.replace("index.html");
+    async function quickPayment(clientName) {
+        const amt = prompt(`Payment from ${clientName}:`);
+        if(!amt || isNaN(amt)) return;
+        
+        await db.collection("ledger").add({
+            date: new Date().toLocaleDateString('en-GB'),
+            name: clientName,
+            type: "Payment (Quick)",
+            amount: parseFloat(amt),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
     }
 
-    // Initial render
-    render();
-</script>
+    function openLedger(name, phone, due) {
+        currentClient = name;
+        document.getElementById("adminMainView").style.display = "none";
+        document.getElementById("addBtn").style.display = "none";
+        document.getElementById("fullLedgerPage").style.display = "block";
+        document.getElementById("ledgerTitle").innerText = name;
+        document.getElementById("ledgerPhone").innerText = "📞 " + (phone || "N/A");
+        refreshLedgerTable();
+    }
 
+    function refreshLedgerTable() {
+        const filtered = ledger.filter(l => l.name === currentClient);
+        const body = document.getElementById("ledgerBody");
+        const noData = document.getElementById("noData");
+        
+        // Balance calculation for current client
+        const c = clients.find(cl => cl.name === currentClient);
+        let currentBal = c ? parseFloat(c.openingDue || 0) : 0;
+        
+        body.innerHTML = "";
+        if(filtered.length === 0) noData.style.display = "block";
+        else {
+            noData.style.display = "none";
+            filtered.sort((a,b) => b.timestamp - a.timestamp).forEach(l => {
+                const isPayment = l.type.toLowerCase().includes('payment');
+                body.innerHTML += `<tr><td>${l.date}</td><td>${l.type}</td><td style="text-align:right; color:${isPayment?'#2ecc71':'#ff6b81'};"><b>${isPayment?'-':'+'}₹${l.amount}</b></td></tr>`;
+                if(isPayment) currentBal -= l.amount; else currentBal += l.amount;
+            });
+        }
+        document.getElementById("ledgerBalance").innerText = "₹ " + currentBal;
+    }
+
+    async function addTransactionFromPage() {
+        const amt = prompt("Amount enter karein:");
+        if(!amt || isNaN(amt)) return;
+        const type = confirm("Kya ye Payment hai? (Cancel for Sale/Due)") ? "Payment" : "Sale/Order";
+
+        await db.collection("ledger").add({
+            date: new Date().toLocaleDateString('en-GB'),
+            name: currentClient,
+            type: type,
+            amount: parseFloat(amt),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    function toggleModal(show, id = "") {
+        document.getElementById("clientModal").style.display = show ? "flex" : "none";
+        if(show && id) {
+            const c = clients.find(client => client.id === id);
+            document.getElementById("editId").value = id;
+            document.getElementById("custName").value = c.name;
+            document.getElementById("custPhone").value = c.phone;
+            document.getElementById("dueInputGroup").style.display = "none";
+        } else {
+            document.getElementById("editId").value = "";
+            document.getElementById("custName").value = "";
+            document.getElementById("custPhone").value = "";
+            document.getElementById("custDue").value = 0;
+            document.getElementById("dueInputGroup").style.display = "block";
+        }
+    }
+
+    function closeLedger() {
+        currentClient = null;
+        document.getElementById("fullLedgerPage").style.display = "none";
+        document.getElementById("adminMainView").style.display = "block";
+        document.getElementById("addBtn").style.display = "flex";
+    }
+
+    function go(p) { window.location.href = p; }
+    window.onload = initApp;
+</script>
 </body>
 </html>

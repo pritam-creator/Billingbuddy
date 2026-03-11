@@ -1,78 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Cart - Surjya Bakery</title>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{
-            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-            background-size: 400% 400%;
-            animation: bgMove 15s ease infinite;
-            color: #fff; height: 100vh; overflow: hidden;
-        }
+        /* (Puraana Stylesheet waise hi rahega) */
+        .card:active { transform: scale(0.95); transition: 0.1s; }
+        body { animation: fadeIn 0.5s ease-in-out; background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
         .app{ display: flex; height: 100vh; }
-        
-        /* SIDEBAR */
-        .sidebar{
-            width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08);
-            border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px;
-            display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000;
-        }
-        .menu{ list-style: none; margin-top: 20px; }
-        .menu li{
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
-        }
+        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
+        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
+        .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .menu{ list-style: none; flex-grow: 1; }
+        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 15px; }
         .menu li:hover, .menu li.active{ background: rgba(255,255,255,0.2); opacity: 1; }
-
-        /* CONTENT */
-        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 120px; }
-        .top-header{ display: flex; justify-content: space-between; align-items: center;  margin-bottom: 30px;}
-        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-
-        /* CART ITEMS */
-        .cart-item{
-            background: rgba(255,255,255,0.12); padding: 20px; border-radius: 20px;
-            backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .item-actions { display: flex; align-items: center; gap: 20px; }
-        .qty-controls { display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 5px; }
-        .qty-btn { width: 35px; height: 35px; border: none; border-radius: 10px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 18px; }
-        .qty-val { width: 40px; text-align: center; font-weight: bold; }
-        .remove-btn { color: #ff6b81; background: none; border: none; cursor: pointer; font-size: 18px; transition: 0.2s; }
-        .remove-btn:active { transform: scale(0.8); }
-
-        /* FOOTER */
-        .cart-footer {
-            position: fixed; bottom: 0; right: 0; left: 260px;
-            background: rgba(0,0,0,0.3); backdrop-filter: blur(30px);
-            padding: 20px 40px; border-top: 1px solid rgba(255,255,255,0.2);
-            display: flex; justify-content: space-between; align-items: center;
-            z-index: 100;
-        }
-        .total-info h2 { font-size: 24px; color: #2ecc71; }
-        .checkout-actions { display: flex; gap: 15px; }
-        .btn { padding: 12px 25px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-clear { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-checkout { background: #2ecc71; color: white; }
-        .btn:active { transform: scale(0.95); }
-
-        .empty-state { text-align: center; margin-top: 100px; opacity: 0.6; }
+        .menu li.active{ border-left: 4px solid #fff; font-weight: bold; }
+        .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 220px; }
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .back-btn{ width: 35px; height: 35px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .quick-add-box { background: rgba(255,255,255,0.15); padding: 12px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); position: relative; }
+        .quick-add-box input { width: 100%; background: transparent; border: none; color: white; padding: 5px; outline: none; font-size: 15px; }
+        .search-results { position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border-radius: 0 0 10px 10px; z-index: 2000; max-height: 200px; overflow-y: auto; display: none; border: 1px solid rgba(255,255,255,0.1); }
+        .search-item { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; }
+        .order-settings { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group label { display: block; font-size: 11px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
+        .form-group select, .form-group input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px; border-radius: 8px; outline: none; }
+        .cart-item{ background: rgba(255,255,255,0.12); padding: 12px 18px; border-radius: 15px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.15); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .qty-controls { display: flex; align-items: center; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 4px; }
+        .qty-btn { width: 28px; height: 28px; border: none; border-radius: 8px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; }
+        .qty-val { width: 35px; text-align: center; font-weight: bold; }
+        .remove-btn { color: #ff6b81; background: none; border: none; cursor: pointer; font-size: 18px; margin-left: 10px; }
+        .billing-summary { background: rgba(0,0,0,0.2); border-radius: 15px; padding: 15px; margin-top: 20px; border: 1px dashed rgba(255,255,255,0.2); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .summary-row input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; width: 80px; text-align: right; border-radius: 5px; }
+        .cart-footer { position: fixed; bottom: 0; right: 0; left: 260px; background: rgba(0,0,0,0.5); backdrop-filter: blur(25px); padding: 15px 40px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .btn-checkout { background: #2ecc71; color: white; padding: 12px 25px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); }
 
         @media(max-width: 768px){
             .sidebar{ display: none; }
-            .content{ margin-left: 0; padding: 20px; }
-            .cart-footer { left: 0; padding: 15px 20px; flex-direction: column; gap: 15px; }
-            .checkout-actions { width: 100%; }
-            .btn { flex: 1; }
+            .content{ margin-left: 0; padding: 15px; padding-bottom: 240px; }
+            .cart-footer { left: 0; padding: 15px; }
+            .order-settings { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -81,163 +60,234 @@
 
 <div class="app">
     <aside class="sidebar">
-        <div style="padding: 10px; text-align: center;"><h3>SURJYA BAKERY</h3></div>
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin</p></div>
+        </div>
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
             <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
             <li class="active" onclick="go('cart.html')"><i class="fa-solid fa-cart-shopping"></i> Cart</li>
-            <li onclick="go('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
             <li onclick="go('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
+            <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <button class="back-btn" onclick="go('items.html')">
-                <i class="fa-solid fa-arrow-left"></i> Items
-            </button>
-            <h2>🛒 My Cart</h2>
-            <div style="width: 50px;"></div> 
+            <div class="back-btn" onclick="go('items.html')"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2>🛒 Checkout</h2>
+            <div style="width: 35px;"></div>
         </header>
 
-        <div class="cart-container" id="cartContainer">
+        <div class="quick-add-box">
+            <input type="text" id="quickSearch" placeholder="Search & Add Item..." oninput="searchItems(this.value)">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <div class="order-settings" id="orderSettings" style="display: none;">
+            <div class="form-group">
+                <label>Customer</label>
+                <select id="customerSelect"></select>
             </div>
+            <div class="form-group">
+                <label>Payment</label>
+                <select id="paymentMode">
+                    <option value="Cash">Cash</option>
+                    <option value="Online">Online / UPI</option>
+                    <option value="Due">Udhaar (Due)</option>
+                </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Note</label>
+                <input type="text" id="orderNote" placeholder="Order details...">
+            </div>
+        </div>
+
+        <div id="cartContainer"></div>
+
+        <div id="summarySection" class="billing-summary" style="display: none;">
+            <div class="summary-row"><span>Sub Total:</span><span id="subTotal">₹ 0</span></div>
+            <div class="summary-row"><span>Discount (₹):</span><input type="number" id="discountVal" value="0" oninput="calculateTotal()"></div>
+            <div class="summary-row"><span>Final:</span><b id="finalDisplay" style="color: #4ade80;">₹ 0</b></div>
+        </div>
     </main>
 
-    <div class="cart-footer" id="cartFooter">
+    <div class="cart-footer" id="cartFooter" style="display: none;">
         <div class="total-info">
-            <p style="opacity: 0.7; font-size: 14px;">Grand Total</p>
+            <p>Total Payable</p>
             <h2 id="grandTotalDisplay">₹ 0</h2>
         </div>
         <div class="checkout-actions">
-            <button class="btn btn-clear" onclick="clearCart()">Clear Cart</button>
-            <button class="btn btn-checkout" onclick="checkout()">
-                Checkout <i class="fa-solid fa-chevron-right"></i>
-            </button>
+            <button class="btn-checkout" id="checkoutBtn" onclick="placeOrder()">Place Order <i class="fa-solid fa-check"></i></button>
         </div>
     </div>
 </div>
 
 <script>
-    function go(page) { window.location.href = page; }
-    
-    // Global Cart Data
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        storageBucket: "billingbuddy-551f9.firebasestorage.app",
+        messagingSenderId: "287026017084",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Offline support (Internet jane par bhi kaam karega)
+    db.enablePersistence().catch(err => console.log("Offline mode error", err.code));
+
+    // --- APP LOGIC ---
+    function go(p) { window.location.href = p; }
+
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    let clients = JSON.parse(localStorage.getItem("clients")) || [];
+    let items = JSON.parse(localStorage.getItem("items")) || [];
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+    let ledger = JSON.parse(localStorage.getItem("ledger")) || [];
+
+    function searchItems(val) {
+        const res = document.getElementById("searchResults");
+        if(!val) { res.style.display="none"; return; }
+        const filtered = items.filter(i => i.name.toLowerCase().includes(val.toLowerCase()));
+        res.innerHTML = "";
+        if(filtered.length > 0) {
+            res.style.display = "block";
+            filtered.forEach(item => {
+                res.innerHTML += `<div class="search-item" onclick='quickAdd("${item.id}")'>
+                    <span>${item.name}</span><b>₹${item.price}</b>
+                </div>`;
+            });
+        } else { res.style.display="none"; }
+    }
+
+    function quickAdd(id) {
+        const item = items.find(i => i.id == id);
+        let exist = cart.find(c => c.id == id);
+        if(exist) exist.qty++; else cart.push({...item, qty:1});
+        document.getElementById("quickSearch").value="";
+        document.getElementById("searchResults").style.display="none";
+        save();
+    }
 
     function renderCart() {
         const container = document.getElementById("cartContainer");
         const footer = document.getElementById("cartFooter");
-        container.innerHTML = "";
+        const summary = document.getElementById("summarySection");
+        const settings = document.getElementById("orderSettings");
         
+        container.innerHTML = "";
         if (cart.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-cart-ghost" style="font-size:80px; margin-bottom:20px; display:block;"></i>
-                    <h3>Your cart is empty</h3>
-                    <p>Pehle Items page se kuch add karein!</p>
-                </div>`;
-            footer.style.display = "none";
+            container.innerHTML = `<div style="text-align:center; padding-top:50px; opacity:0.5;"><h3>Cart khali hai</h3></div>`;
+            footer.style.display="none"; summary.style.display="none"; settings.style.display="none";
             return;
         }
 
-        footer.style.display = "flex";
-        let total = 0;
+        footer.style.display="flex"; summary.style.display="block"; settings.style.display="grid";
+        
+        const custSelect = document.getElementById("customerSelect");
+        custSelect.innerHTML = '<option value="Walking Customer">Walking Customer</option>';
+        clients.forEach(c => custSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`);
 
-        cart.forEach((item, index) => {
-            let price = parseFloat(item.price) || 0;
-            let qty = parseInt(item.qty) || 1;
-            total += (price * qty);
-
-            const itemDiv = document.createElement("div");
-            itemDiv.className = "cart-item";
-            itemDiv.innerHTML = `
-                <div class="item-info">
-                    <h3>${item.name}</h3>
-                    <p>₹${price} / unit</p>
-                </div>
-                <div class="item-actions">
-                    <div class="qty-controls">
-                        <button class="qty-btn" onclick="updateQty(${index}, -1)">-</button>
-                        <div class="qty-val">${qty}</div>
-                        <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
+        cart.forEach((item, i) => {
+            container.innerHTML += `
+                <div class="cart-item">
+                    <div><h4>${item.name}</h4><small>₹${item.price} × ${item.qty}</small></div>
+                    <div style="display:flex; align-items:center;">
+                        <div class="qty-controls">
+                            <button class="qty-btn" onclick="updateQty(${i},-1)">-</button>
+                            <div class="qty-val">${item.qty}</div>
+                            <button class="qty-btn" onclick="updateQty(${i},1)">+</button>
+                        </div>
+                        <button class="remove-btn" onclick="remove(${i})"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                    <button class="remove-btn" onclick="removeItem(${index})">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(itemDiv);
+                </div>`;
         });
-
-        document.getElementById("grandTotalDisplay").innerText = "₹ " + total.toLocaleString();
+        calculateTotal();
     }
 
-    function updateQty(index, change) {
-        cart[index].qty = (parseInt(cart[index].qty) || 1) + change;
-        if (cart[index].qty < 1) {
-            removeItem(index);
-        } else {
-            saveAndRefresh();
-        }
+    function calculateTotal() {
+        let sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+        let disc = parseFloat(document.getElementById("discountVal").value) || 0;
+        let total = Math.max(0, sub - disc);
+        document.getElementById("subTotal").innerText = "₹ " + sub;
+        document.getElementById("grandTotalDisplay").innerText = "₹ " + total;
+        document.getElementById("finalDisplay").innerText = "₹ " + total;
+        return total;
     }
 
-    function removeItem(index) {
-        if(confirm("Ye item nikal dein?")) {
-            cart.splice(index, 1); // Delete from array
-            saveAndRefresh();      // Save and Update UI
-        }
-    }
+    // --- FIREBASE SYNC LOGIC ---
+    async function placeOrder() {
+        const btn = document.getElementById("checkoutBtn");
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
 
-    function clearCart() {
-        if(confirm("Pura cart khali karna hai?")) {
-            cart = [];        // Empty array
-            saveAndRefresh(); // Save and Update UI
-        }
-    }
+        const customer = document.getElementById("customerSelect").value;
+        const mode = document.getElementById("paymentMode").value;
+        const note = document.getElementById("orderNote").value;
+        const amount = calculateTotal();
 
-    function saveAndRefresh() {
-        localStorage.setItem("cart", JSON.stringify(cart));
-        renderCart(); // This refreshes the list on screen
-    }
-
-    function checkout() {
-        if(cart.length === 0) return;
-
-        let finalTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        let orderID = Math.floor(1000 + Math.random() * 9000);
-
-        // Save to Orders
-        let orders = JSON.parse(localStorage.getItem("orders")) || [];
-        orders.unshift({
-            id: orderID,
-            date: new Date().toLocaleString(),
+        const orderId = "ORD-" + Date.now();
+        const newOrder = {
+            orderId: orderId,
+            date: new Date().toLocaleString('en-IN'),
+            customer: customer,
             items: [...cart],
-            total: finalTotal,
-            status: "Pending"
-        });
-        localStorage.setItem("orders", JSON.stringify(orders));
+            total: amount,
+            mode: mode,
+            note: note,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() // Cloud Time
+        };
 
-        // Save to Records
-        let records = JSON.parse(localStorage.getItem("bakeryRecords")) || [];
-        records.push({
-            title: "Order #" + orderID,
-            amount: finalTotal,
-            date: new Date().toISOString().split('T')[0],
-            type: "income"
-        });
-        localStorage.setItem("bakeryRecords", JSON.stringify(records));
-        
-        // Final Clean up
-        cart = [];
-        saveAndRefresh();
-        
-        alert("🎉 Order Successful!");
-        window.location.href = "orders.html";
+        try {
+            // 1. Save to Firebase
+            await db.collection("orders").doc(orderId).set(newOrder);
+
+            // 2. Save to Local Storage (Legacy Support)
+            orders.unshift(newOrder);
+            localStorage.setItem("orders", JSON.stringify(orders));
+
+            // 3. Udhaar Entry
+            if(mode === "Due" && customer !== "Walking Customer") {
+                const ledgerEntry = {
+                    name: customer,
+                    type: 'pay',
+                    amount: amount,
+                    note: "Order: " + orderId,
+                    date: new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short'}),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await db.collection("ledger").add(ledgerEntry);
+                
+                ledger.push(ledgerEntry);
+                localStorage.setItem("ledger", JSON.stringify(ledger));
+            }
+
+            alert("✅ Cloud Synced & Order Done!");
+            cart = [];
+            localStorage.setItem("cart", JSON.stringify(cart));
+            go('orders.html');
+
+        } catch (error) {
+            console.error("Firebase Error: ", error);
+            alert("⚠️ Error: Saved to local storage only.");
+            // Offline fall back
+            orders.unshift(newOrder);
+            localStorage.setItem("orders", JSON.stringify(orders));
+            go('orders.html');
+        }
     }
 
-    // Load initial data
+    function updateQty(i, c) { cart[i].qty += c; if(cart[i].qty < 1) remove(i); else save(); }
+    function remove(i) { cart.splice(i, 1); save(); }
+    function save() { localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
+
     renderCart();
 </script>
-
 </body>
 </html>

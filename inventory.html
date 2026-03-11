@@ -1,165 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-
-    <title>Inventory - Surjya Bakery</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Inventory - Surjya Bakery Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        /* ===== CONSISTENT THEME (Admin Panel Style) ===== */
+        /* Styles remain exactly as you provided for consistent UI */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-
-        body{
-            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-            background-size: 400% 400%;
-            animation: bgMove 15s ease infinite;
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
-        }
-
+        body{ background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-
         .app{ display: flex; height: 100vh; }
-
-        /* SIDEBAR */
-        .sidebar{
-            width: 260px;
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.08);
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding: 20px 15px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100%;
-            transition: 0.3s ease;
-            z-index: 1000;
-        }
-
-        .menu{ list-style: none; margin-top: 20px; }
-        .menu li{
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            border-radius: 8px; cursor: pointer; transition: 0.3s; opacity: 0.8;
-        }
-        .menu li:hover{ background: rgba(255,255,255,0.2); opacity: 1; }
-        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; }
-
-        /* MAIN CONTENT */
-        .content{ flex: 1; padding: 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 120px; }
-
-        /* TOP HEADER & SEARCH */
-      .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .back-btn{ background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-        
-        .search-container {
-            background: rgba(255,255,255,0.1);
-            padding: 10px 20px;
-            border-radius: 15px;
-            margin-top: 25px;
-            display: flex;
-            align-items: center;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .search-container input {
-            background: none; border: none; color: white; margin-left: 10px; width: 100%; outline: none;
-        }
-        .search-container input::placeholder { color: rgba(255,255,255,0.6); }
-
-        /* INVENTORY CARDS */
-        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        
-        .item-card{
-            background: rgba(255,255,255,0.12);
-            padding: 20px;
-            border-radius: 20px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.15);
-            transition: 0.3s; margin-top: 20px;
-        }
-        .item-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.18); }
-        
-        .item-info h3 { font-size: 18px; margin-bottom: 10px; }
-        .stock-badge { 
-            display: inline-block; padding: 4px 12px; border-radius: 20px; 
-            font-size: 13px; font-weight: bold; background: rgba(255,255,255,0.2);
-        }
-        .low-stock { background: rgba(231, 76, 60, 0.2); color: #ff6b81; border: 1px solid rgba(231, 76, 60, 0.3); }
-
-        .actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn-edit { background: rgba(241, 196, 15, 0.3); color: #f1c40f; }
-        .btn-edit:hover { background: #f1c40f; color: #333; }
-        .btn-del { background: rgba(231, 76, 60, 0.2); color: #ff6b81; }
-        .btn-del:hover { background: #e74c3c; color: #fff; }
-
-        /* FLOATING ADD BUTTON */
-        .add-btn {
-            position: fixed; bottom: 100px; right: 30px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background: #fff; color: #764ba2;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            cursor: pointer; z-index: 100; transition: 0.3s;
-        }
-        .add-btn:hover { transform: scale(1.1) rotate(90deg); }
-
-        /* BOTTOM NAV (Mobile Only) */
-        .bottom-nav {
-            position: fixed; bottom: 20px; left: 20px; right: 20px;
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(25px);
-            border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;
-            display: none; justify-content: space-around; padding: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000;
-        }
-        .nav-item { text-align: center; color: white; opacity: 0.6; cursor: pointer; font-size: 20px; }
-        .nav-item.active { opacity: 1; font-weight: bold; }
-        .nav-item span { display: block; font-size: 10px; margin-top: 4px; }
-
-        @media(max-width: 768px){
-            .sidebar{ display: none; }
-            .content { margin-left: 0; padding: 20px; }
-            .bottom-nav { display: flex; }
-        }
+        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
+        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
+        .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .menu{ list-style: none; flex-grow: 1; }
+        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 14px; }
+        .menu li:hover, .menu li.active{ background: rgba(255,255,255,0.2); opacity: 1; }
+        .menu li.active{ border-left: 4px solid #fff; font-weight: bold; }
+        .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 80px; }
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .back-btn { width: 35px; height: 35px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .report-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .report-card { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .report-card p { font-size: 9px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
+        .report-card h3 { font-size: 16px; color: #f1c40f; }
+        .search-box { background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; margin-bottom: 20px; }
+        .search-box input { background: none; border: none; color: white; margin-left: 10px; width: 100%; outline: none; font-size: 14px; }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .item-card{ background: rgba(255,255,255,0.12); padding: 18px; border-radius: 20px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 12px; transition: 0.2s; position: relative; }
+        .item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .item-header h3 { font-size: 18px; font-weight: 700; color: #f1c40f; }
+        .stock-display { display: flex; align-items: baseline; gap: 5px; }
+        .stock-num { font-size: 24px; font-weight: 800; }
+        .stock-unit { font-size: 12px; opacity: 0.6; }
+        .price-tag { font-size: 13px; color: #2ecc71; font-weight: bold; margin-bottom: 5px; display: block; cursor: pointer; }
+        .progress-container { background: rgba(0,0,0,0.2); height: 6px; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; transition: 0.5s; }
+        .quick-actions { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1); padding: 8px; border-radius: 12px; }
+        .btn-qty { width: 35px; height: 35px; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; color: white; transition: 0.2s; display: flex; align-items: center; justify-content: center;}
+        .btn-minus { background: #ff4d6d; }
+        .btn-plus { background: #2ecc71; }
+        .item-footer { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.5; margin-top: 5px; }
+        .add-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: #fff; color: #764ba2; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); cursor: pointer; z-index: 100; transition: 0.3s; }
+        .del-btn { opacity: 0.3; cursor: pointer; transition: 0.2s; padding: 5px; }
+        .del-btn:hover { opacity: 1; color: #ff4d6d; }
+        @media(max-width: 768px){ .sidebar{ display: none; } .content { margin-left: 0; padding: 15px; } .report-bar { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
-
 <body>
 
 <div class="app">
     <aside class="sidebar">
-        <div style="padding: 10px; text-align: center;">
-            <h3 style="letter-spacing: 1px; font-weight: 800;">SURJYA ADMIN</h3>
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin</p></div>
         </div>
         <ul class="menu">
             <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
-            <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
-            <li class="active"><i class="fa-solid fa-warehouse"></i> Inventory</li>
+            <li class="active" onclick="go('inventory.html')"><i class="fa-solid fa-warehouse"></i> Inventory</li>
+            <li onclick="go('ledger.html')"><i class="fa-solid fa-book-bookmark"></i> Ledger</li>
             <li onclick="go('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
-            <li onclick="go('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
-            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+            <li onclick="go('employees.html')"><i class="fa-solid fa-user-tie"></i> Employees</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <button class="back-btn" onclick="go('dashboard.html')">
-                <i class="fa-solid fa-arrow-left"></i> Back
+            <div class="header-left">
+                <div class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-chevron-left"></i></div>
+                <h2 style="font-size: 22px;">💰 Inventory</h2>
+            </div>
+            <button class="btn-qty" style="background:#3498db; width:auto; padding:0 15px; font-size:11px;" onclick="downloadReport()">
+                <i class="fa-solid fa-file-arrow-down" style="margin-right: 5px;"></i> Export CSV
             </button>
-            <h2>📦 Inventory Control</h2>
-            <div style="width: 40px;"></div>
         </header>
 
-        <div class="search-container">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="Search stock items..." onkeyup="searchInventory()">
+        <div class="report-bar">
+            <div class="report-card"><p>Total Items</p><h3 id="totalItemsCount">0</h3></div>
+            <div class="report-card"><p>Low Stock</p><h3 id="lowStockCount" style="color:#ff6b81">0</h3></div>
+            <div class="report-card"><p>Healthy</p><h3 id="healthyCount" style="color:#2ecc71">0</h3></div>
+            <div class="report-card"><p>Value</p><h3 id="totalStockValue">₹0</h3></div>
         </div>
 
-        <div class="inventory-grid" id="inventoryList">
-            </div>
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="opacity: 0.6;"></i>
+            <input type="text" id="searchInput" placeholder="Search bakery items..." onkeyup="render()">
+        </div>
+
+        <div class="inventory-grid" id="inventoryList"></div>
     </main>
 
     <div class="add-btn" onclick="addItem()">
@@ -167,97 +102,143 @@
     </div>
 </div>
 
-<nav class="bottom-nav">
-    <div class="nav-item" onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i><span>Home</span></div>
-    <div class="nav-item" onclick="go('items.html')"><i class="fa-solid fa-box"></i><span>Items</span></div>
-    <div class="nav-item active"><i class="fa-solid fa-warehouse"></i><span>Stock</span></div>
-    <div class="nav-item" onclick="go('orders.html')"><i class="fa-solid fa-list-check"></i><span>Orders</span></div>
-</nav>
-
 <script>
-    /* 🔐 SESSION PROTECTION */
-    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        storageBucket: "billingbuddy-551f9.firebasestorage.app",
+        messagingSenderId: "287026017084",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
 
-    // Sample Inventory Data (Can be linked to items.html data)
-    let inventory = JSON.parse(localStorage.getItem("inventory")) || [
-        { name: "Bread", stock: 50 },
-        { name: "Cake", stock: 5 },
-        { name: "Cookies", stock: 12 },
-        { name: "Milk Bun", stock: 2 }
-    ];
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    function renderInventory(filter = "") {
+    let inventory = [];
+
+    // Real-time listener for Inventory
+    function initInventory() {
+        db.collection("inventory").onSnapshot((snapshot) => {
+            inventory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            render();
+        });
+    }
+
+    function render() {
         const list = document.getElementById("inventoryList");
+        const filter = document.getElementById("searchInput").value.toLowerCase();
         list.innerHTML = "";
 
-        const filteredItems = inventory.filter(item => 
-            item.name.toLowerCase().includes(filter.toLowerCase())
-        );
+        let lowCount = 0;
+        let healthyCount = 0;
+        let totalVal = 0;
 
-        filteredItems.forEach((item, index) => {
-            const isLow = item.stock < 10;
-            const card = document.createElement("div");
-            card.className = "item-card";
-            card.innerHTML = `
-                <div class="item-info">
-                    <h3>${item.name}</h3>
-                    <div class="stock-badge ${isLow ? 'low-stock' : ''}">
-                        Stock: ${item.stock} ${isLow ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}
+        inventory.filter(item => item.name.toLowerCase().includes(filter)).forEach((item) => {
+            const isLow = item.stock <= (item.minLevel || 10);
+            if(isLow) lowCount++; else healthyCount++;
+            
+            const itemPrice = parseFloat(item.price) || 0;
+            const itemTotalValue = item.stock * itemPrice;
+            totalVal += itemTotalValue;
+
+            const progress = Math.min((item.stock / ((item.minLevel || 10) * 5)) * 100, 100); 
+            
+            list.innerHTML += `
+                <div class="item-card">
+                    <div class="item-header">
+                        <div>
+                            <h3>${item.name}</h3>
+                            <span class="price-tag" onclick="editPrice('${item.id}', ${itemPrice})">
+                                ₹${itemPrice} / ${item.unit || 'Pc'} <i class="fa-solid fa-pen" style="font-size:10px; opacity:0.5"></i>
+                            </span>
+                            <div class="stock-display">
+                                <span class="stock-num" style="color: ${isLow ? '#ff6b81' : '#2ecc71'}">${item.stock}</span>
+                                <span class="stock-unit">${item.unit || 'Pcs'}</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-trash-can del-btn" onclick="deleteItem('${item.id}', '${item.name}')"></i>
                     </div>
-                </div>
-                <div class="actions">
-                    <button class="btn btn-edit" onclick="editStock(${index})">
-                        <i class="fa-solid fa-pen"></i> Update
-                    </button>
-                    <button class="btn btn-del" onclick="deleteItem(${index})">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `;
-            list.appendChild(card);
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${progress}%; background: ${isLow ? '#ff6b81' : '#2ecc71'}"></div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="btn-qty btn-minus" onclick="updateQty('${item.id}', ${item.stock}, -1)"><i class="fa-solid fa-minus"></i></button>
+                        <span style="font-size: 11px; font-weight: bold; opacity: 0.6;">Value: ₹${itemTotalValue.toLocaleString('en-IN')}</span>
+                        <button class="btn-qty btn-plus" onclick="updateQty('${item.id}', ${item.stock}, 1)"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div class="item-footer">
+                        <span>${isLow ? '⚠️ REORDER SOON' : '✅ STOCK OK'}</span>
+                        <span>Updated: ${item.lastUpdate || 'Just now'}</span>
+                    </div>
+                </div>`;
         });
-        localStorage.setItem("inventory", JSON.stringify(inventory));
+
+        document.getElementById("totalItemsCount").innerText = inventory.length;
+        document.getElementById("lowStockCount").innerText = lowCount;
+        document.getElementById("healthyCount").innerText = healthyCount;
+        document.getElementById("totalStockValue").innerText = "₹" + totalVal.toLocaleString('en-IN');
     }
 
-    function searchInventory() {
-        const term = document.getElementById("searchInput").value;
-        renderInventory(term);
+    async function updateQty(id, currentStock, change) {
+        const newStock = Math.max(0, currentStock + change);
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        await db.collection("inventory").doc(id).update({
+            stock: newStock,
+            lastUpdate: time
+        });
     }
 
-    function addItem() {
-        const name = prompt("Enter new item name:");
+    async function editPrice(id, currentPrice) {
+        const newPrice = prompt(`Enter New Price:`, currentPrice);
+        if(newPrice !== null && !isNaN(newPrice)) {
+            await db.collection("inventory").doc(id).update({
+                price: parseFloat(newPrice)
+            });
+        }
+    }
+
+    async function addItem() {
+        const name = prompt("Item Name (e.g., Milk Bread):");
         if (!name) return;
-        const stock = prompt("Enter initial stock quantity:", "0");
-        if (stock === null) return;
+        const unit = prompt("Unit (Pcs/Kg/Pkt):", "Pcs");
+        const price = prompt("Price per unit (₹):", "0");
+        const stock = prompt("Initial Stock:", "0");
+        const min = prompt("Min Alert Level (Stock low warning):", "10");
 
-        inventory.push({ name: name, stock: parseInt(stock) || 0 });
-        renderInventory();
+        await db.collection("inventory").add({
+            name, unit,
+            price: parseFloat(price) || 0,
+            stock: parseInt(stock) || 0,
+            minLevel: parseInt(min) || 10,
+            lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
     }
 
-    function editStock(index) {
-        const newStock = prompt(`Update stock for ${inventory[index].name}:`, inventory[index].stock);
-        if (newStock !== null) {
-            inventory[index].stock = parseInt(newStock) || 0;
-            renderInventory();
+    async function deleteItem(id, name) {
+        if (confirm(`Remove ${name} from inventory?`)) {
+            await db.collection("inventory").doc(id).delete();
         }
     }
 
-    function deleteItem(index) {
-        if (confirm(`Remove ${inventory[index].name} from inventory?`)) {
-            inventory.splice(index, 1);
-            renderInventory();
-        }
+    function downloadReport() {
+        let csv = "Item Name,Stock,Unit,Price,Total Value,Status\n";
+        inventory.forEach(item => {
+            let status = item.stock <= (item.minLevel || 10) ? "Low Stock" : "In Stock";
+            let val = item.stock * (item.price || 0);
+            csv += `"${item.name}",${item.stock},${item.unit},${item.price},${val},${status}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Inventory_Report_${new Date().toLocaleDateString()}.csv`;
+        a.click();
     }
 
     function go(page) { window.location.href = page; }
-
-    function logout() {
-        localStorage.removeItem("loggedIn");
-        window.location.replace("index.html");
-    }
-
-    // Initial render
-    renderInventory();
+    window.onload = initInventory;
 </script>
 
 </body>

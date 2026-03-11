@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Khatabook Cloud - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+        body{ background: #0f172a; color: #fff; height: 100vh; overflow: hidden; }
+        .app{ display: flex; height: 100vh; }
+        .sidebar{ width: 260px; background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px 15px; display: flex; flex-direction: column; }
+        .menu{ list-style: none; margin-top: 20px; }
+        .menu li{ padding: 12px 15px; border-radius: 12px; cursor: pointer; opacity: 0.7; margin-bottom: 5px; display: flex; gap: 10px; }
+        .menu li.active{ background: #3b82f6; opacity: 1; }
+        .content{ flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .top-header{ width: 100%; max-width: 600px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .back-btn{ background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .search-box { width: 100%; max-width: 600px; margin-bottom: 20px; position: relative; }
+        .search-box input { width: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); padding: 12px 40px; border-radius: 12px; color: white; outline: none; }
+        .search-box i { position: absolute; left: 15px; top: 15px; opacity: 0.5; }
+        .grid-summary { width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #1e293b; padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .text-green { color: #4ade80; }
+        .text-red { color: #ff6b81; }
+        .list-container { width: 100%; max-width: 600px; background: #1e293b; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+        .customer-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 10; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 100; flex-direction: column; }
+        .modal-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; }
+        .modal-body { flex: 1; padding: 20px; overflow-y: auto; width: 100%; max-width: 600px; margin: 0 auto; }
+        .entry-section { background: #1e293b; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 600px; margin: 0 auto; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .entry-input { flex: 1; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; color: white; outline: none; }
+        .modal-footer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .trans-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .btn-pay { background: #ff6b81; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-collect { background: #4ade80; color: #064e3b; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        @media(max-width: 768px){ .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <aside class="sidebar">
+        <h2 style="margin-bottom: 20px;">Surjya Bakery</h2>
+        <ul class="menu">
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
+            <li class="active"><i class="fa-solid fa-book"></i> Khatabook</li>
+            <li onclick="go('pos.html')"><i class="fa-solid fa-receipt"></i> Billing</li>
+        </ul>
+    </aside>
+
+    <main class="content">
+        <header class="top-header">
+            <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+                <h2>Khatabook Cloud</h2>
+                <div id="dateNow" style="font-size: 12px; opacity: 0.6;"></div>
+            </div>
+        </header>
+
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="custSearch" placeholder="Search customer..." oninput="renderCustomerList()">
+        </div>
+
+        <div class="grid-summary">
+            <div class="stat-card">
+                <p style="font-size: 11px; opacity:0.6;">TOTAL YOU GET (LENA)</p>
+                <h3 id="mainTotalCollect" class="text-green">₹ 0</h3>
+            </div>
+            <div class="stat-card">
+                <p style="font-size: 11px; opacity:0.6;">TOTAL YOU GIVE (DENA)</p>
+                <h3 id="mainTotalPay" class="text-red">₹ 0</h3>
+            </div>
+        </div>
+
+        <div class="list-container" id="customerList"></div>
+    </main>
+</div>
+
+<div class="fab" onclick="showClientPicker()"><i class="fa-solid fa-plus"></i></div>
+
+<div class="modal" id="pickerModal">
+    <div class="modal-header">
+        <h3>New Customer</h3>
+        <i class="fa-solid fa-xmark" onclick="closePicker()"></i>
+    </div>
+    <div class="modal-body">
+        <div class="input-group">
+            <input type="text" id="newManualName" class="entry-input" placeholder="Enter Name">
+            <button class="btn-collect" style="padding: 10px 20px" onclick="addNewManualCustomer()">Add</button>
+        </div>
+        <div id="pickerList"></div>
+    </div>
+</div>
+
+<div class="modal" id="customerModal">
+    <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <i class="fa-solid fa-arrow-left" onclick="closeHistory()"></i>
+            <div>
+                <h3 id="activeCustName">Name</h3>
+                <p id="activeCustBalance" style="font-size: 12px;">Balance: ₹0</p>
+            </div>
+        </div>
+        <div style="display:flex; gap:15px;">
+            <i class="fa-brands fa-whatsapp" style="color:#25D366; font-size:22px;" onclick="sendWhatsAppReminder()"></i>
+            <i class="fa-solid fa-trash" style="opacity:0.5; font-size:20px;" onclick="settleAccount()"></i>
+        </div>
+    </div>
+    <div class="modal-body" id="transactionHistory"></div>
+    
+    <div class="entry-section">
+        <div class="input-group">
+            <input type="number" id="entryAmount" class="entry-input" placeholder="₹ Amount">
+            <input type="text" id="entryNote" class="entry-input" placeholder="Note (Cake, Milk, etc.)">
+        </div>
+        <div class="modal-footer-btns">
+            <button class="btn-pay" onclick="saveEntry('pay')">GAVE (DENA)</button>
+            <button class="btn-collect" onclick="saveEntry('collect')">GOT (LENA)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let activeCustomer = null;
+
+    // --- INITIALIZE & LIVE LISTEN ---
+    function init() {
+        document.getElementById('dateNow').innerText = new Date().toDateString();
+        // Listen to all ledger entries in real-time
+        db.collection("ledger").onSnapshot(() => {
+            renderCustomerList();
+            if(activeCustomer) renderHistory();
+        });
+    }
+
+    async function renderCustomerList() {
+        const container = document.getElementById('customerList');
+        const search = document.getElementById('custSearch').value.toLowerCase();
+        
+        const snapshot = await db.collection("ledger").get();
+        let customers = {};
+        let totalCollect = 0, totalPay = 0;
+
+        snapshot.forEach(doc => {
+            const entry = doc.data();
+            if (!customers[entry.name]) customers[entry.name] = 0;
+            let amt = parseFloat(entry.amount);
+            customers[entry.name] += (entry.type === 'collect' ? amt : -amt);
+        });
+
+        container.innerHTML = '';
+        const names = Object.keys(customers).filter(n => n.toLowerCase().includes(search));
+        
+        names.forEach(name => {
+            const balance = customers[name];
+            if(balance > 0) totalCollect += balance; else totalPay += Math.abs(balance);
+            const isCollect = balance >= 0;
+            container.innerHTML += `
+                <div class="customer-row" onclick="openCustomer('${name}')">
+                    <div><h4>${name}</h4></div>
+                    <div style="text-align: right">
+                        <h4 class="${isCollect ? 'text-green' : 'text-red'}">₹${Math.abs(balance).toLocaleString()}</h4>
+                        <p style="font-size: 10px; opacity: 0.5;">${isCollect ? 'Lena hai' : 'Dena hai'}</p>
+                    </div>
+                </div>`;
+        });
+
+        document.getElementById('mainTotalCollect').innerText = `₹${totalCollect.toLocaleString()}`;
+        document.getElementById('mainTotalPay').innerText = `₹${totalPay.toLocaleString()}`;
+    }
+
+    function openCustomer(name) {
+        activeCustomer = name;
+        document.getElementById('activeCustName').innerText = name;
+        document.getElementById('customerModal').style.display = 'flex';
+        renderHistory();
+    }
+
+    async function renderHistory() {
+        const historyBody = document.getElementById('transactionHistory');
+        const snapshot = await db.collection("ledger").where("name", "==", activeCustomer).orderBy("timestamp", "desc").get();
+        
+        historyBody.innerHTML = '';
+        let balance = 0;
+        
+        snapshot.forEach(doc => {
+            const e = doc.data();
+            const isCollect = e.type === 'collect';
+            balance += isCollect ? parseFloat(e.amount) : -parseFloat(e.amount);
+            historyBody.innerHTML += `
+                <div class="trans-item">
+                    <div><p>${e.date}</p><small style="opacity:0.5">${e.note || ''}</small></div>
+                    <h4 class="${isCollect ? 'text-green' : 'text-red'}">₹${e.amount}</h4>
+                </div>`;
+        });
+        document.getElementById('activeCustBalance').innerText = `Total Balance: ₹${balance}`;
+    }
+
+    async function saveEntry(type) {
+        const amtInput = document.getElementById('entryAmount');
+        const noteInput = document.getElementById('entryNote');
+        const amt = amtInput.value;
+        if (!amt) return alert("Enter amount!");
+
+        await db.collection("ledger").add({
+            name: activeCustomer,
+            type: type,
+            amount: amt,
+            note: noteInput.value,
+            date: new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short'}),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        amtInput.value = ''; noteInput.value = '';
+        renderHistory();
+    }
+
+    async function settleAccount() {
+        if(confirm("Settle this account? (Clear all Cloud data for this person)")) {
+            const snapshot = await db.collection("ledger").where("name", "==", activeCustomer).get();
+            snapshot.forEach(doc => doc.ref.delete());
+            closeHistory();
+        }
+    }
+
+    function sendWhatsAppReminder() {
+        const bal = document.getElementById('activeCustBalance').innerText;
+        window.open(`https://wa.me/?text=Hello, Surjya Bakery reminder: Aapka ${bal} baaki hai. Kripya bhugtan karein.`);
+    }
+
+    function showClientPicker() { document.getElementById('pickerModal').style.display = 'flex'; }
+    function closePicker() { document.getElementById('pickerModal').style.display = 'none'; }
+    function closeHistory() { activeCustomer = null; document.getElementById('customerModal').style.display = 'none'; }
+    function addNewManualCustomer() {
+        let name = document.getElementById('newManualName').value;
+        if(name) { openCustomer(name); closePicker(); document.getElementById('newManualName').value=''; }
+    }
+    function go(p) { window.location.href = p; }
+    window.onload = init;
+</script>
+</body>
+</html>

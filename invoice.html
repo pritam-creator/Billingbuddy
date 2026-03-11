@@ -1,279 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>New Surjya Bakery - Invoice</title>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>POS - Surjya Bakery Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-body{
-background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-background-size:400% 400%;
-animation:bgMove 15s ease infinite;
-color:#fff;min-height:100vh;
-}
-@keyframes bgMove{
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
-}
-.app{display:flex;min-height:100vh;}
-.sidebar{
-width:260px;
-backdrop-filter:blur(20px);
-background:rgba(255,255,255,0.08);
-border-right:1px solid rgba(255,255,255,0.2);
-padding:20px 15px;
-position:fixed;
-height:100%;
-}
-.content{flex:1;padding:25px;margin-left:260px;}
-.glass-card{
-background:rgba(255,255,255,0.15);
-backdrop-filter:blur(20px);
-border:1px solid rgba(255,255,255,0.2);
-border-radius:20px;
-padding:20px;
-margin-bottom:20px;
-}
-input{
-width:100%;
-padding:12px;
-border-radius:10px;
-border:none;
-background:rgba(255,255,255,0.2);
-color:white;
-outline:none;
-margin-top:5px;
-}
-.grid-input{
-display:grid;
-grid-template-columns:2fr 1fr 1fr auto;
-gap:10px;
-align-items:end;
-}
-table{width:100%;border-collapse:collapse;}
-th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);}
-.btn-main{
-width:100%;
-padding:14px;
-border:none;
-border-radius:12px;
-font-weight:bold;
-cursor:pointer;
-margin-top:10px;
-}
-@media(max-width:768px){
-.sidebar{display:none;}
-.content{margin-left:0;padding:15px;}
-.grid-input{grid-template-columns:1fr;}
-}
-</style>
+    <style>
+        /* (Styles same as provided for brand consistency) */
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+        body{ background: #0f172a; color: #fff; height: 100vh; overflow: hidden; display: flex; }
+        .sidebar{ width: 260px; background: rgba(30, 41, 59, 0.7); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px; display: flex; flex-direction: column; }
+        .sidebar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .back-btn { width: 35px; height: 35px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: #3b82f6; transition: 0.2s; }
+        .back-btn:hover { background: #3b82f6; color: #fff; }
+        .menu li{ list-style: none; padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 8px; opacity: 0.7; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .menu li:hover, .menu li.active{ background: #3b82f6; opacity: 1; }
+        .content{ flex: 1; padding: 25px; overflow-y: auto; background: radial-gradient(circle at top right, #1e293b, #0f172a); padding-bottom: 100px; }
+        .mobile-nav { display: none; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .glass-card { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(10px); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        input { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; padding: 14px; border-radius: 10px; color: #fff; width: 100%; outline: none; margin-bottom: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; border: 1px solid rgba(255,255,255,0.1); }
+        .quick-tiles { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; scrollbar-width: none; }
+        .tile { min-width: 90px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; }
+        .tile span { font-size: 10px; font-weight: bold; text-transform: uppercase; display: block; margin-top: 5px; }
+        .grid-inputs { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 2px solid #334155; font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+        .btn { padding: 15px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-add { background: #3b82f6; color: white; }
+        .btn-share { background: #10b981; color: white; width: 100%; }
+        .btn-udhaar { background: #f59e0b; color: white; width: 100%; }
+        @media(max-width: 768px){ .sidebar{ display: none; } .mobile-nav { display: flex; } .content { padding: 15px; } .grid-inputs { grid-template-columns: 1fr 1fr; } .btn-add { grid-column: span 2; } }
+    </style>
 </head>
-
 <body>
-<div class="app">
 
 <aside class="sidebar">
-<h3 style="text-align:center;margin-bottom:30px;">NEW SURJYA BAKERY</h3>
-<ul style="list-style:none;">
-<li style="padding:12px;cursor:pointer;" onclick="window.location.href='dashboard.html'">
-<i class="fa-solid fa-house"></i> Dashboard
-</li>
-<li style="padding:12px;background:rgba(255,255,255,0.2);border-radius:10px;">
-<i class="fa-solid fa-file-invoice"></i> Invoice
-</li>
-</ul>
+    <div class="sidebar-header">
+        <div class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></div>
+        <h2 id="sideBrand" style="color: #3b82f6;"><i class="fa-solid fa-cookie-bite"></i> SURJYA</h2>
+    </div>
+    <ul class="menu">
+        <li class="active"><i class="fa-solid fa-file-invoice"></i> Billing</li>
+        <li onclick="go('inventory.html')"><i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+        <li onclick="openSettings()"><i class="fa-solid fa-gear"></i> Settings</li>
+        <li onclick="go('ledger.html')"><i class="fa-solid fa-book-bookmark"></i> Ledger</li>
+    </ul>
 </aside>
 
 <main class="content">
+    <div class="mobile-nav">
+        <div class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></div>
+        <h2 id="mobileBrand" style="font-size: 20px; color: #3b82f6;">Surjya POS</h2>
+    </div>
 
-<h2 style="margin-bottom:20px;">Professional Invoice</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <h1 id="headerName" style="font-size: 24px;">Bakery Billing</h1>
+            <p id="invMeta" style="color: #64748b; font-size: 13px; margin-top: 4px;"></p>
+        </div>
+    </div>
 
-<div class="glass-card">
-<input id="custName" placeholder="Client Name">
-<input id="custAddr" placeholder="Client Address">
-</div>
+    <div class="quick-tiles">
+        <div class="tile" onclick="quickAdd('Bread', 25)"><i class="fa-solid fa-bread-slice"></i><span>Bread</span></div>
+        <div class="tile" onclick="quickAdd('Cake 1Lb', 350)"><i class="fa-solid fa-cake-candles"></i><span>Cake</span></div>
+        <div class="tile" onclick="quickAdd('Cookies', 60)"><i class="fa-solid fa-cookie"></i><span>Cookies</span></div>
+        <div class="tile" onclick="quickAdd('Patties', 20)"><i class="fa-solid fa-hotdog"></i><span>Patties</span></div>
+        <div class="tile" onclick="quickAdd('Pastry', 45)"><i class="fa-solid fa-ice-cream"></i><span>Pastry</span></div>
+    </div>
 
-<div class="glass-card grid-input">
-<input id="iName" placeholder="Item Name">
-<input id="iQty" type="number" placeholder="Qty">
-<input id="iPrice" type="number" placeholder="Price">
-<button class="btn-main" style="background:#2ecc71;margin:0;" onclick="addItem()">
-<i class="fa-solid fa-plus"></i>
-</button>
-</div>
+    <div class="glass-card">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input id="custName" placeholder="Customer Name" style="margin-bottom:0">
+            <input id="custPhone" type="tel" placeholder="Mobile Number" style="margin-bottom:0">
+        </div>
+    </div>
 
-<div class="glass-card" style="padding:0;">
-<table>
-<thead>
-<tr>
-<th>Item</th>
-<th>Qty</th>
-<th>Price</th>
-<th>Total</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
-</div>
+    <div class="glass-card">
+        <input id="iName" placeholder="🔍 Search Product..." list="inventoryList">
+        <datalist id="inventoryList"></datalist>
+        <div class="grid-inputs">
+            <input id="iQty" type="number" placeholder="Qty" value="1" style="margin-bottom:0">
+            <input id="iPrice" type="number" placeholder="Price" style="margin-bottom:0">
+            <input id="iDiscount" type="number" placeholder="Disc ₹" style="margin-bottom:0">
+            <button class="btn btn-add" onclick="addItem()"><i class="fa-solid fa-plus"></i></button>
+        </div>
+    </div>
 
-<div style="max-width:400px;margin-left:auto;">
-<div class="glass-card" style="display:flex;justify-content:space-between;font-size:20px;font-weight:bold;">
-<span>Grand Total:</span>
-<span>₹ <span id="totalText">0.00</span></span>
-</div>
+    <div class="glass-card" style="padding: 0; overflow-x: auto;">
+        <table>
+            <thead><tr><th>Item</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+            <tbody id="cartTable"></tbody>
+        </table>
+    </div>
 
-<button class="btn-main" style="background:white;color:black;" onclick="sharePDF()">
-<i class="fa-solid fa-download"></i> Download Invoice PDF
-</button>
-</div>
-
+    <div style="max-width: 450px; margin-left: auto; margin-top: 10px;">
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #94a3b8;">Sub-total:</span>
+                <span id="subTotal">₹0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 12px;">
+                <span style="font-weight: bold; font-size: 18px;">Total:</span>
+                <h2 id="grandTotal" style="color: #10b981;">₹0.00</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <button class="btn btn-share" onclick="saveAndProcess('share')"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                <button class="btn btn-udhaar" onclick="saveAndProcess('khata')"><i class="fa-solid fa-clock"></i> Khata</button>
+            </div>
+        </div>
+    </div>
 </main>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h2 style="color: #3b82f6; margin-bottom: 20px;"><i class="fa-solid fa-gear"></i> Store Settings</h2>
+        <input type="text" id="setStoreName" placeholder="Bakery Name">
+        <input type="text" id="setStorePhone" placeholder="Phone">
+        <input type="text" id="setStoreAddress" placeholder="Address">
+        <input type="text" id="setBillHeader" placeholder="Bill Header">
+        <button class="btn btn-add" style="width:100%" onclick="saveSettings()">Save & Sync</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:none; border:1px solid #334155;" onclick="closeSettings()">Close</button>
+    </div>
 </div>
 
 <script>
-let items=[];
-let invNo="NSB-"+Math.floor(1000+Math.random()*9000);
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-const custName=document.getElementById("custName");
-const custAddr=document.getElementById("custAddr");
-const iName=document.getElementById("iName");
-const iQty=document.getElementById("iQty");
-const iPrice=document.getElementById("iPrice");
-const tableBody=document.getElementById("tableBody");
-const totalText=document.getElementById("totalText");
+    let cart = [];
+    let currentStoreSettings = {};
+    let invNo = "SB-" + Date.now().toString().slice(-6);
 
-function addItem(){
-const name=iName.value.trim();
-const qty=parseFloat(iQty.value);
-const price=parseFloat(iPrice.value);
+    window.onload = () => {
+        syncSettings();
+        syncInventory();
+        document.getElementById("invMeta").innerText = `Inv: ${invNo} | ${new Date().toLocaleDateString('en-GB')}`;
+    };
 
-if(!name || isNaN(qty) || isNaN(price) || qty<=0 || price<=0){
-alert("Enter valid item details");
-return;
-}
+    // --- CLOUD SETTINGS ---
+    function syncSettings() {
+        db.collection("settings").doc("admin").onSnapshot((doc) => {
+            if (doc.exists) {
+                currentStoreSettings = doc.data();
+                document.getElementById("sideBrand").innerHTML = `<i class="fa-solid fa-cookie-bite"></i> ${currentStoreSettings.name.split(' ')[0]}`;
+                document.getElementById("mobileBrand").innerText = currentStoreSettings.name;
+                document.getElementById("headerName").innerText = currentStoreSettings.billHeader || "Billing";
+                
+                // Pre-fill modal
+                document.getElementById("setStoreName").value = currentStoreSettings.name;
+                document.getElementById("setStorePhone").value = currentStoreSettings.phone;
+                document.getElementById("setStoreAddress").value = currentStoreSettings.address;
+                document.getElementById("setBillHeader").value = currentStoreSettings.billHeader;
+            }
+        });
+    }
 
-items.push({name,qty,price,total:qty*price});
-render();
+    async function saveSettings() {
+        await db.collection("settings").doc("admin").update({
+            name: document.getElementById("setStoreName").value,
+            phone: document.getElementById("setStorePhone").value,
+            address: document.getElementById("setStoreAddress").value,
+            billHeader: document.getElementById("setBillHeader").value
+        });
+        closeSettings();
+    }
 
-iName.value="";
-iQty.value="";
-iPrice.value="";
-}
+    // --- INVENTORY SYNC (For Search) ---
+    function syncInventory() {
+        db.collection("inventory").onSnapshot(snap => {
+            const dl = document.getElementById("inventoryList");
+            dl.innerHTML = "";
+            snap.forEach(doc => {
+                let opt = document.createElement("option");
+                opt.value = doc.data().name;
+                dl.appendChild(opt);
+            });
+        });
+    }
 
-function render(){
-let grand=0;
-tableBody.innerHTML="";
+    // --- POS ACTIONS ---
+    function quickAdd(name, price) {
+        document.getElementById("iName").value = name;
+        document.getElementById("iPrice").value = price;
+        addItem();
+    }
 
-items.forEach((it,index)=>{
-grand+=it.total;
+    function addItem() {
+        let name = document.getElementById("iName").value;
+        let qty = parseFloat(document.getElementById("iQty").value) || 1;
+        let price = parseFloat(document.getElementById("iPrice").value);
+        let disc = parseFloat(document.getElementById("iDiscount").value) || 0;
+        if(!name || !price) return;
+        cart.push({ name, qty, price, disc, total: (qty * price) - disc });
+        renderCart();
+        document.getElementById("iName").value = ""; document.getElementById("iPrice").value = "";
+    }
 
-tableBody.innerHTML+=`
-<tr>
-<td>${it.name}</td>
-<td>${it.qty}</td>
-<td>₹${it.price.toFixed(2)}</td>
-<td>₹${it.total.toFixed(2)}</td>
-<td onclick="removeItem(${index})">
-<i class="fa-solid fa-trash" style="color:red;cursor:pointer;"></i>
-</td>
-</tr>`;
-});
+    function renderCart() {
+        let html = ""; let total = 0;
+        cart.forEach((item, i) => {
+            total += item.total;
+            html += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total.toFixed(2)}</td><td onclick="cart.splice(${i},1);renderCart()"><i class="fa-solid fa-trash" style="color:#ef4444;"></i></td></tr>`;
+        });
+        document.getElementById("subTotal").innerText = `₹${total.toFixed(2)}`;
+        document.getElementById("grandTotal").innerText = `₹${total.toFixed(2)}`;
+        document.getElementById("cartTable").innerHTML = html;
+    }
 
-totalText.innerText=grand.toFixed(2);
-}
+    async function saveAndProcess(type) {
+        if(cart.length === 0) return alert("Cart empty!");
+        const total = document.getElementById("grandTotal").innerText;
+        const custName = document.getElementById("custName").value || "Guest";
+        
+        // Save to Cloud Sales Record
+        await db.collection("sales").add({
+            invoice: invNo,
+            customer: custName,
+            items: cart,
+            total: total,
+            date: new Date().toLocaleDateString('en-GB'),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-function removeItem(index){
-if(confirm("Remove item?")){
-items.splice(index,1);
-render();
-}
-}
+        // WhatsApp Messaging
+        let msg = `*${currentStoreSettings.name}*\nInv: ${invNo}\nCust: ${custName}\n---\n`;
+        cart.forEach(i => msg += `${i.name} x${i.qty} = ₹${i.total}\n`);
+        msg += `---\n*Total: ${total}*\n${currentStoreSettings.address}`;
 
-async function sharePDF(){
+        if(type === 'share') window.open(`https://wa.me/${document.getElementById("custPhone").value}?text=${encodeURIComponent(msg)}`);
+        else alert("Recorded in Khata!");
+        
+        location.reload(); // Reset for next bill
+    }
 
-if(items.length===0)return alert("Items empty!");
-if(!custName.value.trim())return alert("Enter client name!");
-
-const {jsPDF}=window.jspdf;
-const doc=new jsPDF();
-const pageWidth=doc.internal.pageSize.getWidth();
-const pageHeight=doc.internal.pageSize.getHeight();
-
-// Header
-doc.setFillColor(72,187,180);
-doc.rect(0,0,pageWidth,60,'F');
-
-// Safe Logo Load
-try{
-const img=new Image();
-img.src="logo.png";
-await new Promise((resolve,reject)=>{
-img.onload=resolve;
-img.onerror=reject;
-});
-doc.addImage(img,'PNG',150,10,40,40);
-}catch(e){}
-
-// Title
-doc.setFontSize(28);
-doc.setTextColor(255);
-doc.text("INVOICE",20,35);
-
-// Company Info
-doc.setTextColor(0);
-doc.setFontSize(11);
-doc.text("New Surjya Bakery",20,75);
-doc.text("Churaibari, North Tripura - 799262",20,82);
-doc.text("Phone: 7085662649",20,89);
-
-doc.text("Invoice No: "+invNo,140,75);
-doc.text("Date: "+new Date().toLocaleDateString(),140,82);
-
-// Bill To
-doc.setFont(undefined,'bold');
-doc.text("Bill To:",20,105);
-doc.setFont(undefined,'normal');
-doc.text(custName.value,20,112);
-doc.text(custAddr.value||"",20,119);
-
-// Table
-let y=135;
-doc.setFont(undefined,'bold');
-doc.text("Item",20,y);
-doc.text("Qty",110,y);
-doc.text("Price",135,y);
-doc.text("Total",165,y);
-doc.line(20,y+2,190,y+2);
-doc.setFont(undefined,'normal');
-
-items.forEach(it=>{
-y+=12;
-if(y>270){doc.addPage();y=20;}
-doc.text(it.name,20,y);
-doc.text(it.qty.toString(),110,y);
-doc.text(it.price.toFixed(2),135,y);
-doc.text(it.total.toFixed(2),165,y);
-});
-
-y+=15;
-doc.setFont(undefined,'bold');
-doc.setFontSize(14);
-doc.text("Grand Total: ₹ "+totalText.innerText,120,y);
-
-// Footer dynamic
-doc.setFontSize(14);
-doc.setTextColor(100);
-doc.text("Thank You For Your Business!",20,pageHeight-10);
-
-doc.save("New_Surjya_Bakery_Invoice.pdf");
-}
+    function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
+    function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
+    function go(p) { window.location.href = p; }
 </script>
 
 </body>

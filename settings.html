@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Settings - Bakery Cloud</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif;}
+        body{background:#0f172a; color:#fff; padding:20px; display:flex; justify-content:center; min-height:100vh;}
+        .container{width:100%; max-width:500px; background:rgba(255,255,255,0.05); padding:25px; border-radius:24px; border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(20px); height: fit-content;}
+        h2{margin-bottom:20px; color:#3b82f6; display:flex; align-items:center; gap:12px; font-size:20px;}
+        .form-group{margin-bottom:15px;}
+        label{display:block; font-size:11px; opacity:0.6; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;}
+        input{width:100%; padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background:#1e293b; color:#fff; outline:none; transition:0.3s; font-size:15px;}
+        input:focus{border-color:#3b82f6; background:#1e293b;}
+        .btn-save{width:100%; padding:16px; background:#3b82f6; border:none; border-radius:14px; color:#fff; font-weight:bold; cursor:pointer; margin-top:15px; font-size:16px; transition:0.3s;}
+        .btn-save:active{transform:scale(0.98);}
+        
+        .backup-section{margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);}
+        .btn-outline{width:100%; padding:12px; background:transparent; border:1px solid rgba(255,255,255,0.2); border-radius:12px; color:#fff; cursor:pointer; margin-top:10px; font-size:13px;}
+        
+        .back-link{display:flex; align-items:center; justify-content:center; gap:8px; margin-top:25px; color:#94a3b8; text-decoration:none; font-size:14px;}
+        .status-msg{font-size:12px; text-align:center; margin-top:10px; color:#4ade80; display:none;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2><i class="fa-solid fa-store"></i> Store Identity</h2>
+    
+    <div class="form-group">
+        <label>Bakery / Business Name</label>
+        <input type="text" id="storeName" placeholder="e.g. Surjya Bakery">
+    </div>
+
+    <div class="form-group">
+        <label>Contact Number (For Invoice)</label>
+        <input type="text" id="storePhone" placeholder="+91 0000000000">
+    </div>
+
+    <div class="form-group">
+        <label>Store Address</label>
+        <input type="text" id="storeAddress" placeholder="Street, City, PIN">
+    </div>
+
+    <div class="form-group">
+        <label>Currency Symbol</label>
+        <input type="text" id="currency" placeholder="₹">
+    </div>
+
+    <button class="btn-save" onclick="saveSettings()">Update Cloud Settings</button>
+    <div id="statusMsg" class="status-msg">Changes saved to Cloud! ✓</div>
+
+    <div class="backup-section">
+        <label style="margin-bottom:10px; display:block">Data Maintenance</label>
+        <button class="btn-outline" onclick="exportData()"><i class="fa-solid fa-download"></i> Download JSON Backup</button>
+        <button class="btn-outline" onclick="document.getElementById('importFile').click()"><i class="fa-solid fa-upload"></i> Restore from File</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+    </div>
+
+    <a href="dashboard.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+</div>
+
+<script>
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // --- LOAD SETTINGS FROM CLOUD ---
+    window.onload = async function() {
+        const docRef = db.collection("settings").doc("store_config");
+        const doc = await docRef.get();
+
+        if (doc.exists) {
+            const data = doc.data();
+            document.getElementById("storeName").value = data.name || "";
+            document.getElementById("storePhone").value = data.phone || "";
+            document.getElementById("storeAddress").value = data.address || "";
+            document.getElementById("currency").value = data.currency || "₹";
+            // Local fallback backup
+            localStorage.setItem("bakery_settings", JSON.stringify(data));
+        }
+    };
+
+    // --- SAVE TO CLOUD ---
+    async function saveSettings() {
+        const settings = {
+            name: document.getElementById("storeName").value,
+            phone: document.getElementById("storePhone").value,
+            address: document.getElementById("storeAddress").value,
+            currency: document.getElementById("currency").value,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        try {
+            await db.collection("settings").doc("store_config").set(settings);
+            localStorage.setItem("bakery_settings", JSON.stringify(settings));
+            
+            const msg = document.getElementById("statusMsg");
+            msg.style.display = "block";
+            setTimeout(() => { msg.style.display = "none"; }, 3000);
+        } catch (e) {
+            alert("Error saving: " + e.message);
+        }
+    }
+
+    // --- EXPORT ALL CLOUD DATA ---
+    async function exportData() {
+        const collections = ["items", "orders", "cashflow", "ledger"];
+        let allData = { backupDate: new Date().toISOString() };
+
+        for(let col of collections) {
+            const snap = await db.collection(col).get();
+            allData[col] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "Bakery_Full_Backup.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    // --- IMPORT DATA TO CLOUD ---
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(confirm("Ye action Cloud ka puraana data overwrite kar sakta hai. Continue?")) {
+                    // This is a bulk import logic - simplified
+                    for(let col in data) {
+                        if(Array.isArray(data[col])) {
+                            for(let item of data[col]) {
+                                const {id, ...rest} = item;
+                                await db.collection(col).doc(id || undefined).set(rest);
+                            }
+                        }
+                    }
+                    alert("Cloud Restore Complete!");
+                    location.reload();
+                }
+            } catch (err) { alert("Invalid File Format!"); }
+        };
+        reader.readAsText(file);
+    }
+</script>
+</body>
+</html>

@@ -1,229 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Dashboard - New Surjya Bakery</title>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* ===== GLOBAL STYLES ===== */
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-        }
-
-        body{
-            background: linear-gradient(135deg,#667eea,#764ba2,#ec4899);
-            background-size: 400% 400%;
-            animation: bgMove 15s ease infinite;
-            transition: 0.3s ease;
-            color: #fff;
-            min-height: 100vh;
-        }
-
-        @keyframes bgMove{
-            0%{background-position:0% 50%;}
-            50%{background-position:100% 50%;}
-            100%{background-position:0% 50%;}
-        }
-
+        /* ===== GLOBAL STYLES (No Changes Made) ===== */
+        *{ margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+        body{ background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; transition: 0.3s ease; color: #fff; min-height: 100vh; }
+        @keyframes bgMove{ 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
         .app{ display: flex; height: 100vh; overflow: hidden; }
-
-        /* ===== SIDEBAR ===== */
-        .sidebar{
-            width: 260px;
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.08);
-            border-right: 1px solid rgba(255,255,255,0.2);
-            padding: 20px 15px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100%;
-            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
-        }
-
+        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; }
         .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
-        .profile-info h4 { font-size: 16px; font-weight: 600; }
-        .profile-info p{ font-size: 12px; opacity: 0.7; }
-
+        .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.3); }
         .menu{ list-style: none; flex-grow: 1; }
-
-        .menu li{
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-bottom: 5px;
-            font-size: 15px;
-            opacity: 0.8;
-        }
-
-        .menu li:hover{ 
-            background: rgba(255,255,255,0.15); 
-            opacity: 1;
-            transform: translateX(5px);
-        }
-
-        /* Active Page Style */
-        .menu li.active{
-            background: rgba(255,255,255,0.25);
-            border-left: 4px solid #fff;
-            opacity: 1;
-            font-weight: bold;
-        }
-
-        /* ===== MAIN CONTENT ===== */
-        .content{
-            flex: 1;
-            padding: 30px;
-            margin-left: 260px;
-            overflow-y: auto;
-            transition: 0.3s;
-        }
-
-        .top-header{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .header-left{ display: flex; align-items: center; gap: 15px; }
-        #menuBtn { 
-            font-size: 22px; 
-            cursor: pointer; 
-            display: none; /* Desktop pe hidden */
-        }
-
-        .greeting{ font-size: 14px; opacity: 0.8; margin-top: 4px; }
-
-        .action-buttons{ display: flex; gap: 12px; }
-
-        .btn{
-            background: rgba(255,255,255,0.2);
-            border: none;
-            padding: 10px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            color: white;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn:hover{ background: rgba(255,255,255,0.35); transform: translateY(-2px); }
-
-        /* ===== CARDS ===== */
-        .cards{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card{
-            background: rgba(255,255,255,0.12);
-            padding: 25px;
-            border-radius: 20px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.15);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            transition: 0.3s;
-        }
-
-        .card:hover{ transform: translateY(-8px); background: rgba(255,255,255,0.18); }
-        .card i{ font-size: 28px; margin-bottom: 15px; color: #fff; }
-        .card h3{ font-size: 24px; margin-bottom: 5px; }
-        .card p{ opacity: 0.8; font-size: 14px; }
-
-        /* ===== UTILS ===== */
-        .overlay{
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.3s;
-            z-index: 900;
-        }
-
+        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; margin-bottom: 5px; font-size: 15px; opacity: 0.8; }
+        .menu li:hover{ background: rgba(255,255,255,0.15); opacity: 1; transform: translateX(5px); }
+        .menu li.active{ background: rgba(255,255,255,0.25); border-left: 4px solid #fff; opacity: 1; font-weight: bold; }
+        .content{ flex: 1; padding: 25px; margin-left: 260px; overflow-y: auto; transition: 0.3s; }
+        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #menuBtn { font-size: 22px; cursor: pointer; display: none; }
+        .greeting{ font-size: 13px; opacity: 0.8; margin-top: 4px; }
+        .welcome-msg { font-size: 18px; font-weight: bold; letter-spacing: -0.5px; }
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.7; font-weight: bold; display: block; margin-top: 20px; }
+        .grid-top { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: rgba(255,255,255,0.12); padding: 15px 20px; border-radius: 15px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 15px; transition: 0.3s; }
+        .card:hover{ transform: translateY(-3px); background: rgba(255,255,255,0.18); }
+        .card i{ font-size: 24px; }
+        .card-info h3{ font-size: 20px; line-height: 1.2; }
+        .card-info p{ opacity: 0.7; font-size: 10px; text-transform: uppercase; font-weight: bold; }
+        .progress-container { width: 100%; background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; margin-top: 8px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #4ade80; width: 0%; transition: 0.8s ease; }
+        .quick-actions { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .action-chip { background: #fff; color: #764ba2; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.2s; }
+        .activity-card { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .activity-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .status-badge { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        .bg-success { background: #10b981; } .bg-danger { background: #ef4444; }
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; background: #fff; color: #764ba2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; transition: 0.3s; }
+        .txt-profit { color: #4ade80; } .txt-loss { color: #ff4d4d; } .txt-collect { color: #60a5fa; } .txt-pay { color: #fbbf24; }
+        @media(max-width: 768px){ .sidebar{ left: -260px; } .sidebar.active{ left: 0; } .content{ margin-left: 0; padding: 15px; } #menuBtn { display: block; } .grid-top { grid-template-columns: 1fr; } }
+        .overlay{ position: fixed; inset: 0; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; }
         .overlay.active{ opacity: 1; pointer-events: all; }
-
-        /* ===== MOBILE RESPONSIVE ===== */
-        @media(max-width: 768px){
-            .sidebar{ left: -260px; }
-            .sidebar.active{ left: 0; }
-            .content{ margin-left: 0; padding: 20px; }
-            #menuBtn { display: block; }
-        }
-
-        /* ===== DARK MODE OVERRIDE ===== */
         body.dark{ background: #0f172a; }
-        body.dark .sidebar{ background: rgba(15,23,42,0.95); }
-        body.dark .card{ background: rgba(30,41,59,0.7); border-color: rgba(255,255,255,0.05); }
-        body.dark .btn{ background: rgba(148,163,184,0.15); }
-
-        .logo{
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 0 20px rgba(255,255,255,0.3);
-            animation: glow 2s infinite alternate;
-            object-fit: cover;
-        }
-
-        @keyframes glow{
-            from{ box-shadow: 0 0 10px rgba(255,255,255,0.3); }
-            to{ box-shadow: 0 0 30px rgba(255,255,255,0.6); }
-        }
     </style>
 </head>
-
 <body>
-
-<script>
-    /* SESSION PROTECTION */
-    if(localStorage.getItem("loggedIn") !== "true"){
-        window.location.replace("index.html");
-    }
-</script>
 
 <div class="app">
     <aside class="sidebar" id="sidebar">
         <div class="profile">
             <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
-            <div class="profile-info">
-                <h4>Surjya Bakery</h4>
-                <p>Admin Panel</p>
-            </div>
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin Panel</p></div>
         </div>
-
-        <ul class="menu" id="mainMenu">
-            <li data-page="dashboard.html" onclick="goPage('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
-            <li data-page="items.html" onclick="goPage('items.html')"><i class="fa-solid fa-box"></i> Items</li>
-            <li data-page="invoice.html" onclick="goPage('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
-            <li data-page="clients.html" onclick="goPage('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
-            <li data-page="inventory.html" onclick="goPage('inventory.html')"><i class="fa-solid fa-warehouse"></i> Inventory</li>
-            <li data-page="orders.html" onclick="goPage('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
-            <li data-page="records.html" onclick="goPage('records.html')"><i class="fa-solid fa-chart-column"></i> Records</li>
-            <li data-page="records.html" onclick="goPage('employees.html')"><i class="fa-solid fa-users"></i> employees</li>
+        <ul class="menu">
+            <li class="active" onclick="goPage('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')"><i class="fa-solid fa-book-bookmark"></i> Ledger (Khata)</li>
+            <li onclick="goPage('items.html')"><i class="fa-solid fa-box"></i> Items</li>
+            <li onclick="goPage('invoice.html')"><i class="fa-solid fa-receipt"></i> Invoice</li>
+            <li onclick="goPage('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
+            <li onclick="goPage('inventory.html')"><i class="fa-solid fa-warehouse"></i> Inventory</li>
+            <li onclick="goPage('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
+            <li onclick="goPage('records.html')"><i class="fa-solid fa-chart-column"></i> Records</li>
+            <li onclick="goPage('employees.html')"><i class="fa-solid fa-user-tie"></i> Employees</li>
         </ul>
     </aside>
 
@@ -233,134 +79,204 @@
         <header class="top-header">
             <div class="header-left">
                 <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
-                <div>
-                    <h2 id="pageTitle">Dashboard</h2>
-                    <div class="greeting" id="greeting">Loading...</div>
-                </div>
+                <div><h2 id="welcomeMsg" class="welcome-msg">Dashboard</h2><div class="greeting" id="greeting"></div></div>
             </div>
-
             <div class="action-buttons">
-                <button class="btn" id="darkToggle" title="Toggle Theme">🌙</button>
-                <button class="btn" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                <button id="darkToggle" style="background: rgba(255,255,255,0.1); border:none; padding:8px 12px; border-radius:8px; color:white; cursor:pointer;">🌙</button>
+                <button id="logoutBtn" style="background: rgba(255,255,255,0.1); border:none; padding:8px 12px; border-radius:8px; color:white; cursor:pointer;"><i class="fa-solid fa-power-off"></i></button>
             </div>
         </header>
 
-        <div class="cards">
-            <div class="card">
-                <i class="fa-solid fa-indian-rupee-sign"></i>
-                <h3 id="todaySales">₹0</h3>
-                <p>Today Sales</p>
+        <div class="quick-actions">
+            <div class="action-chip" onclick="goPage('invoice.html')"><i class="fa-solid fa-plus"></i> New Bill</div>
+            <div class="action-chip" onclick="goPage('items.html')"><i class="fa-solid fa-tag"></i> Add Item</div>
+            <div class="action-chip" onclick="goPage('ledger.html')"><i class="fa-solid fa-indian-rupee-sign"></i> Add Khata</div>
+        </div>
+
+        <span class="section-label">Finance Summary</span>
+        <div class="grid-top">
+            <div class="card" onclick="goPage('ledger.html')" style="cursor: pointer;">
+                <i class="fa-solid fa-arrow-down-wide-short txt-collect"></i>
+                <div class="card-info"><p>To Collect</p><h3 id="dash-collect">₹ 0</h3></div>
             </div>
-            <div class="card">
-                <i class="fa-solid fa-receipt"></i>
-                <h3 id="ordersCount">0</h3>
-                <p>Total Orders</p>
-            </div>
-            <div class="card">
-                <i class="fa-solid fa-users"></i>
-                <h3 id="clientsCount">0</h3>
-                <p>Total Clients</p>
+            <div class="card" onclick="goPage('ledger.html')" style="cursor: pointer;">
+                <i class="fa-solid fa-arrow-up-wide-short txt-pay"></i>
+                <div class="card-info"><p>To Pay</p><h3 id="dash-pay">₹ 0</h3></div>
             </div>
         </div>
-        
-        </main>
+
+        <span class="section-label">Business Performance</span>
+        <div class="grid-stats">
+            <div class="card">
+                <i class="fa-solid fa-wallet txt-profit"></i>
+                <div class="card-info" style="width: 100%;">
+                    <p>Sales Target (₹5k)</p>
+                    <h3 id="dash-sales">₹ 0</h3>
+                    <div class="progress-container"><div class="progress-bar" id="salesProgress"></div></div>
+                </div>
+            </div>
+            <div class="card">
+                <i id="profit-icon" class="fa-solid fa-chart-line txt-profit"></i>
+                <div class="card-info"><p id="profit-label">Net Profit</p><h3 id="dash-profit" class="txt-profit">₹ 0</h3></div>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-layer-group" style="color: #a78bfa;"></i>
+                <div class="card-info"><p>Active Items</p><h3 id="dash-items">0</h3></div>
+            </div>
+            <div class="card">
+                <i class="fa-solid fa-users" style="color: #2dd4bf;"></i>
+                <div class="card-info"><p>Total Clients</p><h3 id="dash-clients">0</h3></div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div>
+                <span class="section-label">Top Selling Items</span>
+                <div class="activity-card" id="topProducts"><p style="opacity: 0.5; text-align: center; padding: 20px;">Analyizing...</p></div>
+            </div>
+            <div>
+                <span class="section-label">Recent Orders</span>
+                <div class="activity-card" id="recentActivity"><p style="opacity: 0.5; text-align: center; padding: 20px;">Loading...</p></div>
+            </div>
+        </div>
+
+        <span class="section-label" id="stockAlertLabel" style="color: #ff4d4d; display: none;">⚠️ Inventory Alerts</span>
+        <div class="activity-card" id="stockAlerts" style="display: none; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);"></div>
+    </main>
+
+    <div class="fab" onclick="goPage('invoice.html')"><i class="fa-solid fa-receipt"></i></div>
 </div>
 
 <script>
-    /* DARK MODE LOGIC */
-    const darkToggle = document.getElementById("darkToggle");
-    const isDark = localStorage.getItem("darkMode") === "true";
-
-    if(isDark){
-        document.body.classList.add("dark");
-        darkToggle.innerText = "☀️";
-    }
-
-    darkToggle.onclick = () => {
-        document.body.classList.toggle("dark");
-        const currentlyDark = document.body.classList.contains("dark");
-        localStorage.setItem("darkMode", currentlyDark);
-        darkToggle.innerText = currentlyDark ? "☀️" : "🌙";
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
     };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    /* SIDEBAR & OVERLAY LOGIC */
+    // UI Controls (Login Check, Sidebar, Dark Mode)
+    if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
     const menuBtn = document.getElementById("menuBtn");
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("overlay");
+    const darkToggle = document.getElementById("darkToggle");
 
-    menuBtn.onclick = () => {
-        sidebar.classList.add("active");
-        overlay.classList.add("active");
+    menuBtn.onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
+    overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
+
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+        darkToggle.innerText = document.body.classList.contains("dark") ? "☀️" : "🌙";
     };
 
-    overlay.onclick = () => {
-        sidebar.classList.remove("active");
-        overlay.classList.remove("active");
-    };
+    // Firebase Data Listener (Real-time update)
+    async function updateDashboard() {
+        // Fetch Orders
+        db.collection("orders").onSnapshot(snap => {
+            const orders = snap.docs.map(doc => doc.data());
+            
+            // Total Sales
+            const totalSales = orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+            document.getElementById("dash-sales").innerText = "₹ " + totalSales.toLocaleString();
+            const target = 5000; 
+            document.getElementById("salesProgress").style.width = Math.min((totalSales / target) * 100, 100) + "%";
 
-    /* NAVIGATION & ACTIVE STATE */
-    function goPage(page){
-        window.location.href = page;
+            // Recent Activity
+            renderRecentActivity(orders);
+            // Top Products
+            renderTopProducts(orders);
+            // Profit calculation (Simple logic: Sales - Expenses)
+            updateProfit(totalSales);
+        });
+
+        // Fetch Clients
+        db.collection("clients").onSnapshot(snap => {
+            document.getElementById("dash-clients").innerText = snap.size;
+        });
+
+        // Fetch Items
+        db.collection("items").onSnapshot(snap => {
+            const items = snap.docs.map(doc => doc.data());
+            document.getElementById("dash-items").innerText = snap.size;
+            renderStockAlerts(items);
+        });
+
+        // Fetch Ledger
+        db.collection("ledger").onSnapshot(snap => {
+            let collect = 0, pay = 0;
+            snap.forEach(doc => {
+                const bal = doc.data().balance || 0;
+                if(bal > 0) collect += bal; else pay += Math.abs(bal);
+            });
+            document.getElementById("dash-collect").innerText = "₹ " + collect.toLocaleString();
+            document.getElementById("dash-pay").innerText = "₹ " + pay.toLocaleString();
+        });
     }
 
-    function setActivePage() {
-        const path = window.location.pathname;
-        const page = path.split("/").pop() || "dashboard.html";
-        const menuItems = document.querySelectorAll(".menu li");
-        
-        menuItems.forEach(item => {
-            if(item.getAttribute("data-page") === page) {
-                item.classList.add("active");
-                // Update Header Title based on active page
-                document.getElementById("pageTitle").innerText = item.innerText.trim();
+    async function updateProfit(sales) {
+        db.collection("expenses").onSnapshot(snap => {
+            const totalExp = snap.docs.reduce((sum, doc) => sum + parseFloat(doc.data().amount || 0), 0);
+            const profit = sales - totalExp;
+            const profitEl = document.getElementById("dash-profit");
+            const profitIcon = document.getElementById("profit-icon");
+            
+            profitEl.innerText = "₹ " + Math.abs(profit).toLocaleString();
+            if(profit >= 0) {
+                profitEl.className = "txt-profit"; profitIcon.className = "fa-solid fa-chart-line txt-profit";
+                document.getElementById("profit-label").innerText = "Net Profit";
             } else {
-                item.classList.remove("active");
+                profitEl.className = "txt-loss"; profitIcon.className = "fa-solid fa-chart-bar txt-loss";
+                document.getElementById("profit-label").innerText = "Net Loss";
             }
         });
     }
 
-    /* GREETING & CLOCK */
+    function renderTopProducts(orders) {
+        const counts = {};
+        orders.forEach(order => { if(order.items) order.items.forEach(item => { counts[item.name] = (counts[item.name] || 0) + (parseFloat(item.qty) || 1); }); });
+        const sorted = Object.entries(counts).sort(([,a],[,b]) => b - a).slice(0, 3);
+        const container = document.getElementById("topProducts");
+        if(sorted.length === 0) { container.innerHTML = `<p style="opacity:0.5; text-align:center;">No data</p>`; return; }
+        container.innerHTML = sorted.map(([name, qty], i) => `<div class="activity-row"><div style="display:flex; align-items:center; gap:10px;"><span style="background:#764ba2; padding:2px 8px; border-radius:50%; font-size:10px;">${i+1}</span><b>${name}</b></div><div style="font-size:12px; opacity:0.7;">${qty} sold</div></div>`).join('');
+    }
+
+    function renderStockAlerts(items) {
+        const container = document.getElementById("stockAlerts");
+        const lowStock = items.filter(i => parseFloat(i.stock || 0) < 10);
+        if(lowStock.length > 0) {
+            document.getElementById("stockAlertLabel").style.display = "block"; container.style.display = "block";
+            container.innerHTML = lowStock.map(item => `<div class="activity-row"><b>${item.name}</b><span class="status-badge bg-danger">ONLY ${item.stock} LEFT</span></div>`).join('');
+        } else { document.getElementById("stockAlertLabel").style.display = "none"; container.style.display = "none"; }
+    }
+
+    function renderRecentActivity(orders) {
+        const container = document.getElementById("recentActivity");
+        const lastThree = orders.slice(-3).reverse();
+        if(lastThree.length === 0) { container.innerHTML = `<p style="opacity:0.5; text-align:center;">No orders</p>`; return; }
+        container.innerHTML = lastThree.map(o => `<div class="activity-row"><div><b>#${o.id || 'INV'}</b><div style="font-size:11px; opacity:0.6;">${o.date || 'Today'}</div></div><div style="text-align:right;"><b>₹${parseFloat(o.total).toLocaleString()}</b><br><span class="status-badge bg-success">PAID</span></div></div>`).join('');
+    }
+
     function updateGreeting(){
         const now = new Date();
         const hour = now.getHours();
-        let greet = "Good Evening 🌙";
-
-        if(hour < 12) greet = "Good Morning ☀️";
-        else if(hour < 18) greet = "Good Afternoon 🌤️";
-
-        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-        document.getElementById("greeting").innerText = 
-            `${greet} | ${now.toLocaleDateString(undefined, options)} | ${now.toLocaleTimeString()}`;
+        const wish = hour < 12 ? "Good Morning ☀️" : hour < 17 ? "Good Afternoon ☕" : "Good Evening 🌙";
+        document.getElementById("welcomeMsg").innerText = wish + ", Pritam!";
+        document.getElementById("greeting").innerText = now.toLocaleDateString() + " | " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
-    function updateDashboard() {
-    // Orders ka data uthao
-    const orders = JSON.parse(localStorage.getItem("orders")) || [];
-    const totalOrders = orders.length;
-    
-    // Total Sales calculate karo
-    const sales = orders.reduce((sum, order) => sum + parseFloat(order.total || 0), 0);
-    
-    // UI update karo
-    document.getElementById("dash-orders").innerText = totalOrders;
-    document.getElementById("dash-sales").innerText = "₹ " + sales.toLocaleString();
-}
 
+    function goPage(page){ window.location.href = page; }
+    document.getElementById("logoutBtn").onclick = () => { if(confirm("Logout karein?")) { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); } };
 
-    /* LOGOUT */
-    document.getElementById("logoutBtn").onclick = () => {
-        if(confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem("loggedIn");
-            window.location.replace("index.html");
-        }
-    };
-
-    // Initialize functions
     window.onload = () => {
-        setActivePage();
-        setInterval(updateGreeting, 1000);
+        updateDashboard();
         updateGreeting();
+        setInterval(updateGreeting, 60000); // Update time every minute
     };
 </script>
-
 </body>
 </html>
