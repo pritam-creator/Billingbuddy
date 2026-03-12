@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* Styles remain exactly as you provided for consistent UI */
         *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
         body{ background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
         @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
@@ -20,19 +19,28 @@
         .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
         .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
         .menu{ list-style: none; flex-grow: 1; }
-        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 14px; }
+        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 14px; margin-bottom: 5px;}
         .menu li:hover, .menu li.active{ background: rgba(255,255,255,0.2); opacity: 1; }
         .menu li.active{ border-left: 4px solid #fff; font-weight: bold; }
+        
         .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 80px; }
         .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .header-left { display: flex; align-items: center; gap: 12px; }
         .back-btn { width: 35px; height: 35px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        
+        /* Tab System */
+        .tab-bar { display: flex; gap: 10px; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 15px; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 10px; font-size: 14px; transition: 0.3s; opacity: 0.6; }
+        .tab.active { background: #fff; color: #764ba2; opacity: 1; font-weight: bold; }
+
         .report-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         .report-card { background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
         .report-card p { font-size: 9px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
         .report-card h3 { font-size: 16px; color: #f1c40f; }
+        
         .search-box { background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; margin-bottom: 20px; }
         .search-box input { background: none; border: none; color: white; margin-left: 10px; width: 100%; outline: none; font-size: 14px; }
+        
         .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
         .item-card{ background: rgba(255,255,255,0.12); padding: 18px; border-radius: 20px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 12px; transition: 0.2s; position: relative; }
         .item-header { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -82,6 +90,11 @@
             </button>
         </header>
 
+        <div class="tab-bar">
+            <div class="tab active" id="tabBakery" onclick="switchTab('Bakery')"><i class="fa-solid fa-cookie"></i> Bakery Items</div>
+            <div class="tab" id="tabRaw" onclick="switchTab('Raw')"><i class="fa-solid fa-seedling"></i> Raw Materials</div>
+        </div>
+
         <div class="report-bar">
             <div class="report-card"><p>Total Items</p><h3 id="totalItemsCount">0</h3></div>
             <div class="report-card"><p>Low Stock</p><h3 id="lowStockCount" style="color:#ff6b81">0</h3></div>
@@ -91,7 +104,7 @@
 
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass" style="opacity: 0.6;"></i>
-            <input type="text" id="searchInput" placeholder="Search bakery items..." onkeyup="render()">
+            <input type="text" id="searchInput" placeholder="Search..." onkeyup="render()">
         </div>
 
         <div class="inventory-grid" id="inventoryList"></div>
@@ -103,13 +116,10 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
         projectId: "billingbuddy-551f9",
-        storageBucket: "billingbuddy-551f9.firebasestorage.app",
-        messagingSenderId: "287026017084",
         appId: "1:287026017084:web:aae879570ad706e5a2a439"
     };
 
@@ -117,8 +127,8 @@
     const db = firebase.firestore();
 
     let inventory = [];
+    let currentTab = 'Bakery';
 
-    // Real-time listener for Inventory
     function initInventory() {
         db.collection("inventory").onSnapshot((snapshot) => {
             inventory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -126,16 +136,28 @@
         });
     }
 
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tabBakery').classList.toggle('active', tab === 'Bakery');
+        document.getElementById('tabRaw').classList.toggle('active', tab === 'Raw');
+        render();
+    }
+
     function render() {
         const list = document.getElementById("inventoryList");
         const filter = document.getElementById("searchInput").value.toLowerCase();
         list.innerHTML = "";
 
-        let lowCount = 0;
-        let healthyCount = 0;
-        let totalVal = 0;
+        let lowCount = 0; let healthyCount = 0; let totalVal = 0;
 
-        inventory.filter(item => item.name.toLowerCase().includes(filter)).forEach((item) => {
+        // Filter by Tab and Search
+        const filteredData = inventory.filter(item => {
+            const matchesTab = item.type === currentTab || (!item.type && currentTab === 'Bakery');
+            const matchesSearch = item.name.toLowerCase().includes(filter);
+            return matchesTab && matchesSearch;
+        });
+
+        filteredData.forEach((item) => {
             const isLow = item.stock <= (item.minLevel || 10);
             if(isLow) lowCount++; else healthyCount++;
             
@@ -175,71 +197,64 @@
                 </div>`;
         });
 
-        document.getElementById("totalItemsCount").innerText = inventory.length;
+        document.getElementById("totalItemsCount").innerText = filteredData.length;
         document.getElementById("lowStockCount").innerText = lowCount;
         document.getElementById("healthyCount").innerText = healthyCount;
         document.getElementById("totalStockValue").innerText = "₹" + totalVal.toLocaleString('en-IN');
     }
 
+    async function addItem() {
+        const type = confirm("Press OK for 'Bakery Item' or CANCEL for 'Raw Material'") ? 'Bakery' : 'Raw';
+        const name = prompt(`Enter ${type} Name:`);
+        if (!name) return;
+        const unit = prompt("Unit (Pcs/Kg/Ltr/Pkt):", type === 'Raw' ? 'Kg' : 'Pcs');
+        const price = prompt("Price per unit (₹):", "0");
+        const stock = prompt("Initial Stock:", "0");
+        const min = prompt("Min Alert Level:", "10");
+
+        await db.collection("inventory").add({
+            name, unit, type,
+            price: parseFloat(price) || 0,
+            stock: parseFloat(stock) || 0,
+            minLevel: parseFloat(min) || 10,
+            lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+    }
+
     async function updateQty(id, currentStock, change) {
         const newStock = Math.max(0, currentStock + change);
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         await db.collection("inventory").doc(id).update({
             stock: newStock,
-            lastUpdate: time
+            lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
     }
 
     async function editPrice(id, currentPrice) {
         const newPrice = prompt(`Enter New Price:`, currentPrice);
         if(newPrice !== null && !isNaN(newPrice)) {
-            await db.collection("inventory").doc(id).update({
-                price: parseFloat(newPrice)
-            });
+            await db.collection("inventory").doc(id).update({ price: parseFloat(newPrice) });
         }
-    }
-
-    async function addItem() {
-        const name = prompt("Item Name (e.g., Milk Bread):");
-        if (!name) return;
-        const unit = prompt("Unit (Pcs/Kg/Pkt):", "Pcs");
-        const price = prompt("Price per unit (₹):", "0");
-        const stock = prompt("Initial Stock:", "0");
-        const min = prompt("Min Alert Level (Stock low warning):", "10");
-
-        await db.collection("inventory").add({
-            name, unit,
-            price: parseFloat(price) || 0,
-            stock: parseInt(stock) || 0,
-            minLevel: parseInt(min) || 10,
-            lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
     }
 
     async function deleteItem(id, name) {
-        if (confirm(`Remove ${name} from inventory?`)) {
-            await db.collection("inventory").doc(id).delete();
-        }
+        if (confirm(`Remove ${name}?`)) { await db.collection("inventory").doc(id).delete(); }
     }
 
     function downloadReport() {
-        let csv = "Item Name,Stock,Unit,Price,Total Value,Status\n";
+        let csv = "Type,Item Name,Stock,Unit,Price,Total Value\n";
         inventory.forEach(item => {
-            let status = item.stock <= (item.minLevel || 10) ? "Low Stock" : "In Stock";
             let val = item.stock * (item.price || 0);
-            csv += `"${item.name}",${item.stock},${item.unit},${item.price},${val},${status}\n`;
+            csv += `"${item.type || 'Bakery'}", "${item.name}",${item.stock},${item.unit},${item.price},${val}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `Inventory_Report_${new Date().toLocaleDateString()}.csv`;
+        a.href = window.URL.createObjectURL(blob);
+        a.download = `Inventory_${currentTab}_${new Date().toLocaleDateString()}.csv`;
         a.click();
     }
 
     function go(page) { window.location.href = page; }
     window.onload = initInventory;
 </script>
-
 </body>
 </html>

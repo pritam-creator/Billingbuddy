@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* (Styles same as provided for brand consistency) */
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
         body{ background: #0f172a; color: #fff; height: 100vh; overflow: hidden; display: flex; }
         .sidebar{ width: 260px; background: rgba(30, 41, 59, 0.7); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px; display: flex; flex-direction: column; }
@@ -37,10 +36,43 @@
         .btn-add { background: #3b82f6; color: white; }
         .btn-share { background: #10b981; color: white; width: 100%; }
         .btn-udhaar { background: #f59e0b; color: white; width: 100%; }
+
+        /* PRINT STYLES - Isse print ke waqt baki sab gayab ho jayega */
+        #printSection { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printSection, #printSection * { visibility: visible; }
+            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff; padding: 20px; }
+            .no-print { display: none; }
+        }
+
         @media(max-width: 768px){ .sidebar{ display: none; } .mobile-nav { display: flex; } .content { padding: 15px; } .grid-inputs { grid-template-columns: 1fr 1fr; } .btn-add { grid-column: span 2; } }
     </style>
 </head>
 <body>
+
+<div id="printSection">
+    <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+        <h2 id="pStoreName">Surjya Bakery</h2>
+        <p id="pStoreAddr">Address Loading...</p>
+        <p id="pStorePhone">Phone: ...</p>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px;">
+        <span id="pInvNo">Inv: #000</span>
+        <span id="pDate">Date: 01/01/2024</span>
+    </div>
+    <p style="font-size: 14px; margin-bottom: 10px;">Customer: <b id="pCustName">Guest</b></p>
+    <table style="width: 100%; font-size: 13px; color: #000;">
+        <thead style="border-bottom: 1px solid #000;">
+            <tr><th style="color:#000">Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+        </thead>
+        <tbody id="pItems"></tbody>
+    </table>
+    <div style="text-align: right; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px;">
+        <h3>Total Amount: <span id="pGrandTotal">₹0.00</span></h3>
+    </div>
+    <p style="text-align: center; margin-top: 20px; font-size: 12px;">*** Thank You! Visit Again ***</p>
+</div>
 
 <aside class="sidebar">
     <div class="sidebar-header">
@@ -112,7 +144,7 @@
                 <h2 id="grandTotal" style="color: #10b981;">₹0.00</h2>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <button class="btn btn-share" onclick="saveAndProcess('share')"><i class="fa-solid fa-share-nodes"></i> Share</button>
+                <button class="btn btn-share" onclick="saveAndProcess('share')"><i class="fa-solid fa-print"></i> Print Bill</button>
                 <button class="btn btn-udhaar" onclick="saveAndProcess('khata')"><i class="fa-solid fa-clock"></i> Khata</button>
             </div>
         </div>
@@ -132,7 +164,6 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -152,7 +183,6 @@
         document.getElementById("invMeta").innerText = `Inv: ${invNo} | ${new Date().toLocaleDateString('en-GB')}`;
     };
 
-    // --- CLOUD SETTINGS ---
     function syncSettings() {
         db.collection("settings").doc("admin").onSnapshot((doc) => {
             if (doc.exists) {
@@ -161,7 +191,11 @@
                 document.getElementById("mobileBrand").innerText = currentStoreSettings.name;
                 document.getElementById("headerName").innerText = currentStoreSettings.billHeader || "Billing";
                 
-                // Pre-fill modal
+                // Print Settings
+                document.getElementById("pStoreName").innerText = currentStoreSettings.name;
+                document.getElementById("pStoreAddr").innerText = currentStoreSettings.address;
+                document.getElementById("pStorePhone").innerText = "Phone: " + currentStoreSettings.phone;
+
                 document.getElementById("setStoreName").value = currentStoreSettings.name;
                 document.getElementById("setStorePhone").value = currentStoreSettings.phone;
                 document.getElementById("setStoreAddress").value = currentStoreSettings.address;
@@ -180,7 +214,6 @@
         closeSettings();
     }
 
-    // --- INVENTORY SYNC (For Search) ---
     function syncInventory() {
         db.collection("inventory").onSnapshot(snap => {
             const dl = document.getElementById("inventoryList");
@@ -193,7 +226,6 @@
         });
     }
 
-    // --- POS ACTIONS ---
     function quickAdd(name, price) {
         document.getElementById("iName").value = name;
         document.getElementById("iPrice").value = price;
@@ -208,50 +240,58 @@
         if(!name || !price) return;
         cart.push({ name, qty, price, disc, total: (qty * price) - disc });
         renderCart();
-        document.getElementById("iName").value = ""; document.getElementById("iPrice").value = "";
+        document.getElementById("iName").value = ""; 
+        document.getElementById("iPrice").value = "";
+        document.getElementById("iDiscount").value = "";
     }
 
     function renderCart() {
         let html = ""; let total = 0;
+        let printHtml = "";
         cart.forEach((item, i) => {
             total += item.total;
             html += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total.toFixed(2)}</td><td onclick="cart.splice(${i},1);renderCart()"><i class="fa-solid fa-trash" style="color:#ef4444;"></i></td></tr>`;
+            printHtml += `<tr><td>${item.name}</td><td>${item.qty}</td><td>${item.price}</td><td>${item.total.toFixed(2)}</td></tr>`;
         });
         document.getElementById("subTotal").innerText = `₹${total.toFixed(2)}`;
         document.getElementById("grandTotal").innerText = `₹${total.toFixed(2)}`;
         document.getElementById("cartTable").innerHTML = html;
+        document.getElementById("pItems").innerHTML = printHtml;
+        document.getElementById("pGrandTotal").innerText = `₹${total.toFixed(2)}`;
     }
 
     async function saveAndProcess(type) {
         if(cart.length === 0) return alert("Cart empty!");
         const total = document.getElementById("grandTotal").innerText;
-        const custName = document.getElementById("custName").value || "Guest";
+        const cName = document.getElementById("custName").value || "Guest";
         
-        // Save to Cloud Sales Record
+        // Update Print Data
+        document.getElementById("pCustName").innerText = cName;
+        document.getElementById("pInvNo").innerText = `Inv: #${invNo}`;
+        document.getElementById("pDate").innerText = `Date: ${new Date().toLocaleDateString('en-GB')}`;
+
+        // Save to Firebase
         await db.collection("sales").add({
             invoice: invNo,
-            customer: custName,
+            customer: cName,
             items: cart,
             total: total,
             date: new Date().toLocaleDateString('en-GB'),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // WhatsApp Messaging
-        let msg = `*${currentStoreSettings.name}*\nInv: ${invNo}\nCust: ${custName}\n---\n`;
-        cart.forEach(i => msg += `${i.name} x${i.qty} = ₹${i.total}\n`);
-        msg += `---\n*Total: ${total}*\n${currentStoreSettings.address}`;
-
-        if(type === 'share') window.open(`https://wa.me/${document.getElementById("custPhone").value}?text=${encodeURIComponent(msg)}`);
-        else alert("Recorded in Khata!");
-        
-        location.reload(); // Reset for next bill
+        if(type === 'share') {
+            window.print(); // Yeh print popup kholega
+            location.reload();
+        } else {
+            alert("Recorded in Khata!");
+            location.reload();
+        }
     }
 
     function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
     function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
     function go(p) { window.location.href = p; }
 </script>
-
 </body>
 </html>

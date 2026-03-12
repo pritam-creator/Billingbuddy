@@ -93,9 +93,10 @@
         <i class="fa-solid fa-xmark" onclick="closePicker()"></i>
     </div>
     <div class="modal-body">
-        <div class="input-group">
-            <input type="text" id="newManualName" class="entry-input" placeholder="Enter Name">
-            <button class="btn-collect" style="padding: 10px 20px" onclick="addNewManualCustomer()">Add</button>
+        <div class="input-group" style="flex-direction: column;">
+            <input type="text" id="newManualName" class="entry-input" placeholder="Enter Name" style="margin-bottom: 10px; width: 100%;">
+            <input type="tel" id="newManualPhone" class="entry-input" placeholder="Mobile Number" style="margin-bottom: 10px; width: 100%;">
+            <button class="btn-collect" style="padding: 15px; width: 100%;" onclick="addNewManualCustomer()">Add Customer</button>
         </div>
         <div id="pickerList"></div>
     </div>
@@ -107,7 +108,8 @@
             <i class="fa-solid fa-arrow-left" onclick="closeHistory()"></i>
             <div>
                 <h3 id="activeCustName">Name</h3>
-                <p id="activeCustBalance" style="font-size: 12px;">Balance: ₹0</p>
+                <p id="activeCustPhone" style="font-size: 11px; opacity: 0.7;"></p>
+                <p id="activeCustBalance" style="font-size: 12px; font-weight: bold;">Balance: ₹0</p>
             </div>
         </div>
         <div style="display:flex; gap:15px;">
@@ -130,7 +132,6 @@
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -141,11 +142,10 @@
     const db = firebase.firestore();
 
     let activeCustomer = null;
+    let activeCustomerPhone = "";
 
-    // --- INITIALIZE & LIVE LISTEN ---
     function init() {
         document.getElementById('dateNow').innerText = new Date().toDateString();
-        // Listen to all ledger entries in real-time
         db.collection("ledger").onSnapshot(() => {
             renderCustomerList();
             if(activeCustomer) renderHistory();
@@ -162,21 +162,27 @@
 
         snapshot.forEach(doc => {
             const entry = doc.data();
-            if (!customers[entry.name]) customers[entry.name] = 0;
+            if (!customers[entry.name]) {
+                customers[entry.name] = { balance: 0, phone: entry.phone || "" };
+            }
             let amt = parseFloat(entry.amount);
-            customers[entry.name] += (entry.type === 'collect' ? amt : -amt);
+            customers[entry.name].balance += (entry.type === 'collect' ? amt : -amt);
         });
 
         container.innerHTML = '';
         const names = Object.keys(customers).filter(n => n.toLowerCase().includes(search));
         
         names.forEach(name => {
-            const balance = customers[name];
+            const data = customers[name];
+            const balance = data.balance;
             if(balance > 0) totalCollect += balance; else totalPay += Math.abs(balance);
             const isCollect = balance >= 0;
             container.innerHTML += `
-                <div class="customer-row" onclick="openCustomer('${name}')">
-                    <div><h4>${name}</h4></div>
+                <div class="customer-row" onclick="openCustomer('${name}', '${data.phone}')">
+                    <div>
+                        <h4>${name}</h4>
+                        <small style="opacity: 0.5;">${data.phone || 'No mobile'}</small>
+                    </div>
                     <div style="text-align: right">
                         <h4 class="${isCollect ? 'text-green' : 'text-red'}">₹${Math.abs(balance).toLocaleString()}</h4>
                         <p style="font-size: 10px; opacity: 0.5;">${isCollect ? 'Lena hai' : 'Dena hai'}</p>
@@ -188,9 +194,11 @@
         document.getElementById('mainTotalPay').innerText = `₹${totalPay.toLocaleString()}`;
     }
 
-    function openCustomer(name) {
+    function openCustomer(name, phone) {
         activeCustomer = name;
+        activeCustomerPhone = phone || "";
         document.getElementById('activeCustName').innerText = name;
+        document.getElementById('activeCustPhone').innerText = activeCustomerPhone ? "📞 " + activeCustomerPhone : "No Number";
         document.getElementById('customerModal').style.display = 'flex';
         renderHistory();
     }
@@ -223,6 +231,7 @@
 
         await db.collection("ledger").add({
             name: activeCustomer,
+            phone: activeCustomerPhone,
             type: type,
             amount: amt,
             note: noteInput.value,
@@ -235,25 +244,41 @@
     }
 
     async function settleAccount() {
-        if(confirm("Settle this account? (Clear all Cloud data for this person)")) {
+        if(confirm("Settle this account? (Clear all data for this person)")) {
             const snapshot = await db.collection("ledger").where("name", "==", activeCustomer).get();
-            snapshot.forEach(doc => doc.ref.delete());
+            const batch = db.batch();
+            snapshot.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
             closeHistory();
         }
     }
 
     function sendWhatsAppReminder() {
         const bal = document.getElementById('activeCustBalance').innerText;
-        window.open(`https://wa.me/?text=Hello, Surjya Bakery reminder: Aapka ${bal} baaki hai. Kripya bhugtan karein.`);
+        if(activeCustomerPhone) {
+            window.open(`https://wa.me/91${activeCustomerPhone}?text=Hello, Surjya Bakery reminder: Aapka ${bal} baaki hai. Kripya bhugtan karein.`);
+        } else {
+            window.open(`https://wa.me/?text=Surjya Bakery: ${activeCustomer}'s ${bal} is pending.`);
+        }
     }
 
     function showClientPicker() { document.getElementById('pickerModal').style.display = 'flex'; }
     function closePicker() { document.getElementById('pickerModal').style.display = 'none'; }
     function closeHistory() { activeCustomer = null; document.getElementById('customerModal').style.display = 'none'; }
+    
     function addNewManualCustomer() {
         let name = document.getElementById('newManualName').value;
-        if(name) { openCustomer(name); closePicker(); document.getElementById('newManualName').value=''; }
+        let phone = document.getElementById('newManualPhone').value;
+        if(name) { 
+            openCustomer(name, phone); 
+            closePicker(); 
+            document.getElementById('newManualName').value=''; 
+            document.getElementById('newManualPhone').value=''; 
+        } else {
+            alert("Please enter a name");
+        }
     }
+
     function go(p) { window.location.href = p; }
     window.onload = init;
 </script>

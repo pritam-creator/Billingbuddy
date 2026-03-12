@@ -90,7 +90,7 @@
         <div class="quick-actions">
             <div class="action-chip" onclick="goPage('invoice.html')"><i class="fa-solid fa-plus"></i> New Bill</div>
             <div class="action-chip" onclick="goPage('items.html')"><i class="fa-solid fa-tag"></i> Add Item</div>
-            <div class="action-chip" onclick="goPage('ledger.html')"><i class="fa-solid fa-indian-rupee-sign"></i> Add Khata</div>
+            <div class="action-chip" onclick="sharePortal()" style="background: #25d366; color: white;"><i class="fa-solid fa-share-nodes"></i> Share Portal</div>
         </div>
 
         <span class="section-label">Finance Summary</span>
@@ -176,37 +176,27 @@
 
     // Firebase Data Listener (Real-time update)
     async function updateDashboard() {
-        // Fetch Orders
         db.collection("orders").onSnapshot(snap => {
             const orders = snap.docs.map(doc => doc.data());
-            
-            // Total Sales
             const totalSales = orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
             document.getElementById("dash-sales").innerText = "₹ " + totalSales.toLocaleString();
             const target = 5000; 
             document.getElementById("salesProgress").style.width = Math.min((totalSales / target) * 100, 100) + "%";
-
-            // Recent Activity
             renderRecentActivity(orders);
-            // Top Products
             renderTopProducts(orders);
-            // Profit calculation (Simple logic: Sales - Expenses)
             updateProfit(totalSales);
         });
 
-        // Fetch Clients
         db.collection("clients").onSnapshot(snap => {
             document.getElementById("dash-clients").innerText = snap.size;
         });
 
-        // Fetch Items
         db.collection("items").onSnapshot(snap => {
             const items = snap.docs.map(doc => doc.data());
             document.getElementById("dash-items").innerText = snap.size;
             renderStockAlerts(items);
         });
 
-        // Fetch Ledger
         db.collection("ledger").onSnapshot(snap => {
             let collect = 0, pay = 0;
             snap.forEach(doc => {
@@ -234,6 +224,19 @@
                 document.getElementById("profit-label").innerText = "Net Loss";
             }
         });
+    }
+
+    // --- SHARE PORTAL LOGIC ---
+    function sharePortal() {
+        const baseUrl = window.location.origin; 
+        const portalUrl = `${baseUrl}/customer_view.html`; // Make sure this page exists
+        const shareText = `*Surjya Bakery - Customer Portal*\n\nYahan se aap hamare Items aur apna Khata check kar sakte hain:\n🔗 ${portalUrl}\n\nThank you!`;
+
+        if (navigator.share) {
+            navigator.share({ title: 'Surjya Bakery', text: shareText, url: portalUrl }).catch(err => console.log(err));
+        } else {
+            window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+        }
     }
 
     function renderTopProducts(orders) {
@@ -275,7 +278,7 @@
     window.onload = () => {
         updateDashboard();
         updateGreeting();
-        setInterval(updateGreeting, 60000); // Update time every minute
+        setInterval(updateGreeting, 60000);
     };
 </script>
 </body>

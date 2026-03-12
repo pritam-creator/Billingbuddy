@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Portal - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
+        .card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        h2 { color: #3b82f6; margin-bottom: 15px; }
+        .price { color: #4ade80; font-weight: bold; }
+        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: none; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Our Items</h2>
+    <input type="text" class="search-box" id="itemSearch" placeholder="Search bakery items..." onkeyup="filterItems()">
+    <div id="itemList">Loading items...</div>
+
+    <hr style="margin: 30px 0; opacity: 0.2;">
+
+    <h2>Check Your Balance</h2>
+    <div id="ledgerList">Loading ledger...</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+            authDomain: "billingbuddy-551f9.firebaseapp.com",
+            projectId: "billingbuddy-551f9",
+            appId: "1:287026017084:web:aae879570ad706e5a2a439"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 1. Load Items
+        db.collection("items").onSnapshot(snap => {
+            const list = document.getElementById("itemList");
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const item = doc.data();
+                list.innerHTML += `
+                    <div class="card item-card">
+                        <div style="display:flex; justify-content:space-between">
+                            <span><b>${item.name}</b></span>
+                            <span class="price">₹${item.price}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+        // 2. Load Public Ledger (Name & Balance Only)
+        db.collection("ledger").onSnapshot(snap => {
+            const list = document.getElementById("ledgerList");
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const l = doc.data();
+                if(l.balance !== 0) {
+                    list.innerHTML += `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between">
+                                <span>${l.name}</span>
+                                <span style="color:${l.balance > 0 ? '#60a5fa' : '#fbbf24'}">
+                                    ${l.balance > 0 ? 'To Pay: ₹' : 'To Receive: ₹'}${Math.abs(l.balance)}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        });
+
+        function filterItems() {
+            let input = document.getElementById('itemSearch').value.toUpperCase();
+            let cards = document.getElementsByClassName('item-card');
+            for (let i = 0; i < cards.length; i++) {
+                let name = cards[i].innerText;
+                cards[i].style.display = name.toUpperCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
+    </script>
+</body>
+</html>
