@@ -87,10 +87,12 @@
         .prod-item { padding: 8px 12px; background: #f8fafc; border-left: 4px solid #f59e0b; border-radius: 8px; margin-top: 8px; font-size: 13px; font-weight: 500; }
         body.dark .prod-item { background: #0f172a; }
 
-        /* Modal */
+        /* Modal Design - FIXED POPUPS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background: #fff; width: 90%; max-width: 380px; padding: 30px; border-radius: 24px; text-align: center; }
         body.dark .modal-content { background: #1e293b; color: #fff; }
+        .modal-btn-row { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
 
         @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 20px; } .input-row { flex-direction: column; } .btn-main { padding: 12px; } }
     </style>
@@ -148,13 +150,49 @@
 
 <div id="choiceModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-bottom: 10px;">Mark Attendance</h3>
+        <h3 style="margin-bottom: 10px;">Attendance</h3>
         <p id="targetWorkerName" style="color:#f59e0b; font-weight: 700; margin-bottom: 25px;"></p>
-        <div style="display:flex; gap:12px;">
-            <button style="background: #10b981; flex:1; padding:14px; border-radius:12px; border:none; color:white; font-weight:700;" onclick="confirmAttendance(1)">Full Day</button>
-            <button style="background: #f59e0b; flex:1; padding:14px; border-radius:12px; border:none; color:white; font-weight:700;" onclick="confirmAttendance(0.5)">Half Day</button>
+        <div class="modal-btn-row">
+            <button class="modal-btn" style="background: #10b981; color:white;" onclick="confirmAttendance(1)">Full Day</button>
+            <button class="modal-btn" style="background: #f59e0b; color:white;" onclick="confirmAttendance(0.5)">Half Day</button>
         </div>
-        <button onclick="closeChoiceModal()" style="margin-top: 20px; background: transparent; border: none; color: #94a3b8; font-weight: 600; cursor: pointer;">Cancel</button>
+        <button onclick="closeModal('choiceModal')" style="margin-top: 20px; background: transparent; border: none; color: #94a3b8; font-weight: 600; cursor: pointer;">Cancel</button>
+    </div>
+</div>
+
+<div id="advanceModal" class="modal">
+    <div class="modal-content">
+        <h3>Advance Pay</h3>
+        <p style="opacity:0.6; font-size:14px; margin-bottom:15px;">Amount enter karein</p>
+        <input type="number" id="advAmountInput" placeholder="Enter Amount (₹)" style="width:100%; margin-bottom:15px;">
+        <div class="modal-btn-row">
+            <button class="modal-btn" style="background:#f59e0b; color:white;" onclick="confirmAdvance()">ADD ADVANCE</button>
+            <button class="modal-btn" style="background:#e2e8f0; color:#1e293b;" onclick="closeModal('advanceModal')">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<div id="settleModal" class="modal">
+    <div class="modal-content">
+        <i class="fa-solid fa-hand-holding-dollar" style="font-size:40px; color:#3b82f6; margin-bottom:15px;"></i>
+        <h3>Settle Salary?</h3>
+        <p id="settleMsg" style="opacity:0.6; font-size:14px; margin-bottom:20px;"></p>
+        <div class="modal-btn-row">
+            <button class="modal-btn" style="background:#3b82f6; color:white;" onclick="confirmSettle()">CONFIRM</button>
+            <button class="modal-btn" style="background:#e2e8f0; color:#1e293b;" onclick="closeModal('settleModal')">BACK</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <i class="fa-solid fa-user-minus" style="font-size:40px; color:#ef4444; margin-bottom:15px;"></i>
+        <h3>Worker Remove?</h3>
+        <p style="opacity:0.6; font-size:14px; margin-bottom:20px;">Kya aap is worker ko hatana chahte hain?</p>
+        <div class="modal-btn-row">
+            <button class="modal-btn" style="background:#ef4444; color:white;" onclick="confirmDelete()">REMOVE</button>
+            <button class="modal-btn" style="background:#e2e8f0; color:#1e293b;" onclick="closeModal('deleteModal')">CANCEL</button>
+        </div>
     </div>
 </div>
 
@@ -170,16 +208,15 @@
 
     let employees = [];
     let activeEmpId = null;
+    let tempCurrentAdv = 0;
     const todayStr = new Date().toLocaleDateString('en-GB');
 
     function initStaff() {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
-        
         db.collection("employees").onSnapshot((snapshot) => {
             employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             render();
         });
-
         db.collection("production").where("date", "==", todayStr).onSnapshot((snapshot) => {
             const prods = snapshot.docs.map(doc => doc.data());
             const pList = document.getElementById("productionList");
@@ -192,7 +229,6 @@
         const prodSelect = document.getElementById("prodWorkerSelect");
         list.innerHTML = "";
         prodSelect.innerHTML = `<option value="">Choose Worker</option>`;
-        
         let presentTodayCount = 0;
 
         employees.forEach((emp) => {
@@ -209,7 +245,7 @@
 
             list.innerHTML += `
                 <div class="emp-card">
-                    <i class="fa-solid fa-circle-minus del-emp" onclick="deleteEmployee('${emp.id}')"></i>
+                    <i class="fa-solid fa-circle-minus del-emp" onclick="openDeleteModal('${emp.id}')"></i>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h4 style="font-weight:800;">${emp.name}</h4>
                         <span style="font-size:12px; font-weight:700; color:#64748b;">₹${wageRate}/day</span>
@@ -223,15 +259,21 @@
                         <button class="btn-sm btn-p ${isPresent ? 'marked' : ''}" onclick="openChoiceModal('${emp.id}', '${emp.name}')">
                             ${isPresent ? '✓ PRESENT' : 'MARK P'}
                         </button>
-                        <button class="btn-sm btn-adv" onclick="addAdvance('${emp.id}', ${adv})">ADVANCE</button>
-                        <button class="btn-sm btn-settle" onclick="settleSalary('${emp.id}', ${netDue})">SETTLE</button>
+                        <button class="btn-sm btn-adv" onclick="openAdvanceModal('${emp.id}', ${adv})">ADVANCE</button>
+                        <button class="btn-sm btn-settle" onclick="openSettleModal('${emp.id}', ${netDue})">SETTLE</button>
                     </div>
                 </div>`;
         });
-
         document.getElementById("totalEmp").innerText = employees.length;
         document.getElementById("todayPresents").innerText = presentTodayCount;
     }
+
+    // MODAL OPEN/CLOSE LOGIC
+    function openChoiceModal(id, name) { activeEmpId = id; document.getElementById("targetWorkerName").innerText = name; document.getElementById("choiceModal").style.display = "flex"; }
+    function openAdvanceModal(id, currentAdv) { activeEmpId = id; tempCurrentAdv = currentAdv; document.getElementById("advanceModal").style.display = "flex"; }
+    function openSettleModal(id, netDue) { activeEmpId = id; document.getElementById("settleMsg").innerText = `Kya aap ₹${netDue.toFixed(0)} settle karke records clear karna chahte hain?`; document.getElementById("settleModal").style.display = "flex"; }
+    function openDeleteModal(id) { activeEmpId = id; document.getElementById("deleteModal").style.display = "flex"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
     async function addEmployee() {
         const name = document.getElementById("empName").value;
@@ -241,30 +283,30 @@
         document.getElementById("empName").value = ""; document.getElementById("empWage").value = "";
     }
 
-    function openChoiceModal(id, name) {
-        activeEmpId = id;
-        document.getElementById("targetWorkerName").innerText = name;
-        document.getElementById("choiceModal").style.display = "flex";
-    }
-
-    function closeChoiceModal() { document.getElementById("choiceModal").style.display = "none"; }
-
     async function confirmAttendance(val) {
         const emp = employees.find(e => e.id === activeEmpId);
         const updatedAttendance = [...(emp.attendance || []), { date: todayStr, value: val }];
         await db.collection("employees").doc(activeEmpId).update({ attendance: updatedAttendance });
-        closeChoiceModal();
+        closeModal('choiceModal');
     }
 
-    async function addAdvance(id, currentAdv) {
-        let amt = prompt("Enter Advance Amount:");
-        if(amt && !isNaN(amt)) await db.collection("employees").doc(id).update({ advance: currentAdv + parseFloat(amt) });
-    }
-
-    async function settleSalary(id, netDue) {
-        if(confirm(`Settle ₹${netDue.toFixed(0)} and clear records?`)) {
-            await db.collection("employees").doc(id).update({ attendance: [], advance: 0 });
+    async function confirmAdvance() {
+        const amt = document.getElementById("advAmountInput").value;
+        if(amt && !isNaN(amt)) {
+            await db.collection("employees").doc(activeEmpId).update({ advance: tempCurrentAdv + parseFloat(amt) });
+            document.getElementById("advAmountInput").value = "";
+            closeModal('advanceModal');
         }
+    }
+
+    async function confirmSettle() {
+        await db.collection("employees").doc(activeEmpId).update({ attendance: [], advance: 0 });
+        closeModal('settleModal');
+    }
+
+    async function confirmDelete() {
+        await db.collection("employees").doc(activeEmpId).delete();
+        closeModal('deleteModal');
     }
 
     async function addProduction() {
@@ -276,17 +318,8 @@
         document.getElementById("prodTask").value = "";
     }
 
-    async function deleteEmployee(id) {
-        if(confirm("Remove this worker?")) await db.collection("employees").doc(id).delete();
-    }
-
     function go(p) { window.location.href = p; }
     window.onload = initStaff;
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
 </script>
 </body>
 </html>

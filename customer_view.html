@@ -11,51 +11,62 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --primary: #3b82f6; --success: #10b981; --bg: #f8fafc; --text: #1e293b; }
+        :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --bg: #f8fafc; --text: #1e293b; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 30px; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 30px; transition: 0.3s; }
         body.dark { --bg: #0f172a; --text: #f1f5f9; background: var(--bg); color: var(--text); }
 
-        header { background: #fff; padding: 25px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        header { background: #fff; padding: 30px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
         body.dark header { background: #1e293b; border-color: #334155; }
-        .logo-img { width: 60px; height: 60px; border-radius: 15px; margin-bottom: 10px; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .logo-img { width: 65px; height: 65px; border-radius: 18px; margin-bottom: 12px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
 
+        /* Search Box */
         .search-box { 
-            background: #fff; border-radius: 16px; padding: 14px 20px; 
+            background: #fff; border-radius: 20px; padding: 16px 22px; 
             display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0;
-            margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
         body.dark .search-box { background: #1e293b; border-color: #334155; }
-        .search-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 15px; color: inherit; }
+        .search-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 16px; color: inherit; font-weight: 500; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 25px; }
-        .tab-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; background: #fff; color: #64748b; font-weight: 700; cursor: pointer; transition: 0.3s; border: 1px solid #e2e8f0; }
-        body.dark .tab-btn { background: #1e293b; border-color: #334155; }
-        .tab-btn.active { background: #000; color: #fff; border-color: #000; }
-        body.dark .tab-btn.active { background: #fff; color: #000; }
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 16px; }
+        body.dark .tabs { background: rgba(255,255,255,0.05); }
+        .tab-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; background: transparent; color: #64748b; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: #fff; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        body.dark .tab-btn.active { background: #1e293b; color: #fff; }
 
-        .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .card { background: #fff; padding: 18px; border-radius: 18px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        /* Cards */
+        .card { background: #fff; padding: 20px; border-radius: 22px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
         body.dark .card { background: #1e293b; border-color: #334155; }
+        .price-tag { color: var(--success); font-weight: 900; font-size: 18px; }
         
-        .login-card { flex-direction: column; gap: 15px; padding: 25px; text-align: center; }
-        .login-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; font-size: 16px; outline: none; }
-        .login-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; }
+        /* Login Section */
+        .login-card { flex-direction: column; gap: 20px; padding: 35px 25px; text-align: center; }
+        .login-input { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #e2e8f0; text-align: center; font-size: 18px; outline: none; font-weight: 700; background: #f8fafc; }
+        body.dark .login-input { background: #0f172a; border-color: #334155; color: #fff; }
+        .login-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: #000; color: #fff; font-weight: 800; cursor: pointer; font-size: 16px; }
+        body.dark .login-btn { background: #fff; color: #000; }
 
-        .price-tag { color: var(--success); font-weight: 800; font-size: 16px; }
-        .balance-tag { padding: 6px 12px; border-radius: 10px; font-weight: 700; font-size: 13px; }
-        .due { background: #fef2f2; color: #ef4444; }
-        .advance { background: #f0fdf4; color: #10b981; }
+        /* Custom Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { width: 100%; max-width: 350px; background: #fff; border-radius: 28px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        body.dark .modal-content { background: #1e293b; color: #fff; }
+        .btn-modal-close { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #f1f5f9; color: #000; font-weight: 700; margin-top: 20px; cursor: pointer; }
+        body.dark .btn-modal-close { background: #334155; color: #fff; }
+
         .hidden { display: none !important; }
+        .due-tag { color: var(--danger); font-weight: 800; }
+        .clear-tag { color: var(--success); font-weight: 800; }
     </style>
 </head>
 <body>
 
 <header>
     <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo-img">
-    <h1 style="font-weight: 900; letter-spacing: -1px;">Surjya Bakery</h1>
-    <p style="font-size: 13px; color: #64748b; font-weight: 600;">Fresh Baked Happiness, Every Day</p>
+    <h1 style="font-weight: 900; letter-spacing: -1.5px; font-size: 28px;">Surjya Bakery</h1>
+    <p style="font-size: 13px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Live Rate & Ledger</p>
 </header>
 
 <div class="container">
@@ -65,29 +76,42 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('items', this)">Bakery Menu</button>
-        <button class="tab-btn" onclick="switchTab('ledger', this)">My Balance</button>
+        <button id="tabItems" class="tab-btn active" onclick="switchTab('items')">Today's Menu</button>
+        <button id="tabLedger" class="tab-btn" onclick="switchTab('ledger')">My Account</button>
     </div>
 
     <div id="itemSection">
-        <div class="section-title"><i class="fa-solid fa-bread-slice" style="color: #f59e0b;"></i> Today's Rates</div>
-        <div id="itemList">Loading fresh items...</div>
+        <div id="itemList" style="min-height: 200px;">
+            <p style="text-align: center; opacity: 0.5; padding: 40px;">Baking fresh data...</p>
+        </div>
     </div>
 
     <div id="ledgerSection" class="hidden">
         <div id="loginForm" class="card login-card">
-            <i class="fa-solid fa-user-shield" style="font-size: 40px; color: var(--primary);"></i>
-            <h3>Check Your Balance</h3>
-            <p style="font-size: 13px; color: #64748b;">Enter your registered mobile number to view your account.</p>
-            <input type="tel" id="mobileInput" class="login-input" placeholder="Enter 10-digit Mobile No.">
-            <button class="login-btn" onclick="verifyCustomer()">Check Now</button>
+            <div style="background: rgba(59, 130, 246, 0.1); width: 70px; height: 70px; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                <i class="fa-solid fa-receipt" style="font-size: 32px; color: var(--primary);"></i>
+            </div>
+            <h3 style="font-weight: 900;">Check Your Balance</h3>
+            <p style="font-size: 14px; color: #64748b; font-weight: 500;">Enter your phone number to see your udhaar / balance details.</p>
+            <input type="tel" id="mobileInput" class="login-input" placeholder="00000 00000" maxlength="10">
+            <button class="login-btn" onclick="verifyCustomer()">VIEW ACCOUNT</button>
         </div>
 
         <div id="ledgerResult" class="hidden">
-            <div class="section-title"><i class="fa-solid fa-wallet" style="color: #3b82f6;"></i> Your Account</div>
             <div id="personalLedger"></div>
-            <button onclick="logout()" style="margin-top:10px; background:none; border:none; color: #64748b; cursor:pointer; font-size:12px;">← Logout / Change Number</button>
+            <p onclick="logout()" style="text-align: center; margin-top: 25px; color: #94a3b8; font-size: 13px; font-weight: 700; cursor: pointer;">
+                <i class="fa-solid fa-arrow-left"></i> LOGOUT / CHANGE NUMBER
+            </p>
         </div>
+    </div>
+</div>
+
+<div class="modal" id="alertModal">
+    <div class="modal-content">
+        <i id="alertIcon" class="fa-solid fa-circle-exclamation" style="font-size: 45px; color: var(--danger); margin-bottom: 15px;"></i>
+        <h3 id="alertTitle" style="font-weight: 900;">Wait!</h3>
+        <p id="alertMsg" style="opacity: 0.7; margin-top: 8px; font-weight: 500;"></p>
+        <button class="btn-modal-close" onclick="closeAlert()">GOT IT</button>
     </div>
 </div>
 
@@ -101,9 +125,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+    // Custom Alert Logic
+    function showAlert(title, msg, type = 'error') {
+        document.getElementById('alertTitle').innerText = title;
+        document.getElementById('alertMsg').innerText = msg;
+        const icon = document.getElementById('alertIcon');
+        if(type === 'success') { icon.className = "fa-solid fa-circle-check"; icon.style.color = "var(--success)"; }
+        else { icon.className = "fa-solid fa-circle-exclamation"; icon.style.color = "var(--danger)"; }
+        document.getElementById('alertModal').style.display = 'flex';
+    }
+    function closeAlert() { document.getElementById('alertModal').style.display = 'none'; }
 
-    // 1. Load Bakery Items
+    // Fetch Items
     db.collection("items").onSnapshot(snap => {
         const list = document.getElementById("itemList");
         list.innerHTML = "";
@@ -112,28 +145,26 @@
             list.innerHTML += `
                 <div class="card item-card">
                     <div>
-                        <p style="font-weight: 700; font-size: 15px;">${item.name}</p>
-                        <p style="font-size: 11px; color: #64748b; margin-top:2px;">Unit: ${item.unit || 'Standard'}</p>
+                        <p style="font-weight: 800; font-size: 16px; letter-spacing: -0.3px;">${item.name}</p>
+                        <p style="font-size: 12px; color: #94a3b8; font-weight: 600; margin-top:3px;">${item.unit || 'Per Unit'}</p>
                     </div>
                     <span class="price-tag">₹${item.price}</span>
                 </div>`;
         });
     });
 
-    // 2. Customer Verification (Privacy Fix)
     function verifyCustomer() {
         const mobile = document.getElementById("mobileInput").value.trim();
         const ledgerDiv = document.getElementById("personalLedger");
 
         if (mobile.length < 10) {
-            alert("Please enter a valid 10-digit mobile number.");
+            showAlert("Invalid Number", "Please enter a correct 10-digit mobile number.");
             return;
         }
 
-        // Search in 'clients' collection where phone == user input
         db.collection("clients").where("phone", "==", mobile).get().then(snap => {
             if (snap.empty) {
-                alert("No record found with this number.");
+                showAlert("Not Found", "Is number se koi account nahi mila. Please contact bakery owner.");
                 return;
             }
             
@@ -143,42 +174,37 @@
             ledgerDiv.innerHTML = "";
             snap.forEach(doc => {
                 const c = doc.data();
+                const due = parseFloat(c.openingDue) || 0;
                 ledgerDiv.innerHTML += `
-                    <div class="card">
-                        <div>
-                            <p style="font-weight: 700; font-size: 16px;">${c.name}</p>
-                            <p style="font-size: 12px; color: #64748b;">ID: ${doc.id}</p>
+                    <div class="card" style="flex-direction: column; align-items: flex-start; gap: 15px;">
+                        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                             <div>
+                                <h2 style="font-weight: 900;">Hello, ${c.name}</h2>
+                                <p style="font-size: 12px; color: #94a3b8; font-weight:600;">Reg. Phone: ${c.phone}</p>
+                             </div>
                         </div>
-                        <span class="balance-tag ${c.openingDue > 0 ? 'due' : 'advance'}">
-                            ${c.openingDue > 0 ? 'Due: ₹'+c.openingDue : 'Clear'}
-                        </span>
+                        <div style="width:100%; background: #f8fafc; border-radius: 14px; padding: 20px; text-align: center; border: 1px dashed #e2e8f0;">
+                            <p style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Pending Balance</p>
+                            <h1 class="${due > 0 ? 'due-tag' : 'clear-tag'}" style="font-size: 32px; margin-top: 5px;">₹ ${due}</h1>
+                        </div>
                     </div>`;
             });
-        }).catch(err => {
-            console.error(err);
-            alert("Connection error. Try again.");
-        });
+        }).catch(() => showAlert("Error", "Server se connect nahi ho raha. Check net."));
+    }
+
+    function switchTab(type) {
+        document.getElementById('tabItems').classList.toggle('active', type === 'items');
+        document.getElementById('tabLedger').classList.toggle('active', type === 'ledger');
+        
+        document.getElementById('itemSection').classList.toggle('hidden', type !== 'items');
+        document.getElementById('ledgerSection').classList.toggle('hidden', type !== 'ledger');
+        document.getElementById('searchContainer').classList.toggle('hidden', type !== 'items');
     }
 
     function logout() {
         document.getElementById("loginForm").classList.remove("hidden");
         document.getElementById("ledgerResult").classList.add("hidden");
         document.getElementById("mobileInput").value = "";
-    }
-
-    function switchTab(type, btn) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        if(type === 'items') {
-            document.getElementById('itemSection').classList.remove('hidden');
-            document.getElementById('ledgerSection').classList.add('hidden');
-            document.getElementById('searchContainer').classList.remove('hidden');
-        } else {
-            document.getElementById('itemSection').classList.add('hidden');
-            document.getElementById('ledgerSection').classList.remove('hidden');
-            document.getElementById('searchContainer').classList.add('hidden');
-        }
     }
 
     function filterItems() {
@@ -188,11 +214,8 @@
             items[i].style.display = items[i].innerText.toUpperCase().includes(input) ? "" : "none";
         }
     }
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
+
+    if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
 </script>
 </body>
 </html>

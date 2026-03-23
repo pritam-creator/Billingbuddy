@@ -12,7 +12,6 @@
 
     <style>
         :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; }
-        
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
         
         body { 
@@ -21,7 +20,6 @@
         }
         body.dark { background: #0f172a; color: #f1f5f9; }
 
-        /* Premium Detail Card */
         .detail-card { 
             width: 100%; max-width: 400px; background: #ffffff; 
             border-radius: 35px; padding: 40px 30px; position: relative;
@@ -32,16 +30,16 @@
 
         .status-badge { 
             position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
-            padding: 10px 24px; border-radius: 50px; font-size: 12px; font-weight: 900;
-            letter-spacingi: 1px; color: #000000; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            white-space: nowrap;
+            padding: 10px 24px; border-radius: 50px; font-size: 11px; font-weight: 900;
+            color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            white-space: nowrap; transition: 0.3s;
         }
 
         .back-nav { position: absolute; top: 25px; left: 25px; color: #94a3b8; cursor: pointer; font-size: 20px; transition: 0.2s; }
         .back-nav:hover { color: #000; }
 
         .header-content { text-align: center; margin-top: 15px; margin-bottom: 35px; }
-        .item-name { font-size: 32px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 5px; line-height: 1; }
+        .item-name { font-size: 32px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 5px; line-height: 1.1; }
         .item-price { font-size: 22px; color: var(--success); font-weight: 800; }
 
         /* Input Styling */
@@ -50,8 +48,8 @@
             color: inherit; border-radius: 16px; padding: 15px; width: 100%; text-align: center;
             font-size: 18px; font-weight: 700; outline: none; margin-bottom: 12px; transition: 0.3s;
         }
-        body.dark .edit-input { background: #334155; }
-        .edit-input:focus { border-color: var(--primary); background: transparent; }
+        body.dark .edit-input { background: #0f172a; }
+        .edit-input:focus { border-color: var(--primary); }
 
         /* Stock Controller */
         .stock-box { 
@@ -69,7 +67,7 @@
         }
         body.dark .btn-c { background: #0f172a; color: #fff; }
         .btn-c:active { transform: scale(0.9); }
-        .val { font-size: 42px; font-weight: 900; color: inherit; }
+        .val { font-size: 42px; font-weight: 900; }
 
         /* Actions */
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -78,24 +76,27 @@
             font-size: 15px; cursor: pointer; transition: 0.3s; display: flex; 
             align-items: center; justify-content: center; gap: 10px;
         }
-        .btn-save { background: #000; color: #fff; grid-column: span 2; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .btn-save { background: #000; color: #fff; grid-column: span 2; }
         body.dark .btn-save { background: #fff; color: #000; }
-        
         .btn-edit { background: #f1f5f9; color: var(--warning); }
         body.dark .btn-edit { background: #334155; }
-        
         .btn-del { background: #fef2f2; color: var(--danger); }
         body.dark .btn-del { background: rgba(239, 68, 68, 0.1); }
 
-        .loading-pulse { animation: pulse 1.5s infinite; opacity: 0.6; }
+        /* MODAL */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 30px; width: 100%; max-width: 350px; text-align: center; }
+        body.dark .modal-content { background: #1e293b; color: #fff; }
+
+        .loading-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div class="detail-card">
-    <div class="status-badge" id="statusBadge">SYNCING...</div>
-    <i class="fa-solid fa-arrow-left-long back-nav" onclick="go('inventory.html')"></i>
+    <div class="status-badge" id="statusBadge" style="background:var(--warning)">SYNCING...</div>
+    <i class="fa-solid fa-chevron-left back-nav" onclick="go('items.html')"></i>
 
     <div class="header-content">
         <div id="viewMode">
@@ -109,24 +110,36 @@
     </div>
 
     <div class="stock-box">
-        <p class="label">Current Inventory</p>
+        <p class="label">Stock Level</p>
         <div class="controls">
-            <button class="btn-c" onclick="changeStock(-1)">−</button>
+            <button class="btn-c" onclick="changeStock(-1)"><i class="fa-solid fa-minus"></i></button>
             <span class="val" id="itemStock">0</span>
-            <button class="btn-c" onclick="changeStock(1)">+</button>
+            <button class="btn-c" onclick="changeStock(1)"><i class="fa-solid fa-plus"></i></button>
         </div>
     </div>
 
     <div class="btn-grid">
         <button class="main-btn btn-save" id="saveBtn" onclick="saveData()">
-            <i class="fa-solid fa-check-circle"></i> SAVE CHANGES
+            <i class="fa-solid fa-cloud-arrow-up"></i> SAVE CHANGES
         </button>
         <button class="main-btn btn-edit" id="editToggle" onclick="toggleEdit()">
-            <i class="fa-solid fa-pen-nib"></i> EDIT
+            <i class="fa-solid fa-pen"></i> EDIT
         </button>
-        <button class="main-btn btn-del" onclick="deleteItem()">
-            <i class="fa-solid fa-trash-alt"></i>
+        <button class="main-btn btn-del" onclick="openDeleteModal()">
+            <i class="fa-solid fa-trash-can"></i>
         </button>
+    </div>
+</div>
+
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div style="background:#fef2f2; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--danger); font-size:30px;"></i>
+        </div>
+        <h2 style="font-weight:900; margin-bottom:10px;">Delete Item?</h2>
+        <p style="opacity:0.6; font-size:14px; margin-bottom:25px;">This action is permanent and will remove the item from inventory.</p>
+        <button class="main-btn" style="background:var(--danger); color:#fff; width:100%; margin-bottom:10px;" onclick="confirmDelete()">YES, DELETE</button>
+        <button class="main-btn" style="background:transparent; color:#94a3b8; width:100%;" onclick="closeModal()">Cancel</button>
     </div>
 </div>
 
@@ -147,15 +160,20 @@
     let isEditing = false;
     let currentStock = 0;
 
-    if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+    window.onload = () => {
+        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+        if(itemId) syncData();
+        else go('inventory.html');
+    };
 
-    // Real-time listener
-    if(itemId) {
+    function syncData() {
         db.collection("inventory").doc(itemId).onSnapshot(doc => {
             if(doc.exists) {
                 itemData = doc.data();
-                currentStock = itemData.stock;
-                if(!isEditing) renderUI();
+                if(!isEditing) {
+                    currentStock = itemData.stock;
+                    renderUI();
+                }
             } else {
                 go('inventory.html');
             }
@@ -169,7 +187,7 @@
         
         const badge = document.getElementById("statusBadge");
         const isLow = currentStock <= (itemData.minLevel || 10);
-        badge.innerText = isLow ? "⚠️ LOW STOCK ALERT" : "✅ STOCK HEALTHY";
+        badge.innerText = isLow ? "⚠️ LOW STOCK" : "✅ STOCK HEALTHY";
         badge.style.background = isLow ? "var(--danger)" : "var(--success)";
     }
 
@@ -189,11 +207,13 @@
             edit.style.display = "block";
             document.getElementById("inputName").value = itemData.name;
             document.getElementById("inputPrice").value = itemData.price;
-            btn.innerHTML = `<i class="fa-solid fa-times"></i>`;
+            btn.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+            btn.style.color = "var(--danger)";
         } else {
             view.style.display = "block";
             edit.style.display = "none";
-            btn.innerHTML = `<i class="fa-solid fa-pen-nib"></i> EDIT`;
+            btn.innerHTML = `<i class="fa-solid fa-pen"></i> EDIT`;
+            btn.style.color = "var(--warning)";
             renderUI();
         }
     }
@@ -203,41 +223,35 @@
         const newName = isEditing ? document.getElementById("inputName").value : itemData.name;
         const newPrice = isEditing ? parseFloat(document.getElementById("inputPrice").value) : itemData.price;
 
+        if(!newName) return;
+
         btn.classList.add("loading-pulse");
-        btn.innerHTML = "SYNCING...";
+        btn.innerHTML = "SAVING...";
 
         try {
             await db.collection("inventory").doc(itemId).update({
                 name: newName,
                 price: newPrice,
                 stock: currentStock,
-                lastUpdate: new Date().toLocaleDateString()
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
             });
-            btn.innerHTML = "UPDATED!";
-            setTimeout(() => {
-                btn.classList.remove("loading-pulse");
-                go('inventory.html');
-            }, 800);
+            btn.innerHTML = "SUCCESS!";
+            setTimeout(() => go('inventory.html'), 600);
         } catch(err) {
-            alert("Error: " + err.message);
-            btn.classList.remove("loading-pulse");
             btn.innerHTML = "RETRY SAVE";
+            btn.classList.remove("loading-pulse");
         }
     }
 
-    async function deleteItem() {
-        if(confirm("Confirm deletion? This cannot be undone.")) {
-            await db.collection("inventory").doc(itemId).delete();
-            go('inventory.html');
-        }
+    function openDeleteModal() { document.getElementById("deleteModal").style.display = "flex"; }
+    function closeModal() { document.getElementById("deleteModal").style.display = "none"; }
+
+    async function confirmDelete() {
+        await db.collection("inventory").doc(itemId).delete();
+        go('inventory.html');
     }
 
     function go(p) { window.location.href = p; }
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
 </script>
 </body>
 </html>

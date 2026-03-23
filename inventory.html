@@ -41,13 +41,11 @@
         /* Top Header Styling */
         .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         
-        /* Back Button Style */
         .back-btn { 
             background: #fff; border: 1px solid #e2e8f0; width: 42px; height: 42px; 
             border-radius: 12px; cursor: pointer; display: flex; align-items: center; 
             justify-content: center; margin-right: 15px; color: #1e293b; transition: 0.2s;
         }
-        .back-btn:active { transform: scale(0.9); }
         body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
 
         /* Navigation Tabs */
@@ -71,13 +69,11 @@
             transition: 0.3s ease; position: relative;
         }
         body.dark .card { background: #1e293b; border-color: #334155; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.06); }
 
         .stock-display { display: flex; align-items: baseline; gap: 8px; margin: 15px 0; }
         .stock-level { font-size: 32px; font-weight: 900; }
         .unit { font-size: 14px; color: #94a3b8; font-weight: 700; }
 
-        /* Progress Bar */
         .progress-track { background: #f1f5f9; height: 10px; border-radius: 20px; margin: 20px 0; overflow: hidden; }
         body.dark .progress-track { background: #0f172a; }
         .progress-fill { height: 100%; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 20px; }
@@ -89,13 +85,20 @@
         }
         .minus { background: #fee2e2; color: #ef4444; }
         .plus { background: #dcfce7; color: #10b981; }
-        .qty-btn:active { transform: scale(0.95); }
 
         .export-btn { background: var(--primary); color: #fff; padding: 12px 20px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; }
         body.dark .export-btn { background: #fff; color: #000; }
 
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; border-radius: 22px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; border-radius: 22px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 100; }
         body.dark .fab { background: #f8fafc; color: #000; }
+
+        /* MODAL STYLING */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
+        .modal-content { background: #fff; width: 100%; max-width: 400px; padding: 30px; border-radius: 28px; }
+        body.dark .modal-content { background: #1e293b; color: #fff; }
+        .modal-input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; margin-bottom: 15px; outline: none; font-size: 14px; }
+        body.dark .modal-input { background: #0f172a; border-color: #334155; color: #fff; }
+        .modal-btn { width: 100%; padding: 15px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; margin-top: 5px; }
 
         @media(max-width: 768px){ 
             .sidebar{ display: none; } 
@@ -147,7 +150,29 @@
         <div class="inventory-grid" id="inventoryList"></div>
     </main>
 
-    <div class="fab" onclick="addItem()"><i class="fa-solid fa-plus"></i></div>
+    <div class="fab" onclick="openAddModal()"><i class="fa-solid fa-plus"></i></div>
+</div>
+
+<div id="itemModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="margin-bottom:20px; font-weight:900;">Add New Item</h2>
+        <input type="text" id="itemName" class="modal-input" placeholder="Item Name">
+        <input type="number" id="itemPrice" class="modal-input" placeholder="Cost Price (₹)">
+        <input type="number" id="itemStock" class="modal-input" placeholder="Initial Stock">
+        <input type="number" id="itemMin" class="modal-input" placeholder="Min Stock Alert">
+        <button class="modal-btn" style="background:var(--primary); color:white;" onclick="saveItem()">SAVE ITEM</button>
+        <button class="modal-btn" style="background:transparent; color:#94a3b8;" onclick="closeModal('itemModal')">Cancel</button>
+    </div>
+</div>
+
+<div id="stockUpdateModal" class="modal">
+    <div class="modal-content" style="text-align:center;">
+        <h2 id="updateTitle" style="font-weight:900; margin-bottom:10px;">Restock</h2>
+        <p id="updateItemName" style="opacity:0.6; margin-bottom:20px;"></p>
+        <input type="number" id="updateQty" class="modal-input" placeholder="Enter Quantity" style="text-align:center; font-size:24px; font-weight:900;">
+        <button id="confirmUpdateBtn" class="modal-btn" style="background:var(--success); color:white;">CONFIRM UPDATE</button>
+        <button class="modal-btn" style="background:transparent; color:#94a3b8;" onclick="closeModal('stockUpdateModal')">Cancel</button>
+    </div>
 </div>
 
 <script>
@@ -162,6 +187,8 @@
 
     let inventory = [];
     let currentTab = 'Bakery';
+    let editingId = null;
+    let updatingStockInfo = { id: null, current: 0, mode: '' };
 
     function initInventory() {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
@@ -182,129 +209,123 @@
         const list = document.getElementById("inventoryList");
         list.innerHTML = "";
         let lowCount = 0; let healthyCount = 0; let totalVal = 0;
-
         const filteredData = inventory.filter(item => (item.type || 'Bakery') === currentTab);
 
         filteredData.forEach((item) => {
             const min = item.minLevel || 10;
             const isLow = item.stock <= min;
             if(isLow) lowCount++; else healthyCount++;
-            
             const price = parseFloat(item.price) || 0;
             const itemValue = item.stock * price;
             totalVal += itemValue;
-
             const progress = Math.min((item.stock / (min * 5)) * 100, 100); 
             
             list.innerHTML += `
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h4 style="font-weight:800; font-size:18px; letter-spacing:-0.5px;">${item.name}</h4>
-                        <div style="display:flex; gap:10px;">
-                            <i class="fa-solid fa-pen-to-square" style="opacity:0.3; cursor:pointer" onclick="editItem('${item.id}')"></i>
+                        <div style="display:flex; gap:12px;">
+                            <i class="fa-solid fa-pen-to-square" style="opacity:0.3; cursor:pointer" onclick="openEditModal('${item.id}')"></i>
                             <i class="fa-solid fa-trash" style="color:var(--danger); opacity:0.3; cursor:pointer" onclick="deleteItem('${item.id}', '${item.name}')"></i>
                         </div>
                     </div>
-
                     <div class="stock-display">
-                        <span class="stock-level" style="color: ${isLow ? 'var(--danger)' : 'var(--primary)'}">
-                            ${item.stock}
-                        </span>
+                        <span class="stock-level" style="color: ${isLow ? 'var(--danger)' : 'var(--primary)'}">${item.stock}</span>
                         <span class="unit">${item.unit || (currentTab==='Raw'?'Kg':'Pcs')}</span>
                     </div>
-
                     <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
-                        <span style="opacity:0.5">PURCHASE PRICE</span>
-                        <span>₹${price} / ${item.unit || (currentTab==='Raw'?'Kg':'Pcs')}</span>
+                        <span style="opacity:0.5">COST PRICE</span>
+                        <span>₹${price}</span>
                     </div>
-
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width: ${progress}%; background: ${isLow ? 'var(--danger)' : 'var(--success)'}"></div>
-                    </div>
-
+                    <div class="progress-track"><div class="progress-fill" style="width: ${progress}%; background: ${isLow ? 'var(--danger)' : 'var(--success)'}"></div></div>
                     <div class="btn-group">
-                        <button class="qty-btn minus" onclick="handleStockUpdate('${item.id}', ${item.stock}, 'minus')">- Quick Use</button>
-                        <button class="qty-btn plus" onclick="handleStockUpdate('${item.id}', ${item.stock}, 'plus')">+ Restock</button>
+                        <button class="qty-btn minus" onclick="openStockUpdate('${item.id}', ${item.stock}, 'minus', '${item.name}')">- Use</button>
+                        <button class="qty-btn plus" onclick="openStockUpdate('${item.id}', ${item.stock}, 'plus', '${item.name}')">+ Stock</button>
                     </div>
-                    
                     <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:10px; font-weight:800; opacity:0.4;">TOTAL VALUATION</span>
+                        <span style="font-size:10px; font-weight:800; opacity:0.4;">VALUATION</span>
                         <span style="font-size:13px; font-weight:900;">₹${itemValue.toLocaleString()}</span>
                     </div>
                 </div>`;
         });
-
         document.getElementById("totalItemsCount").innerText = filteredData.length;
         document.getElementById("lowStockCount").innerText = lowCount;
         document.getElementById("healthyCount").innerText = healthyCount;
         document.getElementById("totalStockValue").innerText = "₹" + totalVal.toLocaleString();
     }
 
-    // New Function to handle bulk updates
-    async function handleStockUpdate(id, current, mode) {
-        const message = mode === 'plus' ? "Kitna stock ADD karna hai?" : "Kitna stock MINUS karna hai?";
-        const input = prompt(message, "1");
-        
-        if (input === null || input === "" || isNaN(input)) return;
-        
-        const amount = parseFloat(input);
-        const newStock = mode === 'plus' ? current + amount : Math.max(0, current - amount);
-        
-        await db.collection("inventory").doc(id).update({ stock: newStock });
+    // MODAL FUNCTIONS
+    function closeModal(id) { document.getElementById(id).style.display = "none"; editingId = null; }
+
+    function openAddModal() {
+        editingId = null;
+        document.getElementById("modalTitle").innerText = "Add " + currentTab;
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemPrice").value = "";
+        document.getElementById("itemStock").value = "";
+        document.getElementById("itemMin").value = "10";
+        document.getElementById("itemModal").style.display = "flex";
     }
 
-    async function addItem() {
-        const type = currentTab;
-        const name = prompt(`Enter ${type} Name:`);
-        if (!name) return;
-        const price = prompt("Cost Price per unit:", "0");
-        const stock = prompt("Initial Stock:", "0");
-        const min = prompt("Alert at what level? (Min Stock):", "10");
-        const unit = type === 'Raw' ? 'Kg' : 'Pcs';
-
-        await db.collection("inventory").add({
-            name, type, price: parseFloat(price), stock: parseFloat(stock), minLevel: parseFloat(min),
-            unit: unit, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
-
-    async function editItem(id) {
+    function openEditModal(id) {
+        editingId = id;
         const item = inventory.find(i => i.id === id);
-        const newPrice = prompt("Update Price:", item.price);
-        const newMin = prompt("Update Min Alert Level:", item.minLevel);
-        if(newPrice !== null) {
-            await db.collection("inventory").doc(id).update({ 
-                price: parseFloat(newPrice),
-                minLevel: parseFloat(newMin)
-            });
-        }
+        document.getElementById("modalTitle").innerText = "Edit Item";
+        document.getElementById("itemName").value = item.name;
+        document.getElementById("itemPrice").value = item.price;
+        document.getElementById("itemStock").value = item.stock;
+        document.getElementById("itemMin").value = item.minLevel;
+        document.getElementById("itemModal").style.display = "flex";
+    }
+
+    async function saveItem() {
+        const data = {
+            name: document.getElementById("itemName").value,
+            price: parseFloat(document.getElementById("itemPrice").value) || 0,
+            stock: parseFloat(document.getElementById("itemStock").value) || 0,
+            minLevel: parseFloat(document.getElementById("itemMin").value) || 0,
+            type: currentTab,
+            unit: currentTab === 'Raw' ? 'Kg' : 'Pcs'
+        };
+        if(!data.name) return;
+        if(editingId) await db.collection("inventory").doc(editingId).update(data);
+        else await db.collection("inventory").add({...data, timestamp: firebase.firestore.FieldValue.serverTimestamp()});
+        closeModal('itemModal');
+    }
+
+    function openStockUpdate(id, current, mode, name) {
+        updatingStockInfo = { id, current, mode };
+        document.getElementById("updateTitle").innerText = mode === 'plus' ? "Restock Item" : "Quick Use";
+        document.getElementById("updateItemName").innerText = name;
+        document.getElementById("updateQty").value = "";
+        document.getElementById("confirmUpdateBtn").style.background = mode === 'plus' ? 'var(--success)' : 'var(--danger)';
+        document.getElementById("stockUpdateModal").style.display = "flex";
+        
+        document.getElementById("confirmUpdateBtn").onclick = async function() {
+            const val = parseFloat(document.getElementById("updateQty").value);
+            if(isNaN(val)) return;
+            const newStock = mode === 'plus' ? current + val : Math.max(0, current - val);
+            await db.collection("inventory").doc(id).update({ stock: newStock });
+            closeModal('stockUpdateModal');
+        };
     }
 
     async function deleteItem(id, name) {
-        if (confirm(`Are you sure? This will remove ${name} from all records.`)) {
-            await db.collection("inventory").doc(id).delete();
-        }
+        if (confirm(`Remove ${name}?`)) await db.collection("inventory").doc(id).delete();
     }
 
     function downloadReport() {
         let csv = "Type,Item,Stock,Unit,Price,TotalValue\n";
-        inventory.forEach(i => {
-            csv += `${i.type},${i.name},${i.stock},${i.unit},${i.price},${i.stock * i.price}\n`;
-        });
+        inventory.forEach(i => { csv += `${i.type},${i.name},${i.stock},${i.unit},${i.price},${i.stock * i.price}\n`; });
         const blob = new Blob([csv], { type: 'text/csv' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `Bakery_Stock_${new Date().toLocaleDateString()}.csv`;
+        a.download = `Stock_Report.csv`;
         a.click();
     }
 
     function go(p) { window.location.href = p; }
     window.onload = initInventory;
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
 </script>
 </body>
 </html>

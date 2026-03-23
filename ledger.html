@@ -13,27 +13,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --bg: #0f172a; }
+        :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f8fafc; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
         
-        body { background: #f8fafc; color: #1e293b; min-height: 100vh; overflow-x: hidden; }
-        body.dark { background: var(--bg); color: #f1f5f9; }
+        body { background: var(--bg); color: #1e293b; min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
+        body.dark { background: #0f172a; color: #f1f5f9; --bg: #0f172a; }
 
         .app { display: flex; height: 100vh; }
 
-        /* Sidebar */
+        /* Sidebar Customization */
         .sidebar { 
             width: 260px; background: #fff; border-right: 1px solid #e2e8f0; 
             padding: 30px 20px; display: flex; flex-direction: column; 
-            position: fixed; height: 100%; z-index: 1000;
+            position: fixed; height: 100%; z-index: 1000; transition: 0.4s;
         }
         body.dark .sidebar { background: #1e293b; border-color: #334155; }
-        .logo { width: 45px; height: 45px; border-radius: 12px; margin-bottom: 30px; cursor: pointer; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; margin-bottom: 30px; cursor: pointer; object-fit: cover; }
         
+        .menu { list-style: none; }
         .menu li { 
             display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
             border-radius: 12px; cursor: pointer; transition: 0.2s; 
-            margin-bottom: 5px; font-size: 14px; color: #64748b; font-weight: 500;
+            margin-bottom: 5px; font-size: 14px; color: #64748b; font-weight: 600;
         }
         .menu li.active { background: #000; color: #fff; }
         body.dark .menu li.active { background: #f8fafc; color: #000; }
@@ -42,62 +43,66 @@
         .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
         
         .top-header { width: 100%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
 
         /* Summary Cards */
-        .grid-summary { width: 100%; max-width: 650px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: #fff; padding: 22px; border-radius: 24px; border: 1px solid #e2e8f0; text-align: left; position: relative; }
+        .grid-summary { width: 100%; max-width: 650px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #fff; padding: 22px; border-radius: 28px; border: 1px solid #e2e8f0; text-align: left; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         body.dark .stat-card { background: #1e293b; border-color: #334155; }
-        .stat-card p { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-card h3 { font-size: 20px; font-weight: 900; margin-top: 5px; }
+        .stat-card p { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card h3 { font-size: 22px; font-weight: 900; margin-top: 6px; letter-spacing: -0.5px; }
 
         /* Search Box */
         .search-box { width: 100%; max-width: 650px; margin-bottom: 20px; position: relative; }
         .search-box input { 
             width: 100%; background: #fff; border: 1px solid #e2e8f0; 
-            padding: 15px 45px; border-radius: 18px; color: #1e293b; outline: none; font-size: 14px; font-weight: 500;
+            padding: 16px 16px 16px 50px; border-radius: 20px; color: #1e293b; outline: none; font-size: 15px; font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.03);
         }
         body.dark .search-box input { background: #1e293b; border-color: #334155; color: #fff; }
-        .search-box i { position: absolute; left: 18px; top: 18px; color: #94a3b8; }
+        .search-box i { position: absolute; left: 20px; top: 20px; color: #94a3b8; }
 
         /* Customer List */
-        .list-container { width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 10px; }
+        .list-container { width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 12px; }
         .customer-card { 
-            background: #fff; padding: 18px; border-radius: 22px; 
+            background: #fff; padding: 20px; border-radius: 24px; 
             border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;
-            transition: 0.2s; cursor: pointer;
+            transition: 0.3s; cursor: pointer;
         }
         body.dark .customer-card { background: #1e293b; border-color: #334155; }
-        .customer-card:hover { transform: scale(1.01); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .customer-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); }
         
-        .avatar { width: 45px; height: 45px; border-radius: 14px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 18px; }
+        .avatar { width: 48px; height: 48px; border-radius: 16px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--primary); font-size: 20px; }
 
         .text-green { color: var(--success); }
         .text-red { color: var(--danger); }
 
         /* FAB */
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #000; color: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: #000; color: #fff; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none; transition: 0.3s; }
+        .fab:active { transform: scale(0.9); }
         body.dark .fab { background: #fff; color: #000; }
 
         /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: flex-end; }
-        .modal-content { width: 100%; max-width: 600px; background: #fff; border-radius: 30px 30px 0 0; padding: 25px; animation: slideUp 0.3s ease-out; }
+        .modal-content { width: 100%; max-width: 600px; background: #fff; border-radius: 35px 35px 0 0; padding: 30px; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         body.dark .modal-content { background: #1e293b; }
         
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .entry-input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 16px; margin-bottom: 12px; outline: none; font-weight: 600; font-size: 14px; }
-        body.dark .entry-input { background: #0f172a; border-color: #334155; color: #fff; }
+        .entry-input { width: 100%; background: #f8fafc; border: 2px solid transparent; padding: 18px; border-radius: 18px; margin-bottom: 12px; outline: none; font-weight: 700; font-size: 15px; transition: 0.3s; }
+        body.dark .entry-input { background: #0f172a; color: #fff; }
+        .entry-input:focus { border-color: var(--primary); background: transparent; }
 
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
-        .btn-pay { background: #fef2f2; color: #ef4444; border: none; padding: 18px; border-radius: 18px; font-weight: 800; cursor: pointer; }
-        .btn-collect { background: #f0fdf4; color: #10b981; border: none; padding: 18px; border-radius: 18px; font-weight: 800; cursor: pointer; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .btn-pay { background: #fef2f2; color: #ef4444; border: none; padding: 20px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 14px; letter-spacing: 0.5px; transition: 0.2s; }
+        .btn-collect { background: #f0fdf4; color: #10b981; border: none; padding: 20px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 14px; letter-spacing: 0.5px; transition: 0.2s; }
 
-        .chip { background: #f1f5f9; border: none; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s; color: #64748b; }
+        .chip { background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; color: #64748b; transition: 0.2s; }
         body.dark .chip { background: #334155; color: #cbd5e1; }
+        .chip:active { transform: scale(0.9); }
 
-        .trans-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .trans-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 10px; border-bottom: 1px solid rgba(0,0,0,0.05); }
         body.dark .trans-item { border-color: rgba(255,255,255,0.05); }
 
         @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 20px; padding-bottom: 100px; } }
@@ -120,36 +125,36 @@
         <header class="top-header">
             <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-chevron-left"></i></button>
             <div style="text-align: right;">
-                <h2 style="font-weight: 900; letter-spacing: -1px;">Ledger Pro</h2>
-                <p id="dateNow" style="font-size: 11px; font-weight: 700; opacity: 0.5;"></p>
+                <h2 style="font-weight: 900; letter-spacing: -1.5px; font-size: 28px;">Ledger Pro</h2>
+                <p id="dateNow" style="font-size: 12px; font-weight: 800; color: var(--primary);"></p>
             </div>
         </header>
 
         <div class="grid-summary">
             <div class="stat-card">
-                <p>Today Collection</p>
+                <p>Today Got (Lena)</p>
                 <h3 id="todayCollect" class="text-green">₹ 0</h3>
             </div>
             <div class="stat-card">
-                <p>Today Payment</p>
+                <p>Today Gave (Dena)</p>
                 <h3 id="todayPay" class="text-red">₹ 0</h3>
             </div>
         </div>
 
-        <div class="grid-summary" style="margin-top: -10px; opacity: 0.8;">
-            <div class="stat-card" style="padding: 15px;">
-                <p style="font-size: 8px;">Total Market Credit</p>
-                <h3 id="mainTotalCollect" style="font-size: 16px; color: var(--danger);">₹ 0</h3>
+        <div class="grid-summary" style="margin-top: -5px; opacity: 0.9;">
+            <div class="stat-card" style="padding: 18px; border-style: dashed;">
+                <p style="font-size: 9px;">Total Market Due</p>
+                <h3 id="mainTotalCollect" style="font-size: 18px; color: var(--danger);">₹ 0</h3>
             </div>
-            <div class="stat-card" style="padding: 15px;">
-                <p style="font-size: 8px;">Due Accounts</p>
-                <h3 id="dueCount" style="font-size: 16px;">0</h3>
+            <div class="stat-card" style="padding: 18px; border-style: dashed;">
+                <p style="font-size: 9px;">Active Accounts</p>
+                <h3 id="dueCount" style="font-size: 18px;">0</h3>
             </div>
         </div>
 
         <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="custSearch" placeholder="Search customer name or phone..." oninput="renderCustomerList()">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" id="custSearch" placeholder="Search name or mobile..." oninput="renderCustomerList()">
         </div>
 
         <div class="list-container" id="customerList"></div>
@@ -160,60 +165,59 @@
 
 <div class="modal" id="addModal">
     <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="font-weight: 900;">Add New Customer</h3>
-            <i class="fa-solid fa-xmark" onclick="closeModals()" style="cursor:pointer; opacity:0.3"></i>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h2 style="font-weight: 900; letter-spacing: -1px;">New Account</h2>
+            <i class="fa-solid fa-circle-xmark" onclick="closeModals()" style="cursor:pointer; opacity:0.3; font-size: 24px;"></i>
         </div>
-        <input type="text" id="newName" class="entry-input" placeholder="Full Name">
-        <input type="tel" id="newPhone" class="entry-input" placeholder="Phone Number (10 digits)">
-        <input type="number" id="openingDue" class="entry-input" placeholder="Opening Due Balance (Optional)">
+        <input type="text" id="newName" class="entry-input" placeholder="Customer Name">
+        <input type="tel" id="newPhone" class="entry-input" placeholder="WhatsApp Number">
+        <input type="number" id="openingDue" class="entry-input" placeholder="Opening Balance (Optional)">
         <button class="btn-collect" style="width:100%; background:#000; color:#fff;" onclick="createNewCustomer()">CREATE ACCOUNT</button>
     </div>
 </div>
 
 <div class="modal" id="customerModal" style="align-items: center;">
-    <div class="modal-content" style="height: 94vh; border-radius: 32px; display: flex; flex-direction: column;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px;">
-            <div style="display:flex; align-items:center; gap:12px;">
+    <div class="modal-content" style="height: 94vh; border-radius: 35px; display: flex; flex-direction: column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; gap:15px;">
                 <div id="modalAvatar" class="avatar">?</div>
                 <div>
-                    <h3 id="activeCustName" style="font-weight: 900;">Name</h3>
-                    <p id="activeCustPhone" style="font-size: 12px; opacity:0.6; font-weight: 600;"></p>
+                    <h3 id="activeCustName" style="font-weight: 900; letter-spacing: -0.5px;">Name</h3>
+                    <p id="activeCustPhone" style="font-size: 13px; opacity:0.6; font-weight: 700;"></p>
                 </div>
             </div>
-            <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fa-solid fa-file-pdf" style="color:#ef4444; font-size:20px; cursor:pointer;" onclick="downloadPDF()"></i>
-                <i class="fa-brands fa-whatsapp" style="color:#22c55e; font-size:24px; cursor:pointer;" onclick="sendWhatsAppReminder()"></i>
-                <i class="fa-solid fa-xmark" onclick="closeModals()" style="font-size:20px; cursor:pointer; opacity:0.3"></i>
+            <div style="display:flex; gap:20px; align-items:center;">
+                <i class="fa-solid fa-file-pdf" style="color:#ef4444; font-size:22px; cursor:pointer;" onclick="downloadPDF()"></i>
+                <i class="fa-brands fa-whatsapp" style="color:#22c55e; font-size:26px; cursor:pointer;" onclick="sendWhatsAppReminder()"></i>
+                <i class="fa-solid fa-xmark" onclick="closeModals()" style="font-size:24px; cursor:pointer; opacity:0.2"></i>
             </div>
         </div>
 
-        <div id="activeCustBalance" style="padding:15px; border-radius:18px; text-align:center; font-weight:900; font-size:22px; margin-bottom:15px;">₹ 0</div>
+        <div id="activeCustBalance" style="padding:20px; border-radius:24px; text-align:center; font-weight:900; font-size:26px; margin-bottom:15px; letter-spacing: -1px;">₹ 0</div>
         
-        <div id="transactionHistory" style="flex:1; overflow-y:auto; margin-bottom:15px;"></div>
+        <div id="transactionHistory" style="flex:1; overflow-y:auto; margin-bottom:15px; scrollbar-width: none;"></div>
 
         <div style="padding-top:15px; border-top:1px solid rgba(0,0,0,0.05);">
-            <div style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:5px;">
+            <div style="display:flex; gap:10px; margin-bottom:15px; overflow-x:auto; padding-bottom:5px; scrollbar-width: none;">
                 <button class="chip" onclick="quickFillBalance()">FULL SETTLE</button>
-                <button class="chip" onclick="fillAmt(100)">₹100</button>
-                <button class="chip" onclick="fillAmt(500)">₹500</button>
-                <button class="chip" onclick="fillAmt(1000)">₹1000</button>
+                <button class="chip" onclick="fillAmt(100)">+ ₹100</button>
+                <button class="chip" onclick="fillAmt(500)">+ ₹500</button>
+                <button class="chip" onclick="fillAmt(1000)">+ ₹1000</button>
             </div>
             <div style="display:flex; gap:10px;">
-                <input type="number" id="entryAmount" class="entry-input" placeholder="₹ Amount" style="flex:1">
-                <input type="text" id="entryNote" class="entry-input" placeholder="Note (Optional)" style="flex:2">
+                <input type="number" id="entryAmount" class="entry-input" placeholder="Amount ₹" style="flex:1">
+                <input type="text" id="entryNote" class="entry-input" placeholder="Remark/Items" style="flex:2">
             </div>
             <div class="btn-row">
                 <button class="btn-pay" onclick="saveEntry('pay')">GAVE (DENA)</button>
                 <button class="btn-collect" onclick="saveEntry('collect')">GOT (LENA)</button>
             </div>
-            <center><p onclick="deleteCustomer()" style="font-size:10px; color:var(--danger); margin-top:15px; cursor:pointer; font-weight:700; opacity:0.4;">DELETE CUSTOMER ACCOUNT</p></center>
+            <center><p onclick="deleteCustomer()" style="font-size:11px; color:var(--danger); margin-top:20px; cursor:pointer; font-weight:800; opacity:0.4; text-transform: uppercase;">Permanently Delete Account</p></center>
         </div>
     </div>
 </div>
 
 <script>
-    // Firebase Setup
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -230,10 +234,9 @@
     let allLedger = [];
 
     function init() {
-        document.getElementById('dateNow').innerText = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+        document.getElementById('dateNow').innerText = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
 
-        // Sync Clients & Ledger
         db.collection("clients").onSnapshot(snap => {
             allClients = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderCustomerList();
@@ -244,7 +247,7 @@
         });
     }
 
-    async function renderCustomerList() {
+    function renderCustomerList() {
         const container = document.getElementById('customerList');
         const search = document.getElementById('custSearch').value.toLowerCase();
         
@@ -252,28 +255,26 @@
         let dueAccounts = 0;
         let dayCollect = 0;
         let dayPay = 0;
-        const todayStr = new Date().toLocaleDateString('en-GB'); // Standardize date format
+        const todayStr = new Date().toLocaleDateString('en-GB');
 
         container.innerHTML = '';
 
-        // Filter and Process
-        const filteredClients = allClients.filter(c => 
+        const filtered = allClients.filter(c => 
             c.name.toLowerCase().includes(search) || (c.phone && c.phone.includes(search))
         ).sort((a, b) => a.name.localeCompare(b.name));
 
-        filteredClients.forEach(client => {
+        filtered.forEach(client => {
             const history = allLedger.filter(l => l.name === client.name);
             let balance = parseFloat(client.openingDue || 0);
 
             history.forEach(t => {
                 const amt = parseFloat(t.amount);
-                // Unified logic for types from both pages
-                if (t.type === 'collect' || t.type === 'Sale' || t.type === 'Due') {
-                    balance += amt;
-                    if(t.date === todayStr) dayPay += amt; // In your logic, Sale/Due is giving credit
-                } else if (t.type === 'pay' || t.type === 'Payment') {
+                if (t.type === 'collect' || t.type === 'Payment') {
                     balance -= amt;
                     if(t.date === todayStr) dayCollect += amt;
+                } else {
+                    balance += amt;
+                    if(t.date === todayStr) dayPay += amt;
                 }
             });
 
@@ -282,16 +283,16 @@
 
             container.innerHTML += `
                 <div class="customer-card" onclick="openCustomer('${client.name}', '${client.phone}')">
-                    <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:15px;">
                         <div class="avatar">${client.name[0].toUpperCase()}</div>
                         <div>
-                            <h4 style="font-weight:800;">${client.name}</h4>
-                            <p style="font-size:11px; opacity:0.5;">${client.phone || 'No Contact'}</p>
+                            <h4 style="font-weight:900; letter-spacing:-0.5px;">${client.name}</h4>
+                            <p style="font-size:12px; opacity:0.5; font-weight:700;">${client.phone || 'No Phone'}</p>
                         </div>
                     </div>
                     <div style="text-align:right">
-                        <h4 class="${balance <= 0 ? 'text-green' : 'text-red'}" style="font-weight:900;">₹${Math.abs(balance).toLocaleString()}</h4>
-                        <span style="font-size:9px; font-weight:900; opacity:0.6;">${balance <= 0 ? 'SETTLED' : 'YOU GET'}</span>
+                        <h4 class="${balance <= 0 ? 'text-green' : 'text-red'}" style="font-weight:900; font-size:18px;">₹${Math.abs(balance).toLocaleString()}</h4>
+                        <span style="font-size:10px; font-weight:900; opacity:0.6;">${balance <= 0 ? 'SETTLED' : 'YOU GET'}</span>
                     </div>
                 </div>`;
         });
@@ -308,7 +309,7 @@
         activeCustomer = name;
         activeCustomerPhone = phone;
         document.getElementById('activeCustName').innerText = name;
-        document.getElementById('activeCustPhone').innerText = phone ? "📞 " + phone : "No phone";
+        document.getElementById('activeCustPhone').innerText = phone ? "WhatsApp: " + phone : "Phone not saved";
         document.getElementById('modalAvatar').innerText = name[0].toUpperCase();
         document.getElementById('customerModal').style.display = 'flex';
         renderHistory();
@@ -323,28 +324,27 @@
         hist.innerHTML = '';
         let balance = parseFloat(client?.openingDue || 0);
 
-        // Display Opening Balance if exists
         if(balance !== 0) {
-            hist.innerHTML += `<div style="text-align:center; padding:10px; font-size:10px; opacity:0.4; font-weight:700;">OPENING BALANCE: ₹${balance}</div>`;
+            hist.innerHTML += `<div style="text-align:center; padding:12px; font-size:11px; opacity:0.5; font-weight:800; color:var(--primary);">OPENING BALANCE: ₹${balance}</div>`;
         }
 
         filtered.forEach(e => {
-            const isCredit = (e.type === 'collect' || e.type === 'Sale' || e.type === 'Due');
+            const isPlus = !(e.type === 'collect' || e.type === 'Payment');
             const amt = parseFloat(e.amount);
             
             hist.innerHTML += `
                 <div class="trans-item">
                     <div style="flex:1">
-                        <p style="font-size:14px; font-weight:700;">${e.note || e.type || 'Entry'}</p>
-                        <small style="font-size:10px; opacity:0.5;">${e.date}</small>
+                        <p style="font-size:15px; font-weight:800;">${e.note || (isPlus ? 'Credit Entry' : 'Payment Received')}</p>
+                        <small style="font-size:11px; opacity:0.5; font-weight:700;">${e.date}</small>
                     </div>
-                    <div style="text-align:right; display:flex; align-items:center; gap:12px;">
-                        <h4 class="${isCredit ? 'text-red' : 'text-green'}" style="font-weight:800;">${isCredit ? '+' : '-'} ₹${amt.toLocaleString()}</h4>
-                        <i class="fa-solid fa-trash-can" onclick="deleteEntry('${e.id}')" style="font-size:12px; opacity:0.2; cursor:pointer;"></i>
+                    <div style="text-align:right; display:flex; align-items:center; gap:15px;">
+                        <h4 class="${isPlus ? 'text-red' : 'text-green'}" style="font-weight:900;">${isPlus ? '+' : '-'} ₹${amt.toLocaleString()}</h4>
+                        <i class="fa-solid fa-trash-can" onclick="deleteEntry('${e.id}')" style="font-size:14px; opacity:0.15; cursor:pointer;"></i>
                     </div>
                 </div>`;
             
-            if(isCredit) balance += amt; else balance -= amt;
+            if(isPlus) balance += amt; else balance -= amt;
         });
 
         currentBalanceRaw = balance;
@@ -362,7 +362,7 @@
         await db.collection("ledger").add({
             name: activeCustomer,
             phone: activeCustomerPhone,
-            type: type, // 'pay' or 'collect'
+            type: type, 
             amount: parseFloat(amt),
             note: note,
             date: new Date().toLocaleDateString('en-GB'),
@@ -371,6 +371,7 @@
 
         document.getElementById('entryAmount').value = ''; 
         document.getElementById('entryNote').value = '';
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
     }
 
     async function createNewCustomer() {
@@ -381,9 +382,7 @@
         if(!n) return alert("Name is required");
 
         await db.collection("clients").add({
-            name: n,
-            phone: p,
-            openingDue: parseFloat(due),
+            name: n, phone: p, openingDue: parseFloat(due),
             created: firebase.firestore.FieldValue.serverTimestamp()
         });
 
@@ -391,15 +390,13 @@
     }
 
     async function deleteEntry(id) {
-        if(confirm("Delete this transaction?")) await db.collection("ledger").doc(id).delete();
+        if(confirm("Delete this entry?")) await db.collection("ledger").doc(id).delete();
     }
 
     async function deleteCustomer() {
-        if(confirm(`Are you sure you want to delete ${activeCustomer}? All history will be lost.`)) {
+        if(confirm(`Are you sure you want to delete ${activeCustomer}?`)) {
             const clientDoc = allClients.find(c => c.name === activeCustomer);
             if(clientDoc) await db.collection("clients").doc(clientDoc.id).delete();
-            
-            // Batch delete ledger history
             const batch = db.batch();
             allLedger.filter(l => l.name === activeCustomer).forEach(l => {
                 batch.delete(db.collection("ledger").doc(l.id));
@@ -412,41 +409,33 @@
     function downloadPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFontSize(18);
-        doc.text("SURJYA BAKERY - LEDGER REPORT", 14, 20);
+        doc.setFont("helvetica", "bold");
+        doc.text("SURJYA BAKERY - CUSTOMER LEDGER", 105, 20, null, null, "center");
         doc.setFontSize(12);
-        doc.text(`Customer: ${activeCustomer}`, 14, 30);
-        doc.text(`Current Pending: Rs. ${currentBalanceRaw}`, 14, 38);
+        doc.text(`Customer: ${activeCustomer}`, 14, 35);
+        doc.text(`Total Pending: Rs. ${currentBalanceRaw}`, 14, 43);
 
         const rows = allLedger.filter(l => l.name === activeCustomer).map(e => [
-            e.date, e.note || '-', e.type.toUpperCase(), `Rs. ${e.amount}`
+            e.date, e.note || '-', e.type === 'collect' ? 'GOT (Lena)' : 'GAVE (Dena)', `Rs. ${e.amount}`
         ]);
 
-        doc.autoTable({ startY: 45, head: [['Date', 'Description', 'Type', 'Amount']], body: rows });
-        doc.save(`${activeCustomer}_Khata.pdf`);
+        doc.autoTable({ startY: 50, head: [['Date', 'Remark', 'Type', 'Amount']], body: rows, theme: 'striped' });
+        doc.save(`${activeCustomer}_Bakery_Ledger.pdf`);
     }
 
     function sendWhatsAppReminder() {
-        if(!activeCustomerPhone) return alert("No phone number saved!");
-        const msg = `Namaste ${activeCustomer}, Surjya Bakery se reminder: Aapka pending balance ₹${currentBalanceRaw} hai. Kripya bhugtan karein. Dhanyawad!`;
+        if(!activeCustomerPhone) return alert("Please save a phone number first!");
+        const msg = `Namaste ${activeCustomer}, Surjya Bakery se reminder: Aapka pending balance ₹${currentBalanceRaw} hai. Kripya time se bhugtan karein. Dhanyawad!`;
         window.open(`https://wa.me/91${activeCustomerPhone}?text=${encodeURIComponent(msg)}`);
     }
 
     function fillAmt(v) { document.getElementById('entryAmount').value = v; }
     function quickFillBalance() { document.getElementById('entryAmount').value = Math.abs(currentBalanceRaw); }
     function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-    function closeModals() { 
-        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
-        activeCustomer = null; 
-    }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); activeCustomer = null; }
     function go(p) { window.location.href = p; }
 
     window.onload = init;
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
 </script>
 </body>
 </html>

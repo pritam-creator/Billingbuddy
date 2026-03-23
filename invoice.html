@@ -36,7 +36,6 @@
             border-radius: 12px; cursor: pointer; transition: 0.2s; 
             margin-bottom: 4px; font-size: 14px; color: #64748b; font-weight: 500;
         }
-        .menu li i { font-size: 18px; width: 24px; }
         .menu li:hover { background: #f1f5f9; color: #0f172a; }
         .menu li.active { background: #000; color: #fff; }
         body.dark .menu li.active { background: #f8fafc; color: #000; }
@@ -81,9 +80,9 @@
         .btn-print { background: #10b981; color: white; width: 100%; }
         .btn-khata { background: #f59e0b; color: white; width: 100%; }
 
-        /* Modal Settings */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 90%; max-width: 450px; }
+        /* MODAL */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 100%; max-width: 450px; }
         body.dark .modal-content { background: #1e293b; color: #fff; }
 
         /* PRINT STYLES */
@@ -93,11 +92,6 @@
             #printSection, #printSection * { visibility: visible; }
             #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; padding: 10px; }
         }
-
-        /* INVOICE TEMPLATES */
-        .inv-standard { font-family: sans-serif; }
-        .inv-thermal { font-family: monospace; width: 80mm; font-size: 12px; }
-        .inv-elegant { font-family: 'Inter', serif; border: 2px solid #000; padding: 20px; }
 
         @media(max-width: 768px){ 
             .sidebar { display: none; } 
@@ -129,7 +123,7 @@
             <div style="display:flex; align-items:center; gap:15px;">
                 <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
                 <div>
-                    <h2 id="headerName" style="font-weight: 800; letter-spacing: -0.5px;">New Bill</h2>
+                    <h2 style="font-weight: 800; letter-spacing: -0.5px;">New Bill</h2>
                     <p id="invMeta" style="color: #64748b; font-size: 11px; font-weight: 600;"></p>
                 </div>
             </div>
@@ -151,7 +145,7 @@
         </div>
 
         <div class="card">
-            <input id="iName" placeholder="🔍 Search or Enter Product Name..." list="inventoryList" style="margin-bottom: 12px; font-weight: 600;">
+            <input id="iName" placeholder="🔍 Search Product..." list="inventoryList" style="margin-bottom: 12px; font-weight: 600;">
             <datalist id="inventoryList"></datalist>
             <div class="grid-inputs">
                 <input id="iQty" type="number" placeholder="Qty" value="1">
@@ -171,8 +165,7 @@
         <div style="max-width: 400px; margin-left: auto;">
             <div class="card" style="background: #000; color: #fff;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px; opacity: 0.7; font-size: 13px;">
-                    <span>Sub-total</span>
-                    <span id="subTotal">₹0.00</span>
+                    <span>Sub-total</span><span id="subTotal">₹0.00</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
                     <span style="font-weight: 700; font-size: 18px;">Grand Total</span>
@@ -187,8 +180,7 @@
     </main>
 </div>
 
-<div id="printSection" class="inv-standard">
-    </div>
+<div id="printSection"></div>
 
 <div id="settingsModal" class="modal">
     <div class="modal-content">
@@ -196,16 +188,23 @@
         <input type="text" id="setStoreName" placeholder="Bakery Name" style="margin-bottom:10px;">
         <input type="text" id="setStorePhone" placeholder="Phone" style="margin-bottom:10px;">
         <input type="text" id="setStoreAddress" placeholder="Address" style="margin-bottom:10px;">
-        
         <label style="font-size: 12px; font-weight: 700; color: #64748b;">INVOICE STYLE</label>
-        <select id="setInvTemplate" style="margin-top:5px; margin-bottom:10px;">
+        <select id="setInvTemplate" style="margin-top:5px; margin-bottom:15px;">
             <option value="inv-standard">Standard A4/A5</option>
             <option value="inv-thermal">Thermal (Roll Paper)</option>
             <option value="inv-elegant">Elegant (Modern Border)</option>
         </select>
+        <button class="btn btn-add" style="width:100%;" onclick="saveSettings()">Save & Sync</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:transparent; color:#94a3b8;" onclick="closeSettings()">Cancel</button>
+    </div>
+</div>
 
-        <button class="btn btn-add" style="width:100%; margin-top:10px;" onclick="saveSettings()">Save & Sync</button>
-        <button class="btn" style="width:100%; margin-top:10px; background:#f1f5f9; color:#000;" onclick="closeSettings()">Cancel</button>
+<div id="successModal" class="modal">
+    <div class="modal-content" style="text-align:center;">
+        <i class="fa-solid fa-circle-check" style="font-size:50px; color:#10b981; margin-bottom:15px;"></i>
+        <h2 id="successTitle">Saved!</h2>
+        <p style="opacity:0.6; margin-bottom:20px;">Bill has been processed successfully.</p>
+        <button class="btn btn-add" style="width:100%;" onclick="location.reload()">NEXT BILL</button>
     </div>
 </div>
 
@@ -221,7 +220,7 @@
 
     let cart = [];
     let invNo = "SB-" + Date.now().toString().slice(-6);
-    let storeData = { name: "Surjya Bakery", address: "Loading...", phone: "..." };
+    let storeData = { name: "Surjya Bakery", address: "...", phone: "..." };
     let selectedTemplate = "inv-standard";
 
     window.onload = () => {
@@ -234,12 +233,11 @@
     function syncSettings() {
         db.collection("settings").doc("admin").onSnapshot((doc) => {
             if (doc.exists) {
-                const data = doc.data();
-                storeData = data;
-                selectedTemplate = data.template || "inv-standard";
-                document.getElementById("setStoreName").value = data.name;
-                document.getElementById("setStorePhone").value = data.phone;
-                document.getElementById("setStoreAddress").value = data.address;
+                storeData = doc.data();
+                selectedTemplate = storeData.template || "inv-standard";
+                document.getElementById("setStoreName").value = storeData.name || "";
+                document.getElementById("setStorePhone").value = storeData.phone || "";
+                document.getElementById("setStoreAddress").value = storeData.address || "";
                 document.getElementById("setInvTemplate").value = selectedTemplate;
             }
         });
@@ -281,9 +279,7 @@
         if(!name || !price) return;
         cart.push({ name, qty, price, disc, total: (qty * price) - disc });
         renderCart();
-        document.getElementById("iName").value = ""; 
-        document.getElementById("iPrice").value = "";
-        document.getElementById("iDiscount").value = "";
+        document.getElementById("iName").value = ""; document.getElementById("iPrice").value = ""; document.getElementById("iDiscount").value = "";
     }
 
     function renderCart() {
@@ -297,75 +293,9 @@
         document.getElementById("cartTable").innerHTML = html;
     }
 
-    function buildInvoice() {
-        const cName = document.getElementById("custName").value || "Guest";
-        const total = document.getElementById("grandTotal").innerText;
-        const date = new Date().toLocaleDateString('en-GB');
-        let itemRows = "";
-        cart.forEach(item => {
-            itemRows += `<tr><td style="padding:5px 0">${item.name}</td><td>${item.qty}</td><td>${item.price}</td><td style="text-align:right">${item.total.toFixed(2)}</td></tr>`;
-        });
-
-        const printArea = document.getElementById("printSection");
-        printArea.className = selectedTemplate;
-
-        let content = "";
-        if(selectedTemplate === 'inv-thermal') {
-            content = `
-                <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:5px;">
-                    <h3>${storeData.name}</h3>
-                    <p>${storeData.address}</p>
-                    <p>Mob: ${storeData.phone}</p>
-                </div>
-                <p style="margin-top:5px;">INV: #${invNo} | Date: ${date}</p>
-                <p>Cust: ${cName}</p>
-                <table style="width:100%; border-bottom:1px dashed #000; margin-top:5px;">
-                    <thead><tr><th style="text-align:left">Item</th><th>Qty</th><th>Prc</th><th style="text-align:right">Tot</th></tr></thead>
-                    <tbody>${itemRows}</tbody>
-                </table>
-                <h3 style="text-align:right; margin-top:10px;">Total: ${total}</h3>
-                <p style="text-align:center; margin-top:10px;">*** Thank You ***</p>
-            `;
-        } else if(selectedTemplate === 'inv-elegant') {
-            content = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #000; padding-bottom:10px;">
-                    <div><h1 style="color:#0052cc">${storeData.name}</h1><p>${storeData.address}</p></div>
-                    <div style="text-align:right"><h2>INVOICE</h2><p>#${invNo}</p></div>
-                </div>
-                <div style="margin:15px 0;"><strong>Bill To:</strong> ${cName} | <strong>Date:</strong> ${date}</div>
-                <table style="width:100%; margin-top:15px;">
-                    <thead style="background:#f1f5f9;"><tr><th style="padding:10px">Description</th><th>Qty</th><th>Price</th><th style="text-align:right">Total</th></tr></thead>
-                    <tbody>${itemRows}</tbody>
-                </table>
-                <div style="margin-top:20px; text-align:right; border-top:2px solid #000; padding-top:10px;">
-                    <h2 style="color:#10b981">Grand Total: ${total}</h2>
-                </div>
-            `;
-        } else {
-            // Standard
-            content = `
-                <div style="text-align:center; margin-bottom:15px;">
-                    <h2>${storeData.name}</h2>
-                    <p>${storeData.address} | Mob: ${storeData.phone}</p>
-                </div>
-                <hr style="border:0; border-top:1px solid #ccc; margin-bottom:10px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                    <span>Invoice: #${invNo}</span>
-                    <span>Date: ${date}</span>
-                </div>
-                <p><strong>Customer:</strong> ${cName}</p>
-                <table style="width:100%; margin-top:10px; border-bottom:1px solid #eee;">
-                    <thead><tr style="border-bottom:1px solid #eee"><th style="text-align:left">Item Name</th><th>Qty</th><th>Price</th><th style="text-align:right">Amount</th></tr></thead>
-                    <tbody>${itemRows}</tbody>
-                </table>
-                <div style="text-align:right; margin-top:15px;"><h3>Net Total: ${total}</h3></div>
-            `;
-        }
-        printArea.innerHTML = content;
-    }
-
     async function saveAndProcess(type) {
-        if(cart.length === 0) return alert("Please add items first!");
+        if(cart.length === 0) return;
+        
         buildInvoice();
 
         await db.collection("sales").add({
@@ -379,19 +309,42 @@
             window.print();
             location.reload();
         } else {
-            alert("Saved Successfully!");
-            location.reload();
+            document.getElementById("successModal").style.display = "flex";
         }
+    }
+
+    function buildInvoice() {
+        const cName = document.getElementById("custName").value || "Guest";
+        const total = document.getElementById("grandTotal").innerText;
+        const date = new Date().toLocaleDateString('en-GB');
+        let itemRows = "";
+        cart.forEach(item => {
+            itemRows += `<tr><td style="padding:5px 0">${item.name}</td><td>${item.qty}</td><td>${item.price}</td><td style="text-align:right">${item.total.toFixed(2)}</td></tr>`;
+        });
+
+        const printArea = document.getElementById("printSection");
+        printArea.className = selectedTemplate;
+        
+        // CSS specific to templates (Standardized)
+        let content = `
+            <div style="font-family:sans-serif; color:#000;">
+                <center><h2>${storeData.name}</h2><p>${storeData.address}<br>Mob: ${storeData.phone}</p></center>
+                <hr>
+                <p>Inv: #${invNo} | Date: ${date}</p>
+                <p>Cust: ${cName}</p>
+                <table style="width:100%; border-top:1px solid #000; margin-top:10px;">
+                    <thead><tr><th align="left">Item</th><th>Qty</th><th>Price</th><th align="right">Total</th></tr></thead>
+                    <tbody>${itemRows}</tbody>
+                </table>
+                <h3 align="right" style="margin-top:10px; border-top:1px solid #000; padding-top:5px;">Total: ${total}</h3>
+                <center style="margin-top:20px;"><p>Thank You! Visit Again</p></center>
+            </div>`;
+        printArea.innerHTML = content;
     }
 
     function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
     function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
     function go(p) { window.location.href = p; }
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
 </script>
 </body>
 </html>

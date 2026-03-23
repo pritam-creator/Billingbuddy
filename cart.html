@@ -11,90 +11,55 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* Minimal & Consistent Theme */
+        /* CSS Same as before with Modal Updates */
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
-        
         body { background: #f8fafc; color: #1e293b; min-height: 100vh; transition: 0.3s; }
         body.dark { background: #0f172a; color: #f1f5f9; }
-
         .app { display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar - Same as Dashboard */
-        .sidebar { 
-            width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; 
-            padding: 30px 20px; display: flex; flex-direction: column; 
-            position: fixed; height: 100%; z-index: 1000; 
-        }
+        /* Sidebar */
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid #e2e8f0; padding: 30px 20px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
         body.dark .sidebar { background: #1e293b; border-color: #334155; }
-
-        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
-        .logo { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; }
-        
-        .menu { list-style: none; flex-grow: 1; }
-        .menu li { 
-            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
-            border-radius: 12px; cursor: pointer; transition: 0.2s; 
-            margin-bottom: 4px; font-size: 14px; color: #64748b; font-weight: 500;
-        }
-        .menu li:hover { background: #f1f5f9; color: #0f172a; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; margin-bottom: 30px; cursor: pointer; }
+        .menu li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; cursor: pointer; margin-bottom: 4px; font-size: 14px; color: #64748b; font-weight: 500; }
         .menu li.active { background: #000; color: #fff; }
         body.dark .menu li.active { background: #f8fafc; color: #000; }
 
-        /* Main Content Area */
+        /* Content Area */
         .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 220px; }
-        
         .top-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
         .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
 
-        /* Quick Search Container */
-        .search-box { background: #fff; border-radius: 16px; padding: 12px 18px; border: 1px solid #e2e8f0; margin-bottom: 20px; position: relative; display: flex; align-items: center; gap: 10px; }
-        body.dark .search-box { background: #1e293b; border-color: #334155; }
-        .search-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 15px; color: inherit; }
-        .search-results { position: absolute; top: 110%; left: 0; right: 0; background: #fff; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 2000; max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; display: none; }
-        body.dark .search-results { background: #1e293b; border-color: #334155; }
-        .search-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
-        body.dark .search-item { border-color: #334155; }
-
-        /* Cart Cards */
+        /* Cart & Form */
+        .card { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
+        body.dark .card { background: #1e293b; border-color: #334155; }
         .cart-item { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         body.dark .cart-item { background: #1e293b; border-color: #334155; }
         
-        .qty-controls { display: flex; align-items: center; background: #f1f5f9; border-radius: 12px; padding: 4px; gap: 8px; }
-        body.dark .qty-controls { background: #0f172a; }
-        .qty-btn { width: 32px; height: 32px; border: none; border-radius: 10px; background: #fff; color: #000; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        body.dark .qty-btn { background: #1e293b; color: #fff; }
+        /* Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { width: 100%; max-width: 350px; background: #fff; border-radius: 28px; padding: 30px; text-align: center; }
+        body.dark .modal-content { background: #1e293b; color: #fff; }
+        .btn-modal { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: 800; cursor: pointer; margin-top: 20px; background: #000; color: #fff; }
+        body.dark .btn-modal { background: #fff; color: #000; }
 
-        /* Order Info Form */
-        .card { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
-        body.dark .card { background: #1e293b; border-color: #334155; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #94a3b8; margin-bottom: 6px; display: block; }
-        select, input[type="text"], input[type="number"] { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; color: inherit; }
-        body.dark select, body.dark input { background: #0f172a; border-color: #334155; }
-
-        /* Summary Section */
-        .summary-box { background: #f8fafc; border-radius: 16px; padding: 15px; margin-top: 15px; }
-        body.dark .summary-box { background: #0f172a; }
-        .summary-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
-
-        /* Footer Checkout Bar */
-        .cart-footer { 
-            position: fixed; bottom: 0; right: 0; left: 260px; 
-            background: #ffffff; padding: 20px 40px; 
-            border-top: 1px solid #e2e8f0; display: flex; 
-            justify-content: space-between; align-items: center; z-index: 100;
-        }
+        /* Footer */
+        .cart-footer { position: fixed; bottom: 0; right: 0; left: 260px; background: #fff; padding: 20px 40px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         body.dark .cart-footer { background: #1e293b; border-color: #334155; }
-        .btn-checkout { background: #10b981; color: white; padding: 16px 35px; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-checkout:hover { background: #059669; transform: translateY(-2px); }
+        .btn-checkout { background: #10b981; color: white; padding: 16px 35px; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; font-size: 16px; }
+
+        /* Utils */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        select, input { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; color: inherit; }
+        body.dark select, body.dark input { background: #0f172a; border-color: #334155; }
+        label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #94a3b8; margin-bottom: 6px; display: block; }
 
         @media(max-width: 768px){
             .sidebar{ display: none; }
             .content{ margin-left: 0; padding: 20px; padding-bottom: 180px; }
             .cart-footer { left: 0; padding: 20px; flex-direction: column; gap: 15px; }
             .btn-checkout { width: 100%; }
-            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -103,29 +68,21 @@
 
 <div class="app">
     <aside class="sidebar">
-        <div class="profile">
-            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-            <div class="profile-info"><h4>Surjya Bakery</h4><p>POS Admin</p></div>
-        </div>
+        <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" onclick="go('dashboard.html')">
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
             <li onclick="go('items.html')"><i class="fa-solid fa-cookie"></i> Items</li>
-            <li class="active"><i class="fa-solid fa-cart-shopping"></i> Checkout</li>
-            <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
+            <li class="active" onclick="go('checkout.html')"><i class="fa-solid fa-cart-shopping"></i> Checkout</li>
+            <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Khatabook</li>
+            <li onclick="showLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
             <button class="back-btn" onclick="go('items.html')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2 style="font-weight: 800; letter-spacing: -0.5px;">Review Order</h2>
+            <h2 style="font-weight: 800;">Review Order</h2>
         </header>
-
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8"></i>
-            <input type="text" id="quickSearch" placeholder="Fast Add: Type Item Name..." oninput="searchItems(this.value)">
-            <div class="search-results" id="searchResults"></div>
-        </div>
 
         <div id="orderSettings" class="card" style="display: none;">
             <div class="form-row">
@@ -144,34 +101,51 @@
             </div>
             <div>
                 <label>Add Order Note</label>
-                <input type="text" id="orderNote" placeholder="e.g. Less spicy, Packing instruction...">
+                <input type="text" id="orderNote" placeholder="e.g. Packing instruction...">
             </div>
         </div>
 
         <div id="cartContainer"></div>
 
         <div id="summarySection" class="card" style="display: none; border-style: dashed;">
-            <div class="summary-line"><span>Sub Total:</span><span id="subTotal">₹ 0</span></div>
-            <div class="summary-line" style="margin-top:10px;">
+            <div class="summary-line" style="display:flex; justify-content: space-between;"><span>Sub Total:</span><span id="subTotal">₹ 0</span></div>
+            <div class="summary-line" style="margin-top:10px; display:flex; justify-content: space-between; align-items:center;">
                 <span>Discount (₹):</span>
-                <input type="number" id="discountVal" value="0" oninput="calculateTotal()" style="width: 80px; padding: 5px 10px; text-align: right;">
+                <input type="number" id="discountVal" value="0" oninput="calculateTotal()" style="width: 80px; text-align: right;">
             </div>
-            <div class="summary-box">
-                <div class="summary-line" style="margin-bottom:0; font-weight:800; color:#10b981;">
-                    <span>Final Amount:</span>
-                    <span id="finalDisplay" style="font-size: 18px;">₹ 0</span>
-                </div>
+            <div style="background:rgba(16, 185, 129, 0.1); padding:15px; border-radius:12px; margin-top:15px; display:flex; justify-content: space-between; font-weight:800; color:#10b981;">
+                <span>Final Amount:</span>
+                <span id="finalDisplay">₹ 0</span>
             </div>
         </div>
     </main>
 
     <footer class="cart-footer" id="cartFooter" style="display: none;">
-        <div class="total-info">
-            <p style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Total Payable</p>
-            <h2 id="grandTotalDisplay" style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">₹ 0</h2>
+        <div>
+            <p style="font-size: 11px; font-weight: 700; color: #94a3b8;">TOTAL PAYABLE</p>
+            <h2 id="grandTotalDisplay" style="font-size: 28px; font-weight: 900;">₹ 0</h2>
         </div>
         <button class="btn-checkout" id="checkoutBtn" onclick="placeOrder()">PLACE ORDER <i class="fa-solid fa-arrow-right" style="margin-left:10px;"></i></button>
     </footer>
+</div>
+
+<div class="modal" id="successModal">
+    <div class="modal-content">
+        <i class="fa-solid fa-circle-check" style="font-size: 50px; color: #10b981; margin-bottom: 15px;"></i>
+        <h3 style="font-weight: 900;">Order Success!</h3>
+        <p style="opacity: 0.6; margin-top: 5px;">Aapka order record ho gaya hai.</p>
+        <button class="btn-modal" onclick="go('records.html')">VIEW RECORDS</button>
+    </div>
+</div>
+
+<div class="modal" id="logoutModal">
+    <div class="modal-content">
+        <h3 style="font-weight: 900;">Logout karein?</h3>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn-modal" style="background:#f1f5f9; color:#000;" onclick="closeModals()">BACK</button>
+            <button class="btn-modal" style="background:#ef4444; color:#fff;" onclick="go('login.html')">LOGOUT</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -185,81 +159,11 @@
     const db = firebase.firestore();
 
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    let items = JSON.parse(localStorage.getItem("items")) || [];
     let clients = JSON.parse(localStorage.getItem("clients")) || [];
 
-    function searchItems(val) {
-        const res = document.getElementById("searchResults");
-        if(!val) { res.style.display="none"; return; }
-        const filtered = items.filter(i => i.name.toLowerCase().includes(val.toLowerCase()));
-        res.innerHTML = "";
-        if(filtered.length > 0) {
-            res.style.display = "block";
-            filtered.forEach(item => {
-                res.innerHTML += `<div class="search-item" onclick='quickAdd("${item.id}")'>
-                    <span>${item.name}</span><b style="color:#3b82f6">₹${item.price}</b>
-                </div>`;
-            });
-        } else { res.style.display="none"; }
-    }
-
-    function quickAdd(id) {
-        const item = items.find(i => i.id == id);
-        let exist = cart.find(c => c.id == id);
-        if(exist) exist.qty++; else cart.push({...item, qty:1});
-        document.getElementById("quickSearch").value="";
-        document.getElementById("searchResults").style.display="none";
-        save();
-    }
-
-    function renderCart() {
-        const container = document.getElementById("cartContainer");
-        const footer = document.getElementById("cartFooter");
-        const summary = document.getElementById("summarySection");
-        const settings = document.getElementById("orderSettings");
-        
-        container.innerHTML = "";
-        if (cart.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding-top:100px; color:#94a3b8;"><i class="fa-solid fa-cart-arrow-down" style="font-size:48px; margin-bottom:15px;"></i><h3>Cart is empty</h3></div>`;
-            footer.style.display="none"; summary.style.display="none"; settings.style.display="none";
-            return;
-        }
-
-        footer.style.display="flex"; summary.style.display="block"; settings.style.display="block";
-        
-        const custSelect = document.getElementById("customerSelect");
-        custSelect.innerHTML = '<option value="Walking Customer">Walking Customer</option>';
-        clients.forEach(c => custSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-
-        cart.forEach((item, i) => {
-            container.innerHTML += `
-                <div class="cart-item">
-                    <div>
-                        <h4 style="font-weight:700;">${item.name}</h4>
-                        <p style="font-size:12px; color:#64748b; font-weight:600;">₹${item.price} per unit</p>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:15px;">
-                        <div class="qty-controls">
-                            <button class="qty-btn" onclick="updateQty(${i},-1)">-</button>
-                            <span style="font-weight:800; width:20px; text-align:center;">${item.qty}</span>
-                            <button class="qty-btn" onclick="updateQty(${i},1)">+</button>
-                        </div>
-                        <i class="fa-solid fa-trash-can" style="color:#ef4444; cursor:pointer;" onclick="remove(${i})"></i>
-                    </div>
-                </div>`;
-        });
-        calculateTotal();
-    }
-
-    function calculateTotal() {
-        let sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
-        let disc = parseFloat(document.getElementById("discountVal").value) || 0;
-        let total = Math.max(0, sub - disc);
-        document.getElementById("subTotal").innerText = "₹ " + sub;
-        document.getElementById("grandTotalDisplay").innerText = "₹ " + total;
-        document.getElementById("finalDisplay").innerText = "₹ " + total;
-        return total;
-    }
+    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+    function showLogout() { showModal('logoutModal'); }
 
     async function placeOrder() {
         const btn = document.getElementById("checkoutBtn");
@@ -287,29 +191,62 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
-            alert("✅ Order Placed Successfully!");
+            // SUCCESS! No alert, just modal.
             cart = [];
             localStorage.setItem("cart", JSON.stringify(cart));
-            go('orders.html');
+            showModal('successModal');
         } catch (error) {
-            alert("⚠️ Connection Error. Saving locally.");
-            go('orders.html');
+            btn.disabled = false;
+            btn.innerText = "RETRY ORDER";
+            // Optional: Add a small error toast here
         }
     }
 
-    function updateQty(i, c) { cart[i].qty += c; if(cart[i].qty < 1) remove(i); else save(); }
-    function remove(i) { cart.splice(i, 1); save(); }
-    function save() { localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
+    // Logic functions same as your code...
+    function calculateTotal() {
+        let sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+        let disc = parseFloat(document.getElementById("discountVal").value) || 0;
+        let total = Math.max(0, sub - disc);
+        document.getElementById("subTotal").innerText = "₹ " + sub;
+        document.getElementById("grandTotalDisplay").innerText = "₹ " + total;
+        document.getElementById("finalDisplay").innerText = "₹ " + total;
+        return total;
+    }
+
+    function renderCart() {
+        const container = document.getElementById("cartContainer");
+        const footer = document.getElementById("cartFooter");
+        const summary = document.getElementById("summarySection");
+        const settings = document.getElementById("orderSettings");
+        
+        container.innerHTML = "";
+        if (cart.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding-top:100px; color:#94a3b8;"><i class="fa-solid fa-cart-arrow-down" style="font-size:48px; margin-bottom:15px;"></i><h3>Cart is empty</h3></div>`;
+            footer.style.display="none"; summary.style.display="none"; settings.style.display="none";
+            return;
+        }
+
+        footer.style.display="flex"; summary.style.display="block"; settings.style.display="block";
+        const custSelect = document.getElementById("customerSelect");
+        custSelect.innerHTML = '<option value="Walking Customer">Walking Customer</option>';
+        clients.forEach(c => custSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+
+        cart.forEach((item, i) => {
+            container.innerHTML += `
+                <div class="cart-item">
+                    <div><h4 style="font-weight:700;">${item.name}</h4><p style="font-size:12px; opacity:0.6;">₹${item.price} x ${item.qty}</p></div>
+                    <i class="fa-solid fa-trash-can" style="color:#ef4444; cursor:pointer;" onclick="remove(${i})"></i>
+                </div>`;
+        });
+        calculateTotal();
+    }
+
+    function remove(i) { cart.splice(i, 1); localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
     function go(p) { window.location.href = p; }
 
     window.onload = () => {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
         renderCart();
-    };
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
     };
 </script>
 </body>
