@@ -19,7 +19,7 @@
 
         .app { display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar - Uniform Design */
+        /* Sidebar */
         .sidebar { 
             width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; 
             padding: 30px 20px; display: flex; flex-direction: column; 
@@ -44,8 +44,9 @@
         .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
         
         .top-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; justify-content: space-between; }
-        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .back-btn, .set-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        body.dark .back-btn, body.dark .set-btn { background: #1e293b; border-color: #334155; color: #fff; }
 
         /* Quick Tiles */
         .quick-tiles { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 20px; scrollbar-width: none; }
@@ -85,13 +86,27 @@
         .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 100%; max-width: 450px; }
         body.dark .modal-content { background: #1e293b; color: #fff; }
 
-        /* PRINT STYLES */
+        /* PRINT STYLES - TEMPLATES */
         #printSection { display: none; }
         @media print {
             body * { visibility: hidden; }
             #printSection, #printSection * { visibility: visible; }
-            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: #000; padding: 10px; }
+            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; padding: 10px; }
         }
+
+        /* --- Design Templates --- */
+        .tpl-abstract { border-top: 10px solid #3b82f6; padding: 20px; }
+        .tpl-thermal { width: 80mm; font-size: 12px; font-family: monospace; }
+        .tpl-elegant { border: 5px double #d4af37; padding: 25px; background: #fffaf0; }
+        .tpl-bakery { border: 2px dashed #8b4513; color: #5d4037; padding: 20px; background: #fffcf5; }
+        .tpl-corporate { border-bottom: 8px solid #1e293b; padding: 20px; }
+        .tpl-modern { border-left: 10px solid #10b981; padding: 20px; background: #f0fff4; }
+        .tpl-minimal { border: 1px solid #000; padding: 15px; }
+        .tpl-compact { font-size: 13px; line-height: 1.1; }
+
+        .inv-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .inv-table th { border-bottom: 2px solid #000; text-align: left; padding: 5px; color: #000; }
+        .inv-table td { border-bottom: 1px solid #eee; padding: 8px 5px; color: #000; }
 
         @media(max-width: 768px){ 
             .sidebar { display: none; } 
@@ -126,6 +141,9 @@
                     <h2 style="font-weight: 800; letter-spacing: -0.5px;">New Bill</h2>
                     <p id="invMeta" style="color: #64748b; font-size: 11px; font-weight: 600;"></p>
                 </div>
+            </div>
+            <div class="header-actions">
+                <button class="set-btn" onclick="openSettings()" title="Settings"><i class="fa-solid fa-gear"></i></button>
             </div>
         </header>
 
@@ -180,24 +198,31 @@
     </main>
 </div>
 
-<div id="printSection"></div>
-
 <div id="settingsModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-bottom: 20px; font-weight: 800;">Store Settings</h3>
+        <h3 style="margin-bottom: 20px; font-weight: 800;">Store & Invoice Settings</h3>
         <input type="text" id="setStoreName" placeholder="Bakery Name" style="margin-bottom:10px;">
         <input type="text" id="setStorePhone" placeholder="Phone" style="margin-bottom:10px;">
-        <input type="text" id="setStoreAddress" placeholder="Address" style="margin-bottom:10px;">
-        <label style="font-size: 12px; font-weight: 700; color: #64748b;">INVOICE STYLE</label>
-        <select id="setInvTemplate" style="margin-top:5px; margin-bottom:15px;">
-            <option value="inv-standard">Standard A4/A5</option>
-            <option value="inv-thermal">Thermal (Roll Paper)</option>
-            <option value="inv-elegant">Elegant (Modern Border)</option>
+        <input type="text" id="setStoreAddress" placeholder="Address" style="margin-bottom:15px;">
+        
+        <label style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Invoice Design</label>
+        <select id="setInvTemplate" style="margin-top:5px; margin-bottom:20px;">
+            <option value="tpl-abstract">Abstract Blue (Modern)</option>
+            <option value="tpl-thermal">Thermal Roll (58/80mm)</option>
+            <option value="tpl-elegant">Elegant Gold (Classic)</option>
+            <option value="tpl-bakery">Vintage Bakery (Brown)</option>
+            <option value="tpl-corporate">Corporate Dark (Pro)</option>
+            <option value="tpl-modern">Modern Green (Fresh)</option>
+            <option value="tpl-minimal">Minimalist (Black & White)</option>
+            <option value="tpl-compact">Compact (Small Label)</option>
         </select>
-        <button class="btn btn-add" style="width:100%;" onclick="saveSettings()">Save & Sync</button>
+        
+        <button class="btn btn-add" style="width:100%;" onclick="saveSettings()">Save & Update</button>
         <button class="btn" style="width:100%; margin-top:10px; background:transparent; color:#94a3b8;" onclick="closeSettings()">Cancel</button>
     </div>
 </div>
+
+<div id="printSection"></div>
 
 <div id="successModal" class="modal">
     <div class="modal-content" style="text-align:center;">
@@ -220,8 +245,8 @@
 
     let cart = [];
     let invNo = "SB-" + Date.now().toString().slice(-6);
-    let storeData = { name: "Surjya Bakery", address: "...", phone: "..." };
-    let selectedTemplate = "inv-standard";
+    let storeData = { name: "Surjya Bakery", address: "Local Street", phone: "0000" };
+    let selectedTemplate = "tpl-abstract";
 
     window.onload = () => {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
@@ -234,7 +259,7 @@
         db.collection("settings").doc("admin").onSnapshot((doc) => {
             if (doc.exists) {
                 storeData = doc.data();
-                selectedTemplate = storeData.template || "inv-standard";
+                selectedTemplate = storeData.template || "tpl-abstract";
                 document.getElementById("setStoreName").value = storeData.name || "";
                 document.getElementById("setStorePhone").value = storeData.phone || "";
                 document.getElementById("setStoreAddress").value = storeData.address || "";
@@ -295,19 +320,15 @@
 
     async function saveAndProcess(type) {
         if(cart.length === 0) return;
-        
         buildInvoice();
-
         await db.collection("sales").add({
             invoice: invNo, customer: document.getElementById("custName").value || "Guest", 
             items: cart, total: document.getElementById("grandTotal").innerText,
             date: new Date().toLocaleDateString('en-GB'),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
         if(type === 'share') {
-            window.print();
-            location.reload();
+            setTimeout(() => { window.print(); location.reload(); }, 500);
         } else {
             document.getElementById("successModal").style.display = "flex";
         }
@@ -315,31 +336,42 @@
 
     function buildInvoice() {
         const cName = document.getElementById("custName").value || "Guest";
+        const cPhone = document.getElementById("custPhone").value || "N/A";
         const total = document.getElementById("grandTotal").innerText;
         const date = new Date().toLocaleDateString('en-GB');
-        let itemRows = "";
+        const template = document.getElementById("setInvTemplate").value;
+
+        let rows = "";
         cart.forEach(item => {
-            itemRows += `<tr><td style="padding:5px 0">${item.name}</td><td>${item.qty}</td><td>${item.price}</td><td style="text-align:right">${item.total.toFixed(2)}</td></tr>`;
+            rows += `<tr><td>${item.name}</td><td>${item.qty}</td><td>${item.price}</td><td align="right">${item.total.toFixed(2)}</td></tr>`;
         });
 
         const printArea = document.getElementById("printSection");
-        printArea.className = selectedTemplate;
+        printArea.className = template;
         
-        // CSS specific to templates (Standardized)
-        let content = `
-            <div style="font-family:sans-serif; color:#000;">
-                <center><h2>${storeData.name}</h2><p>${storeData.address}<br>Mob: ${storeData.phone}</p></center>
-                <hr>
-                <p>Inv: #${invNo} | Date: ${date}</p>
-                <p>Cust: ${cName}</p>
-                <table style="width:100%; border-top:1px solid #000; margin-top:10px;">
-                    <thead><tr><th align="left">Item</th><th>Qty</th><th>Price</th><th align="right">Total</th></tr></thead>
-                    <tbody>${itemRows}</tbody>
+        printArea.innerHTML = `
+            <div style="width:100%; color:#000;">
+                <div style="text-align:center; margin-bottom:15px;">
+                    <h2 style="margin:0; text-transform:uppercase;">${storeData.name}</h2>
+                    <p style="margin:5px 0; font-size:13px;">${storeData.address}<br>Mob: ${storeData.phone}</p>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-top:1px solid #000; padding-top:10px; font-size:12px;">
+                    <div><b>Customer:</b> ${cName}<br><b>Phone:</b> ${cPhone}</div>
+                    <div style="text-align:right;"><b>Invoice:</b> #${invNo}<br><b>Date:</b> ${date}</div>
+                </div>
+                <table class="inv-table">
+                    <thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th align="right">Total</th></tr></thead>
+                    <tbody>${rows}</tbody>
                 </table>
-                <h3 align="right" style="margin-top:10px; border-top:1px solid #000; padding-top:5px;">Total: ${total}</h3>
-                <center style="margin-top:20px;"><p>Thank You! Visit Again</p></center>
+                <div style="text-align:right; margin-top:15px;">
+                    <p style="margin:0; font-size:13px;">Amount Payable</p>
+                    <h2 style="margin:0; font-size:26px;">${total}</h2>
+                </div>
+                <div style="text-align:center; margin-top:25px; border-top:1px dashed #000; padding-top:10px; font-size:11px;">
+                    <p>Thank You! Visit Again</p>
+                    <small>Software by BillingBuddy</small>
+                </div>
             </div>`;
-        printArea.innerHTML = content;
     }
 
     function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
