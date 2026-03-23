@@ -4,107 +4,133 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Item Details - Surjya Bakery Pro</title>
+    <title>Product Insights - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{ background: linear-gradient(135deg,#1e293b,#0f172a,#1e1b4b); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
-        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-        .app{ display: flex; height: 100vh; }
-        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px 15px; display: flex; flex-direction: column; height: 100%; }
-        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
-        .logo{ width: 40px; height: 40px; border-radius: 10px; }
-        .menu{ list-style: none; flex-grow: 1; }
-        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; opacity: 0.7; font-size: 14px; margin-bottom: 5px; }
-        .menu li:hover, .menu li.active{ background: #3b82f6; opacity: 1; color: #fff; }
-        .content{ flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-        .top-header{ width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .back-btn{ background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .details-card{ background: rgba(30, 41, 59, 0.7); width: 100%; max-width: 450px; padding: 30px 25px; border-radius: 24px; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; position: relative; }
-        .edit-input-name { background: rgba(0,0,0,0.3); border: 1px solid #3b82f6; color: #fff; font-size: 24px; font-weight: 700; width: 100%; text-align: center; border-radius: 10px; padding: 5px; margin: 10px 0 25px 0; outline: none; }
-        .edit-input-price { background: rgba(0,0,0,0.3); border: 1px solid #4ade80; color: #4ade80; font-size: 24px; font-weight: 700; width: 120px; text-align: center; border-radius: 8px; padding: 2px 5px; outline: none; }
-        .trend-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #4ade80; color: #064e3b; font-size: 11px; padding: 6px 15px; border-radius: 50px; font-weight: 800; }
-        .info-box { background: rgba(15, 23, 42, 0.5); border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05); }
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .info-row span { font-size: 14px; color: #94a3b8; }
-        .stock-control { display: flex; align-items: center; gap: 10px; background: rgba(59, 130, 246, 0.1); padding: 5px; border-radius: 12px; }
-        .stock-btn { width: 35px; height: 35px; border-radius: 10px; border: none; background: #3b82f6; color: #fff; cursor: pointer; font-size: 20px; }
-        .stock-input { width: 60px; background: transparent; border: none; color: white; text-align: center; font-size: 20px; font-weight: 800; outline: none; }
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn { padding: 15px; border: none; border-radius: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-update { background: #3b82f6; color: white; grid-column: span 2; }
-        .btn-edit { background: rgba(255,255,255,0.05); color: #f1c40f; border: 1px solid rgba(241, 196, 15, 0.2); }
-        .btn-del { background: rgba(255, 107, 129, 0.05); color: #ff6b81; border: 1px solid rgba(255, 107, 129, 0.2); }
-        @media(max-width: 768px){ .sidebar{ display: none; } .content{ padding: 15px; } }
+        :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; }
+        
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        
+        body { 
+            background: #f8fafc; color: #1e293b; min-height: 100vh; 
+            display: flex; justify-content: center; align-items: center; padding: 20px;
+        }
+        body.dark { background: #0f172a; color: #f1f5f9; }
+
+        /* Premium Detail Card */
+        .detail-card { 
+            width: 100%; max-width: 400px; background: #ffffff; 
+            border-radius: 35px; padding: 40px 30px; position: relative;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        body.dark .detail-card { background: #1e293b; border-color: #334155; box-shadow: 0 25px 50px rgba(0,0,0,0.4); }
+
+        .status-badge { 
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            padding: 10px 24px; border-radius: 50px; font-size: 12px; font-weight: 900;
+            letter-spacingi: 1px; color: #000000; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+
+        .back-nav { position: absolute; top: 25px; left: 25px; color: #94a3b8; cursor: pointer; font-size: 20px; transition: 0.2s; }
+        .back-nav:hover { color: #000; }
+
+        .header-content { text-align: center; margin-top: 15px; margin-bottom: 35px; }
+        .item-name { font-size: 32px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 5px; line-height: 1; }
+        .item-price { font-size: 22px; color: var(--success); font-weight: 800; }
+
+        /* Input Styling */
+        .edit-input { 
+            background: #f1f5f9; border: 2px solid transparent;
+            color: inherit; border-radius: 16px; padding: 15px; width: 100%; text-align: center;
+            font-size: 18px; font-weight: 700; outline: none; margin-bottom: 12px; transition: 0.3s;
+        }
+        body.dark .edit-input { background: #334155; }
+        .edit-input:focus { border-color: var(--primary); background: transparent; }
+
+        /* Stock Controller */
+        .stock-box { 
+            background: #f8fafc; border-radius: 28px; padding: 25px; 
+            margin-bottom: 30px; border: 1px solid #e2e8f0; text-align: center;
+        }
+        body.dark .stock-box { background: rgba(255,255,255,0.03); border-color: #334155; }
+        .label { font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; }
+        
+        .controls { display: flex; justify-content: space-between; align-items: center; }
+        .btn-c { 
+            width: 55px; height: 55px; border-radius: 20px; border: none; 
+            background: #fff; color: #000; font-size: 24px; cursor: pointer; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.2s;
+        }
+        body.dark .btn-c { background: #0f172a; color: #fff; }
+        .btn-c:active { transform: scale(0.9); }
+        .val { font-size: 42px; font-weight: 900; color: inherit; }
+
+        /* Actions */
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .main-btn { 
+            padding: 18px; border-radius: 20px; border: none; font-weight: 800; 
+            font-size: 15px; cursor: pointer; transition: 0.3s; display: flex; 
+            align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-save { background: #000; color: #fff; grid-column: span 2; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        body.dark .btn-save { background: #fff; color: #000; }
+        
+        .btn-edit { background: #f1f5f9; color: var(--warning); }
+        body.dark .btn-edit { background: #334155; }
+        
+        .btn-del { background: #fef2f2; color: var(--danger); }
+        body.dark .btn-del { background: rgba(239, 68, 68, 0.1); }
+
+        .loading-pulse { animation: pulse 1.5s infinite; opacity: 0.6; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-<div class="app">
-    <aside class="sidebar">
-        <div class="profile">
-            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin</p></div>
+<div class="detail-card">
+    <div class="status-badge" id="statusBadge">SYNCING...</div>
+    <i class="fa-solid fa-arrow-left-long back-nav" onclick="go('inventory.html')"></i>
+
+    <div class="header-content">
+        <div id="viewMode">
+            <h1 class="item-name" id="itemName">...</h1>
+            <p class="item-price" id="itemPrice">₹ 0</p>
         </div>
-        <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
-            <li class="active" onclick="go('inventory.html')"><i class="fa-solid fa-cookie-bite"></i> Inventory</li>
-            <li onclick="go('pos.html')"><i class="fa-solid fa-file-invoice-dollar"></i> Billing</li>
-        </ul>
-    </aside>
-
-    <main class="content">
-        <header class="top-header">
-            <button class="back-btn" onclick="go('inventory.html')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2 id="headerTitle">Product Detail</h2>
-            <div style="width: 40px;"></div> 
-        </header>
-
-        <div class="details-card">
-            <div class="trend-badge" id="trendBadge">STOCK CHECKING...</div>
-            
-            <div id="nameContainer">
-                <h2 id="detName">Loading...</h2>
-            </div>
-            
-            <div class="info-box">
-                <div class="info-row">
-                    <span>Price (Rate)</span>
-                    <div id="priceContainer">
-                        <b id="detPrice" style="color: #4ade80; font-size: 24px;">₹ 0.00</b>
-                    </div>
-                </div>
-                <div class="info-row">
-                    <span>In Stock</span>
-                    <div class="stock-control">
-                        <button class="stock-btn" onclick="updateStock(-1)">−</button>
-                        <input type="number" id="detStockValue" class="stock-input" value="0">
-                        <button class="stock-btn" onclick="updateStock(1)">+</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="actions">
-                <button class="btn btn-update" id="mainUpdateBtn" onclick="saveChanges()">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Update Cloud
-                </button>
-                <button class="btn btn-edit" id="editBtn" onclick="toggleEdit()">
-                    <i class="fa-solid fa-pen-to-square"></i> Edit
-                </button>
-                <button class="btn btn-del" onclick="deleteItem()">
-                    <i class="fa-solid fa-trash"></i> Delete
-                </button>
-            </div>
+        <div id="editMode" style="display: none;">
+            <input type="text" id="inputName" class="edit-input" placeholder="Item Name">
+            <input type="number" id="inputPrice" class="edit-input" placeholder="Price">
         </div>
-    </main>
+    </div>
+
+    <div class="stock-box">
+        <p class="label">Current Inventory</p>
+        <div class="controls">
+            <button class="btn-c" onclick="changeStock(-1)">−</button>
+            <span class="val" id="itemStock">0</span>
+            <button class="btn-c" onclick="changeStock(1)">+</button>
+        </div>
+    </div>
+
+    <div class="btn-grid">
+        <button class="main-btn btn-save" id="saveBtn" onclick="saveData()">
+            <i class="fa-solid fa-check-circle"></i> SAVE CHANGES
+        </button>
+        <button class="main-btn btn-edit" id="editToggle" onclick="toggleEdit()">
+            <i class="fa-solid fa-pen-nib"></i> EDIT
+        </button>
+        <button class="main-btn btn-del" onclick="deleteItem()">
+            <i class="fa-solid fa-trash-alt"></i>
+        </button>
+    </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -115,98 +141,103 @@
     const db = firebase.firestore();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const itemId = urlParams.get('id'); // Firestore Document ID
+    const itemId = urlParams.get('id');
     
-    let currentItem = null;
+    let itemData = null;
     let isEditing = false;
+    let currentStock = 0;
 
-    // Load Live Data from Firestore
+    if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+
+    // Real-time listener
     if(itemId) {
-        db.collection("inventory").doc(itemId).onSnapshot((doc) => {
+        db.collection("inventory").doc(itemId).onSnapshot(doc => {
             if(doc.exists) {
-                currentItem = { id: doc.id, ...doc.data() };
-                if(!isEditing) refreshUI();
+                itemData = doc.data();
+                currentStock = itemData.stock;
+                if(!isEditing) renderUI();
             } else {
-                alert("Item not found!");
                 go('inventory.html');
             }
         });
     }
 
-    function refreshUI() {
-        document.getElementById("detName").innerText = currentItem.name;
-        document.getElementById("detPrice").innerText = "₹ " + parseFloat(currentItem.price).toFixed(2);
-        document.getElementById("detStockValue").value = currentItem.stock || 0;
+    function renderUI() {
+        document.getElementById("itemName").innerText = itemData.name;
+        document.getElementById("itemPrice").innerText = "₹ " + itemData.price.toLocaleString();
+        document.getElementById("itemStock").innerText = currentStock;
         
-        const badge = document.getElementById("trendBadge");
-        const isLow = currentItem.stock <= (currentItem.minLevel || 5);
-        badge.innerText = isLow ? "⚠️ LOW STOCK" : "✅ HEALTHY STOCK";
-        badge.style.background = isLow ? "#ef4444" : "#4ade80";
-        badge.style.color = isLow ? "#fff" : "#064e3b";
+        const badge = document.getElementById("statusBadge");
+        const isLow = currentStock <= (itemData.minLevel || 10);
+        badge.innerText = isLow ? "⚠️ LOW STOCK ALERT" : "✅ STOCK HEALTHY";
+        badge.style.background = isLow ? "var(--danger)" : "var(--success)";
     }
 
-    function updateStock(val) {
-        const input = document.getElementById("detStockValue");
-        input.value = Math.max(0, parseInt(input.value) + val);
+    function changeStock(n) {
+        currentStock = Math.max(0, currentStock + n);
+        document.getElementById("itemStock").innerText = currentStock;
     }
 
     function toggleEdit() {
         isEditing = !isEditing;
-        const nameContainer = document.getElementById("nameContainer");
-        const priceContainer = document.getElementById("priceContainer");
-        const editBtn = document.getElementById("editBtn");
+        const view = document.getElementById("viewMode");
+        const edit = document.getElementById("editMode");
+        const btn = document.getElementById("editToggle");
 
-        if (isEditing) {
-            nameContainer.innerHTML = `<input type="text" id="editName" class="edit-input-name" value="${currentItem.name}">`;
-            priceContainer.innerHTML = `<input type="number" id="editPrice" class="edit-input-price" value="${currentItem.price}">`;
-            editBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> Cancel`;
+        if(isEditing) {
+            view.style.display = "none";
+            edit.style.display = "block";
+            document.getElementById("inputName").value = itemData.name;
+            document.getElementById("inputPrice").value = itemData.price;
+            btn.innerHTML = `<i class="fa-solid fa-times"></i>`;
         } else {
-            refreshUI();
-            editBtn.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Edit`;
+            view.style.display = "block";
+            edit.style.display = "none";
+            btn.innerHTML = `<i class="fa-solid fa-pen-nib"></i> EDIT`;
+            renderUI();
         }
     }
 
-    async function saveChanges() {
-        const stock = parseInt(document.getElementById("detStockValue").value);
-        let name = currentItem.name;
-        let price = currentItem.price;
+    async function saveData() {
+        const btn = document.getElementById("saveBtn");
+        const newName = isEditing ? document.getElementById("inputName").value : itemData.name;
+        const newPrice = isEditing ? parseFloat(document.getElementById("inputPrice").value) : itemData.price;
 
-        if (isEditing) {
-            name = document.getElementById("editName").value.trim();
-            price = parseFloat(document.getElementById("editPrice").value);
-        }
-
-        if (!name || isNaN(price)) return alert("Invalid details!");
-
-        const btn = document.getElementById("mainUpdateBtn");
-        btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Syncing...";
+        btn.classList.add("loading-pulse");
+        btn.innerHTML = "SYNCING...";
 
         try {
             await db.collection("inventory").doc(itemId).update({
-                name: name,
-                price: price,
-                stock: stock,
-                lastUpdate: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                name: newName,
+                price: newPrice,
+                stock: currentStock,
+                lastUpdate: new Date().toLocaleDateString()
             });
-
-            btn.style.background = "#10b981";
-            btn.innerHTML = "<i class='fa-solid fa-check'></i> Updated!";
-            setTimeout(() => go('inventory.html'), 800);
-        } catch (e) {
-            alert("Error: " + e.message);
-            btn.innerHTML = "Retry Update";
+            btn.innerHTML = "UPDATED!";
+            setTimeout(() => {
+                btn.classList.remove("loading-pulse");
+                go('inventory.html');
+            }, 800);
+        } catch(err) {
+            alert("Error: " + err.message);
+            btn.classList.remove("loading-pulse");
+            btn.innerHTML = "RETRY SAVE";
         }
     }
 
     async function deleteItem() {
-        if(confirm("Are you sure you want to delete this item forever?")) {
+        if(confirm("Confirm deletion? This cannot be undone.")) {
             await db.collection("inventory").doc(itemId).delete();
             go('inventory.html');
         }
     }
 
-    function go(page) { window.location.href = page; }
+    function go(p) { window.location.href = p; }
 </script>
-
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
+</script>
 </body>
 </html>

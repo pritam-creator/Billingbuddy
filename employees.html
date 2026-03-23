@@ -4,50 +4,95 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Employees - Surjya Bakery Pro</title>
+    <title>Staff Management - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* (Saare purane styles waise hi rahenge) */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{ background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
-        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-        .app{ display: flex; height: 100vh; }
-        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
-        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
-        .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
-        .menu{ list-style: none; flex-grow: 1; }
-        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 14px; }
-        .menu li:hover, .menu li.active{ background: rgba(255,255,255,0.2); opacity: 1; }
-        .menu li.active{ border-left: 4px solid #fff; font-weight: bold; }
-        .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 50px; }
-        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; }
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .back-btn { width: 35px; height: 35px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); color: white; }
-        .grid-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-mini { background: rgba(255,255,255,0.12); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .stat-mini p { font-size: 10px; text-transform: uppercase; opacity: 0.7; }
-        .add-box { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
-        input, select { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; outline: none; flex: 1; font-size: 13px; }
-        .btn-add { background: #2ecc71; border: none; color: #fff; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .emp-card { background: rgba(255,255,255,0.12); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; position: relative; }
-        .salary-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; text-align: center; }
-        .salary-summary div span { font-size: 9px; opacity: 0.6; display: block; }
-        .emp-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .btn-sm { padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 11px; font-weight: 600; color: #fff; }
-        .btn-p { background: #2ecc71; }
-        .btn-p.marked { background: rgba(255,255,255,0.1); color: #4ade80; pointer-events: none; }
-        .btn-adv { background: #f39c12; }
-        .btn-settle { background: #3498db; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; }
-        .modal-content { background: #2d3436; width: 90%; max-width: 400px; padding: 20px; border-radius: 20px; position: relative; }
-        .prod-item { background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; margin-top: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #f1c40f; }
-        .del-emp { position: absolute; top: 15px; right: 15px; opacity: 0.3; cursor: pointer; }
-        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 15px; } .input-row { flex-direction: column; } }
+        /* Minimal & Consistent Theme */
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        
+        body { background: #f8fafc; color: #1e293b; min-height: 100vh; transition: 0.3s; }
+        body.dark { background: #0f172a; color: #f1f5f9; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar - Uniform Design */
+        .sidebar { 
+            width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; 
+            padding: 30px 20px; display: flex; flex-direction: column; 
+            position: fixed; height: 100%; transition: 0.4s; z-index: 1000; 
+        }
+        body.dark .sidebar { background: #1e293b; border-color: #334155; }
+
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; padding: 0 10px; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; }
+        
+        .menu { list-style: none; flex-grow: 1; }
+        .menu li { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
+            border-radius: 12px; cursor: pointer; transition: 0.2s; 
+            margin-bottom: 4px; font-size: 14px; color: #64748b; font-weight: 500;
+        }
+        .menu li:hover { background: #f1f5f9; color: #0f172a; }
+        .menu li.active { background: #000; color: #fff; }
+        body.dark .menu li.active { background: #f8fafc; color: #000; }
+
+        /* Content Area */
+        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 50px; }
+        
+        .top-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
+
+        /* Summary Stats */
+        .grid-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #fff; padding: 15px; border-radius: 16px; border: 1px solid #e2e8f0; text-align: center; }
+        body.dark .stat-card { background: #1e293b; border-color: #334155; }
+        .stat-card p { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 5px; }
+
+        /* Forms / Containers */
+        .section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 15px 0; color: #94a3b8; font-weight: 700; display: block; }
+        .glass-box { background: #fff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+        body.dark .glass-box { background: #1e293b; border-color: #334155; }
+        
+        .input-row { display: flex; gap: 10px; }
+        input, select { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; color: #1e293b; outline: none; flex: 1; font-size: 14px; }
+        body.dark input, body.dark select { background: #0f172a; border-color: #334155; color: #fff; }
+
+        .btn-main { background: #000; color: #fff; border: none; padding: 0 20px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        body.dark .btn-main { background: #f8fafc; color: #000; }
+
+        /* Employee Card */
+        .emp-card { background: #fff; padding: 20px; border-radius: 22px; border: 1px solid #e2e8f0; margin-bottom: 15px; position: relative; }
+        body.dark .emp-card { background: #1e293b; border-color: #334155; }
+        .del-emp { position: absolute; top: 20px; right: 20px; color: #ef4444; cursor: pointer; opacity: 0.5; }
+
+        .salary-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #f8fafc; padding: 12px; border-radius: 14px; margin: 15px 0; text-align: center; gap: 5px; }
+        body.dark .salary-summary { background: #0f172a; }
+        .salary-summary div span { font-size: 10px; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 4px; }
+        .salary-summary b { font-size: 14px; }
+
+        .emp-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .btn-sm { padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #fff; transition: 0.2s; }
+        .btn-p { background: #10b981; }
+        .btn-p.marked { background: #f1f5f9; color: #10b981; pointer-events: none; border: 1px solid #e2e8f0; }
+        body.dark .btn-p.marked { background: #0f172a; border-color: #334155; }
+        .btn-adv { background: #f59e0b; }
+        .btn-settle { background: #3b82f6; }
+
+        /* Production List */
+        .prod-item { padding: 8px 12px; background: #f8fafc; border-left: 4px solid #f59e0b; border-radius: 8px; margin-top: 8px; font-size: 13px; font-weight: 500; }
+        body.dark .prod-item { background: #0f172a; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content { background: #fff; width: 90%; max-width: 380px; padding: 30px; border-radius: 24px; text-align: center; }
+        body.dark .modal-content { background: #1e293b; color: #fff; }
+
+        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 20px; } .input-row { flex-direction: column; } .btn-main { padding: 12px; } }
     </style>
 </head>
 <body>
@@ -56,74 +101,70 @@
     <aside class="sidebar">
         <div class="profile">
             <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin</p></div>
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>Staff Manager</p></div>
         </div>
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
-            <li class="active" onclick="go('employees.html')"><i class="fa-solid fa-user-tie"></i> Employees</li>
-            <li onclick="go('ledger.html')"><i class="fa-solid fa-book-bookmark"></i> Ledger</li>
-            <li onclick="go('clients.html')"><i class="fa-solid fa-users"></i> Clients</li>
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li class="active"><i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="go('items.html')"><i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <div class="header-left">
-                <div class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-chevron-left"></i></div>
-                <h2>👷 Bakery Staff</h2>
-            </div>
+            <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2 style="font-weight: 800; letter-spacing: -0.5px;">Staff Management</h2>
         </header>
 
         <div class="grid-summary">
-            <div class="stat-mini"><p>Total Staff</p><h3 id="totalEmp">0</h3></div>
-            <div class="stat-mini"><p>Presents Today</p><h3 id="todayPresents">0</h3></div>
+            <div class="stat-card"><p>Total Staff</p><h2 id="totalEmp">0</h2></div>
+            <div class="stat-card"><p>Present Today</p><h2 id="todayPresents" style="color:#10b981">0</h2></div>
         </div>
 
-        <div class="add-box">
+        <span class="section-label">Add New Worker</span>
+        <div class="glass-box">
             <div class="input-row">
                 <input type="text" id="empName" placeholder="Worker Name">
-                <input type="number" id="empWage" placeholder="Wage/Day">
-                <button class="btn-add" onclick="addEmployee()">ADD</button>
+                <input type="number" id="empWage" placeholder="Wage/Day (₹)">
+                <button class="btn-main" onclick="addEmployee()">ADD STAFF</button>
             </div>
         </div>
 
-        <div class="add-box" style="background: rgba(241, 196, 15, 0.1);">
-            <p style="font-size: 12px; margin-bottom: 8px; color: #f1c40f;">Today's Production</p>
+        <span class="section-label">Production Tracker</span>
+        <div class="glass-box" style="border-left: 5px solid #f59e0b;">
             <div class="input-row">
                 <select id="prodWorkerSelect"></select>
-                <input type="text" id="prodTask" placeholder="Ex: 50kg Biscuit">
-                <button class="btn-add" style="background: #f1c40f;" onclick="addProduction()">OK</button>
+                <input type="text" id="prodTask" placeholder="Ex: 50kg Biscuit Made">
+                <button class="btn-main" style="background:#f59e0b; color:#fff;" onclick="addProduction()">LOG</button>
             </div>
             <div id="productionList"></div>
         </div>
 
+        <span class="section-label">Employee List</span>
         <div id="employeeList"></div>
     </main>
 </div>
 
 <div id="choiceModal" class="modal">
-    <div class="modal-content" style="text-align: center;">
-        <h3 style="margin-bottom: 20px;">Mark Attendance</h3>
-        <p id="targetWorkerName" style="color:#f1c40f; margin-bottom: 20px;"></p>
-        <div style="display:flex; gap:10px;">
-            <button style="background: #2ecc71; flex:1; padding:12px; border-radius:10px; border:none; color:white; font-weight:bold;" onclick="confirmAttendance(1)">Full Day</button>
-            <button style="background: #f39c12; flex:1; padding:12px; border-radius:10px; border:none; color:white; font-weight:bold;" onclick="confirmAttendance(0.5)">Half Day</button>
+    <div class="modal-content">
+        <h3 style="margin-bottom: 10px;">Mark Attendance</h3>
+        <p id="targetWorkerName" style="color:#f59e0b; font-weight: 700; margin-bottom: 25px;"></p>
+        <div style="display:flex; gap:12px;">
+            <button style="background: #10b981; flex:1; padding:14px; border-radius:12px; border:none; color:white; font-weight:700;" onclick="confirmAttendance(1)">Full Day</button>
+            <button style="background: #f59e0b; flex:1; padding:14px; border-radius:12px; border:none; color:white; font-weight:700;" onclick="confirmAttendance(0.5)">Half Day</button>
         </div>
-        <button onclick="closeChoiceModal()" style="margin-top: 20px; background: none; border: 1px solid gray; color: white; padding: 5px 15px; border-radius: 5px;">Cancel</button>
+        <button onclick="closeChoiceModal()" style="margin-top: 20px; background: transparent; border: none; color: #94a3b8; font-weight: 600; cursor: pointer;">Cancel</button>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
         projectId: "billingbuddy-551f9",
-        storageBucket: "billingbuddy-551f9.firebasestorage.app",
-        messagingSenderId: "287026017084",
         appId: "1:287026017084:web:aae879570ad706e5a2a439"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -131,8 +172,9 @@
     let activeEmpId = null;
     const todayStr = new Date().toLocaleDateString('en-GB');
 
-    // Real-time Employee Sync
     function initStaff() {
+        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+        
         db.collection("employees").onSnapshot((snapshot) => {
             employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             render();
@@ -141,7 +183,7 @@
         db.collection("production").where("date", "==", todayStr).onSnapshot((snapshot) => {
             const prods = snapshot.docs.map(doc => doc.data());
             const pList = document.getElementById("productionList");
-            pList.innerHTML = prods.map(p => `<div class="prod-item"><span><b>${p.workerName}:</b> ${p.task}</span></div>`).join('');
+            pList.innerHTML = prods.map(p => `<div class="prod-item"><b>${p.workerName}:</b> ${p.task}</div>`).join('');
         });
     }
 
@@ -155,7 +197,6 @@
 
         employees.forEach((emp) => {
             prodSelect.innerHTML += `<option value="${emp.id}">${emp.name}</option>`;
-            
             const attendanceArr = emp.attendance || [];
             const isPresent = attendanceArr.some(a => a.date === todayStr);
             if(isPresent) presentTodayCount++;
@@ -168,22 +209,22 @@
 
             list.innerHTML += `
                 <div class="emp-card">
-                    <i class="fa-solid fa-trash-can del-emp" onclick="deleteEmployee('${emp.id}')"></i>
-                    <div style="display:flex; justify-content:space-between">
-                        <h4>${emp.name}</h4>
-                        <span style="font-size:12px; opacity:0.6">₹${wageRate}/day</span>
+                    <i class="fa-solid fa-circle-minus del-emp" onclick="deleteEmployee('${emp.id}')"></i>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h4 style="font-weight:800;">${emp.name}</h4>
+                        <span style="font-size:12px; font-weight:700; color:#64748b;">₹${wageRate}/day</span>
                     </div>
                     <div class="salary-summary">
-                        <div><span>Total Days</span><b>${totalDays}</b></div>
-                        <div><span>Advance</span><b style="color:#ff6b81">₹${adv}</b></div>
-                        <div><span>Net Due</span><b style="color:#2ecc71">₹${netDue.toFixed(2)}</b></div>
+                        <div><span>Days</span><b>${totalDays}</b></div>
+                        <div><span>Advance</span><b style="color:#ef4444">₹${adv}</b></div>
+                        <div><span>Net Due</span><b style="color:#10b981">₹${netDue.toFixed(0)}</b></div>
                     </div>
                     <div class="emp-actions">
                         <button class="btn-sm btn-p ${isPresent ? 'marked' : ''}" onclick="openChoiceModal('${emp.id}', '${emp.name}')">
-                            ${isPresent ? '✓ Marked' : 'Mark P'}
+                            ${isPresent ? '✓ PRESENT' : 'MARK P'}
                         </button>
-                        <button class="btn-sm btn-adv" onclick="addAdvance('${emp.id}', ${adv})">Advance</button>
-                        <button class="btn-sm btn-settle" onclick="settleSalary('${emp.id}', ${netDue})">Settle</button>
+                        <button class="btn-sm btn-adv" onclick="addAdvance('${emp.id}', ${adv})">ADVANCE</button>
+                        <button class="btn-sm btn-settle" onclick="settleSalary('${emp.id}', ${netDue})">SETTLE</button>
                     </div>
                 </div>`;
         });
@@ -195,17 +236,9 @@
     async function addEmployee() {
         const name = document.getElementById("empName").value;
         const wage = document.getElementById("empWage").value;
-        if(!name || !wage) return alert("Fill details!");
-        
-        await db.collection("employees").add({
-            name: name,
-            wage: parseFloat(wage),
-            advance: 0,
-            attendance: []
-        });
-        
-        document.getElementById("empName").value = "";
-        document.getElementById("empWage").value = "";
+        if(!name || !wage) return;
+        await db.collection("employees").add({ name, wage: parseFloat(wage), advance: 0, attendance: [] });
+        document.getElementById("empName").value = ""; document.getElementById("empWage").value = "";
     }
 
     function openChoiceModal(id, name) {
@@ -219,57 +252,41 @@
     async function confirmAttendance(val) {
         const emp = employees.find(e => e.id === activeEmpId);
         const updatedAttendance = [...(emp.attendance || []), { date: todayStr, value: val }];
-        
-        await db.collection("employees").doc(activeEmpId).update({
-            attendance: updatedAttendance
-        });
+        await db.collection("employees").doc(activeEmpId).update({ attendance: updatedAttendance });
         closeChoiceModal();
     }
 
     async function addAdvance(id, currentAdv) {
         let amt = prompt("Enter Advance Amount:");
-        if(amt && !isNaN(amt)) {
-            await db.collection("employees").doc(id).update({
-                advance: currentAdv + parseFloat(amt)
-            });
-        }
+        if(amt && !isNaN(amt)) await db.collection("employees").doc(id).update({ advance: currentAdv + parseFloat(amt) });
     }
 
     async function settleSalary(id, netDue) {
-        if(confirm(`Settle ₹${netDue.toFixed(2)} and clear records?`)) {
-            await db.collection("employees").doc(id).update({
-                attendance: [],
-                advance: 0
-            });
+        if(confirm(`Settle ₹${netDue.toFixed(0)} and clear records?`)) {
+            await db.collection("employees").doc(id).update({ attendance: [], advance: 0 });
         }
     }
 
     async function addProduction() {
         const empId = document.getElementById("prodWorkerSelect").value;
         const task = document.getElementById("prodTask").value;
-        if(!empId || !task) return alert("Select worker and enter task!");
-        
+        if(!empId || !task) return;
         const worker = employees.find(e => e.id === empId);
-        
-        await db.collection("production").add({
-            date: todayStr,
-            workerName: worker.name,
-            task: task,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
+        await db.collection("production").add({ date: todayStr, workerName: worker.name, task, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
         document.getElementById("prodTask").value = "";
     }
 
     async function deleteEmployee(id) {
-        if(confirm("Remove this staff member?")) {
-            await db.collection("employees").doc(id).delete();
-        }
+        if(confirm("Remove this worker?")) await db.collection("employees").doc(id).delete();
     }
 
     function go(p) { window.location.href = p; }
     window.onload = initStaff;
 </script>
-
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
+</script>
 </body>
 </html>

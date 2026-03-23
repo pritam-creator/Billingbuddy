@@ -11,97 +11,140 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* (Styles same as your provided CSS for brand consistency) */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{ background: linear-gradient(135deg,#1e293b,#0f172a,#1e1b4b); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
-        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-        .app{ display: flex; height: 100vh; }
-        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px 15px; display: flex; flex-direction: column; }
-        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
-        .logo{ width: 40px; height: 40px; border-radius: 10px; }
-        .menu{ list-style: none; flex-grow: 1; }
-        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; cursor: pointer; opacity: 0.7; font-size: 14px; margin-bottom: 5px; }
-        .menu li:hover, .menu li.active{ background: #3b82f6; opacity: 1; }
-        .content{ flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-        .top-header{ width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
-        .header-main { display: flex; justify-content: space-between; align-items: center; }
-        .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
-        .stat-card { background: rgba(30, 41, 59, 0.7); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .stat-card span { font-size: 10px; color: #94a3b8; text-transform: uppercase; display: block; }
-        .tabs { display: flex; gap: 8px; overflow-x: auto; width: 100%; scrollbar-width: none; }
-        .tab { background: rgba(255,255,255,0.05); padding: 10px 18px; border-radius: 12px; font-size: 13px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
-        .tab.active { background: #3b82f6; border-color: #3b82f6; font-weight: bold; }
-        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; width: 100%; max-width: 900px; }
-        .order-card{ background: rgba(30, 41, 59, 0.7); padding: 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .order-total { font-size: 24px; font-weight: 800; margin: 10px 0; color: #fff; }
-        .order-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
-        .btn { padding: 10px 5px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .status-badge { font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: 50px; text-transform: uppercase; }
-        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-        .status-preparing { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .status-delivered { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        :root { --primary: #3b82f6; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        
+        body { background: #f8fafc; color: #1e293b; min-height: 100vh; }
+        body.dark { background: #0f172a; color: #f1f5f9; }
 
-        /* INVOICE MODAL */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #fff; color: #333; width: 100%; max-width: 400px; border-radius: 15px; overflow: hidden; position: relative; }
-        .invoice-body { padding: 25px; font-size: 14px; }
-        .invoice-header { text-align: center; border-bottom: 2px dashed #eee; padding-bottom: 15px; }
-        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 15px; } .orders-grid { grid-template-columns: 1fr; } }
+        .app { display: flex; height: 100vh; }
+
+        /* Sidebar - Brand Consistent */
+        .sidebar { 
+            width: 260px; background: #fff; border-right: 1px solid #e2e8f0; 
+            padding: 25px 20px; display: flex; flex-direction: column; 
+            position: fixed; height: 100%; z-index: 1000;
+        }
+        body.dark .sidebar { background: #1e293b; border-color: #334155; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; margin-bottom: 30px; }
+        .menu li { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
+            border-radius: 12px; cursor: pointer; transition: 0.2s; 
+            margin-bottom: 5px; font-size: 14px; color: #64748b; font-weight: 500;
+        }
+        .menu li.active { background: #000; color: #fff; }
+        body.dark .menu li.active { background: #f8fafc; color: #000; }
+
+        /* Content Area */
+        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; }
+        
+        .top-header { margin-bottom: 25px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .stat-box { background: #fff; padding: 15px; border-radius: 20px; border: 1px solid #e2e8f0; text-align: center; }
+        body.dark .stat-box { background: #1e293b; border-color: #334155; }
+        .stat-box small { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .stat-box h3 { font-size: 18px; font-weight: 900; }
+
+        /* Filter Tabs */
+        .tabs { display: flex; gap: 10px; margin: 25px 0; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .tab { 
+            padding: 10px 20px; border-radius: 50px; background: #fff; border: 1px solid #e2e8f0;
+            font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.3s;
+        }
+        body.dark .tab { background: #1e293b; border-color: #334155; }
+        .tab.active { background: #000; color: #fff; border-color: #000; }
+        body.dark .tab.active { background: #fff; color: #000; }
+
+        /* Order Cards */
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .order-card { 
+            background: #fff; border-radius: 24px; padding: 20px; border: 1px solid #e2e8f0;
+            transition: 0.3s; position: relative;
+        }
+        body.dark .order-card { background: #1e293b; border-color: #334155; }
+        
+        .order-id { font-weight: 900; font-size: 15px; }
+        .order-time { font-size: 11px; color: #94a3b8; font-weight: 600; }
+        .order-total { font-size: 26px; font-weight: 900; margin: 12px 0; }
+
+        .status-pill { padding: 6px 12px; border-radius: 50px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .pending { background: #fff7ed; color: #f59e0b; }
+        .preparing { background: #eff6ff; color: #3b82f6; }
+        .delivered { background: #f0fdf4; color: #10b981; }
+
+        .action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .act-btn { padding: 10px; border-radius: 12px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .act-btn:active { transform: scale(0.95); }
+        .btn-view { background: #f1f5f9; color: #64748b; }
+        .btn-next { background: #000; color: #fff; }
+        body.dark .btn-next { background: #fff; color: #000; }
+        .btn-wa { background: #25d366; color: #fff; }
+
+        /* Invoice Modal */
+        .modal { 
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; 
+            backdrop-filter: blur(5px);
+        }
+        .modal-body { 
+            background: #fff; color: #000; width: 100%; max-width: 380px; 
+            border-radius: 30px; padding: 30px; position: relative;
+        }
+        .invoice-hr { border: none; border-top: 2px dashed #e2e8f0; margin: 15px 0; }
+
+        @media(max-width: 768px){ .sidebar{ display: none; } .content{ margin-left: 0; padding: 20px; } }
     </style>
 </head>
 <body>
 
 <div class="app">
     <aside class="sidebar">
-        <div class="profile">
-            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-            <div class="profile-info"><h4>Surjya Bakery</h4><p>Order Manager</p></div>
-        </div>
+        <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
-            <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
-            <li onclick="go('pos.html')"><i class="fa-solid fa-receipt"></i> Billing</li>
-            <li class="active"><i class="fa-solid fa-list-check"></i> Orders</li>
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
+            <li onclick="go('inventory.html')"><i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li class="active"><i class="fa-solid fa-cloud-arrow-down"></i> Cloud Orders</li>
             <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <div class="header-main">
-                <button style="background:none; border:none; color:white; cursor:pointer;" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 style="font-size: 18px;">Manage Cloud Orders</h2>
-                <div></div>
-            </div>
-            
-            <div class="stats-bar">
-                <div class="stat-card"><span>Total</span><b id="statToday">0</b></div>
-                <div class="stat-card"><span>Live</span><b id="statPending" style="color:#f59e0b">0</b></div>
-                <div class="stat-card"><span>Revenue</span><b id="statTotal">₹0</b></div>
-            </div>
-
-            <div class="tabs">
-                <div class="tab active" onclick="filterBy('All', this)">All</div>
-                <div class="tab" onclick="filterBy('Pending', this)">Pending</div>
-                <div class="tab" onclick="filterBy('Preparing', this)">Preparing</div>
-                <div class="tab" onclick="filterBy('Delivered', this)">Delivered</div>
+            <h2 style="font-weight: 900; font-size: 26px; letter-spacing: -1px;">Orders Manager</h2>
+            <div class="stats-grid">
+                <div class="stat-box"><small>Total Orders</small><h3 id="statToday">0</h3></div>
+                <div class="stat-box"><small>Active</small><h3 id="statPending" style="color:var(--warning)">0</h3></div>
+                <div class="stat-box"><small>Revenue</small><h3 id="statTotal">₹0</h3></div>
             </div>
         </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="filterBy('All', this)">ALL ORDERS</div>
+            <div class="tab" onclick="filterBy('Pending', this)">PENDING</div>
+            <div class="tab" onclick="filterBy('Preparing', this)">PREPARING</div>
+            <div class="tab" onclick="filterBy('Delivered', this)">DELIVERED</div>
+        </div>
 
         <div class="orders-grid" id="ordersList"></div>
     </main>
 </div>
 
 <div id="invoiceModal" class="modal">
-    <div class="modal-content">
-        <div class="invoice-body" id="invoiceData"></div>
-        <button style="width:100%; padding:15px; border:none; background:#333; color:white; font-weight:bold; cursor:pointer;" onclick="window.print()">Print Invoice</button>
-        <button style="width:100%; padding:10px; border:none; background:#eee; cursor:pointer;" onclick="closeInvoice()">Close</button>
+    <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="font-weight: 900;">SURJYA BAKERY</h2>
+            <p id="invId" style="font-size: 12px; color: #64748b;"></p>
+        </div>
+        <div id="invItems" style="font-size: 14px;"></div>
+        <hr class="invoice-hr">
+        <div style="display:flex; justify-content:space-between; font-weight:900; font-size: 20px;">
+            <span>TOTAL</span><span id="invTotal"></span>
+        </div>
+        <button onclick="closeInvoice()" style="width:100%; margin-top:25px; padding:15px; border-radius:15px; border:none; background:#f1f5f9; font-weight:800; cursor:pointer;">CLOSE</button>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -113,103 +156,98 @@
 
     let currentFilter = "All";
 
-    // --- LIVE SYNC ORDERS ---
     function init() {
-        db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
-            renderOrders(snap);
-        });
+        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+        db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => render(snap));
     }
 
-    function renderOrders(snap) {
+    function render(snap) {
         const list = document.getElementById("ordersList");
         list.innerHTML = "";
-        
-        let countToday = 0, countLive = 0, revenue = 0;
+        let countAll = 0, countLive = 0, totalRev = 0;
 
         snap.forEach(doc => {
-            const order = doc.data();
+            const o = doc.data();
             const id = doc.id;
-            const status = order.status || "Pending";
-            const total = parseFloat(order.total) || 0;
-
-            // Stats Logic
-            countToday++;
+            const status = o.status || "Pending";
+            
+            countAll++;
             if(status !== "Delivered") countLive++;
-            revenue += total;
+            totalRev += parseFloat(o.total || 0);
 
-            // Filter Logic
             if(currentFilter !== "All" && status !== currentFilter) return;
 
-            const statusClass = status === "Preparing" ? "status-preparing" : (status === "Delivered" ? "status-delivered" : "status-pending");
-
             const card = document.createElement("div");
-            card.className = `order-card`;
+            card.className = "order-card";
             card.innerHTML = `
-                <div style="display:flex; justify-content:space-between;">
-                    <div><b>#${order.orderId || id.slice(0,5)}</b><br><small style="opacity:0.6">${order.date}</small></div>
-                    <span class="status-badge ${statusClass}">${status}</span>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                    <div>
+                        <p class="order-id">#${o.orderId || id.slice(0,5)}</p>
+                        <p class="order-time">${o.date || 'Today'}</p>
+                    </div>
+                    <span class="status-pill ${status.toLowerCase()}">${status}</span>
                 </div>
-                <div class="order-total">₹ ${total.toFixed(2)}</div>
-                <div class="order-actions">
-                    <button class="btn" style="background:rgba(255,255,255,0.1); color:white" onclick="viewOrder('${id}')">View</button>
-                    <button class="btn" style="background:#3b82f6; color:white" onclick="nextStatus('${id}', '${status}')">Next</button>
-                    <button class="btn" style="background:#22c55e; color:white" onclick="sendWA('${id}')">WA</button>
-                    <button class="btn" style="background:rgba(239,68,68,0.1); color:#ef4444; grid-column:span 3" onclick="cancelOrder('${id}')">Cancel Order</button>
-                </div>`;
+                <h2 class="order-total">₹${o.total}</h2>
+                <div class="action-row">
+                    <button class="act-btn btn-view" onclick="viewInv('${id}')">VIEW</button>
+                    <button class="act-btn btn-next" onclick="nextStep('${id}', '${status}')">NEXT</button>
+                    <button class="act-btn btn-wa" onclick="sendWhatsApp('${id}')"><i class="fa-brands fa-whatsapp"></i></button>
+                </div>
+                <p onclick="deleteOrder('${id}')" style="font-size:10px; text-align:center; margin-top:15px; opacity:0.3; cursor:pointer">Cancel Order</p>
+            `;
             list.appendChild(card);
         });
 
-        document.getElementById("statToday").innerText = countToday;
+        document.getElementById("statToday").innerText = countAll;
         document.getElementById("statPending").innerText = countLive;
-        document.getElementById("statTotal").innerText = "₹" + revenue.toLocaleString();
+        document.getElementById("statTotal").innerText = "₹" + totalRev.toLocaleString();
     }
 
-    async function nextStatus(id, current) {
-        const cycle = ["Pending", "Preparing", "Delivered"];
-        let next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
+    async function nextStep(id, current) {
+        const steps = ["Pending", "Preparing", "Delivered"];
+        let next = steps[(steps.indexOf(current) + 1) % steps.length];
         await db.collection("orders").doc(id).update({ status: next });
-    }
-
-    async function cancelOrder(id) {
-        if(confirm("Delete this order?")) await db.collection("orders").doc(id).delete();
     }
 
     function filterBy(status, el) {
         currentFilter = status;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
-        // Snapshot will re-trigger render
-        db.collection("orders").get().then(snap => renderOrders(snap));
+        db.collection("orders").get().then(snap => render(snap));
     }
 
-    async function viewOrder(id) {
+    async function viewInv(id) {
         const doc = await db.collection("orders").doc(id).get();
-        const order = doc.data();
-        let itemsHTML = (order.items || []).map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align:right">₹${i.price}</td></tr>`).join('');
+        const o = doc.data();
+        document.getElementById("invId").innerText = "ORDER ID: #" + (o.orderId || id.slice(0,5));
+        document.getElementById("invTotal").innerText = "₹" + o.total;
         
-        document.getElementById("invoiceData").innerHTML = `
-            <div class="invoice-header"><h2>SURJYA BAKERY</h2><p>Cloud Invoice #${order.orderId}</p></div>
-            <table style="width:100%; margin:20px 0; border-collapse:collapse;">
-                <tr style="border-bottom:1px solid #eee"><th>Item</th><th>Qty</th><th style="text-align:right">Price</th></tr>
-                ${itemsHTML}
-            </table>
-            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px;">
-                <span>TOTAL</span><span>₹${order.total}</span>
-            </div>
-        `;
+        let items = (o.items || []).map(i => `<div style="display:flex; justify-content:space-between; margin-bottom:8px"><span>${i.name} x ${i.qty}</span><span>₹${i.price}</span></div>`).join('');
+        document.getElementById("invItems").innerHTML = items || '<p style="text-align:center">No items found</p>';
+        
         document.getElementById("invoiceModal").style.display = "flex";
     }
 
-    function sendWA(id) {
+    function sendWhatsApp(id) {
         db.collection("orders").doc(id).get().then(doc => {
             const o = doc.data();
-            window.open(`https://wa.me/?text=Surjya Bakery: Order #${o.orderId} status is now ${o.status}. Total: ₹${o.total}`);
+            const msg = `Surjya Bakery: Hi! Your Order #${o.orderId} is now ${o.status}. Total amount: ₹${o.total}. Thank you!`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         });
+    }
+
+    async function deleteOrder(id) {
+        if(confirm("Permanently cancel this order?")) await db.collection("orders").doc(id).delete();
     }
 
     function closeInvoice() { document.getElementById("invoiceModal").style.display = "none"; }
     function go(p) { window.location.href = p; }
     window.onload = init;
+</script>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
 </script>
 </body>
 </html>

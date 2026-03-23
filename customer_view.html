@@ -1,86 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Customer Portal - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; }
-        .card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        h2 { color: #3b82f6; margin-bottom: 15px; }
-        .price { color: #4ade80; font-weight: bold; }
-        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: none; margin-bottom: 20px; }
+        :root { --primary: #3b82f6; --success: #10b981; --bg: #f8fafc; --text: #1e293b; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 30px; }
+        body.dark { --bg: #0f172a; --text: #f1f5f9; background: var(--bg); color: var(--text); }
+
+        header { background: #fff; padding: 25px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 100; }
+        body.dark header { background: #1e293b; border-color: #334155; }
+        .logo-img { width: 60px; height: 60px; border-radius: 15px; margin-bottom: 10px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+
+        .search-box { 
+            background: #fff; border-radius: 16px; padding: 14px 20px; 
+            display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0;
+            margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        body.dark .search-box { background: #1e293b; border-color: #334155; }
+        .search-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 15px; color: inherit; }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; }
+        .tab-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; background: #fff; color: #64748b; font-weight: 700; cursor: pointer; transition: 0.3s; border: 1px solid #e2e8f0; }
+        body.dark .tab-btn { background: #1e293b; border-color: #334155; }
+        .tab-btn.active { background: #000; color: #fff; border-color: #000; }
+        body.dark .tab-btn.active { background: #fff; color: #000; }
+
+        .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .card { background: #fff; padding: 18px; border-radius: 18px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        body.dark .card { background: #1e293b; border-color: #334155; }
+        
+        .login-card { flex-direction: column; gap: 15px; padding: 25px; text-align: center; }
+        .login-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; font-size: 16px; outline: none; }
+        .login-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; }
+
+        .price-tag { color: var(--success); font-weight: 800; font-size: 16px; }
+        .balance-tag { padding: 6px 12px; border-radius: 10px; font-weight: 700; font-size: 13px; }
+        .due { background: #fef2f2; color: #ef4444; }
+        .advance { background: #f0fdf4; color: #10b981; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <h2>Our Items</h2>
-    <input type="text" class="search-box" id="itemSearch" placeholder="Search bakery items..." onkeyup="filterItems()">
-    <div id="itemList">Loading items...</div>
 
-    <hr style="margin: 30px 0; opacity: 0.2;">
+<header>
+    <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo-img">
+    <h1 style="font-weight: 900; letter-spacing: -1px;">Surjya Bakery</h1>
+    <p style="font-size: 13px; color: #64748b; font-weight: 600;">Fresh Baked Happiness, Every Day</p>
+</header>
 
-    <h2>Check Your Balance</h2>
-    <div id="ledgerList">Loading ledger...</div>
+<div class="container">
+    <div id="searchContainer" class="search-box">
+        <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8;"></i>
+        <input type="text" id="itemSearch" placeholder="Search bakery items..." onkeyup="filterItems()">
+    </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
-            authDomain: "billingbuddy-551f9.firebaseapp.com",
-            projectId: "billingbuddy-551f9",
-            appId: "1:287026017084:web:aae879570ad706e5a2a439"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('items', this)">Bakery Menu</button>
+        <button class="tab-btn" onclick="switchTab('ledger', this)">My Balance</button>
+    </div>
 
-        // 1. Load Items
-        db.collection("items").onSnapshot(snap => {
-            const list = document.getElementById("itemList");
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const item = doc.data();
-                list.innerHTML += `
-                    <div class="card item-card">
-                        <div style="display:flex; justify-content:space-between">
-                            <span><b>${item.name}</b></span>
-                            <span class="price">₹${item.price}</span>
-                        </div>
+    <div id="itemSection">
+        <div class="section-title"><i class="fa-solid fa-bread-slice" style="color: #f59e0b;"></i> Today's Rates</div>
+        <div id="itemList">Loading fresh items...</div>
+    </div>
+
+    <div id="ledgerSection" class="hidden">
+        <div id="loginForm" class="card login-card">
+            <i class="fa-solid fa-user-shield" style="font-size: 40px; color: var(--primary);"></i>
+            <h3>Check Your Balance</h3>
+            <p style="font-size: 13px; color: #64748b;">Enter your registered mobile number to view your account.</p>
+            <input type="tel" id="mobileInput" class="login-input" placeholder="Enter 10-digit Mobile No.">
+            <button class="login-btn" onclick="verifyCustomer()">Check Now</button>
+        </div>
+
+        <div id="ledgerResult" class="hidden">
+            <div class="section-title"><i class="fa-solid fa-wallet" style="color: #3b82f6;"></i> Your Account</div>
+            <div id="personalLedger"></div>
+            <button onclick="logout()" style="margin-top:10px; background:none; border:none; color: #64748b; cursor:pointer; font-size:12px;">← Logout / Change Number</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+
+    // 1. Load Bakery Items
+    db.collection("items").onSnapshot(snap => {
+        const list = document.getElementById("itemList");
+        list.innerHTML = "";
+        snap.forEach(doc => {
+            const item = doc.data();
+            list.innerHTML += `
+                <div class="card item-card">
+                    <div>
+                        <p style="font-weight: 700; font-size: 15px;">${item.name}</p>
+                        <p style="font-size: 11px; color: #64748b; margin-top:2px;">Unit: ${item.unit || 'Standard'}</p>
                     </div>
-                `;
-            });
+                    <span class="price-tag">₹${item.price}</span>
+                </div>`;
         });
+    });
 
-        // 2. Load Public Ledger (Name & Balance Only)
-        db.collection("ledger").onSnapshot(snap => {
-            const list = document.getElementById("ledgerList");
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const l = doc.data();
-                if(l.balance !== 0) {
-                    list.innerHTML += `
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between">
-                                <span>${l.name}</span>
-                                <span style="color:${l.balance > 0 ? '#60a5fa' : '#fbbf24'}">
-                                    ${l.balance > 0 ? 'To Pay: ₹' : 'To Receive: ₹'}${Math.abs(l.balance)}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-        });
+    // 2. Customer Verification (Privacy Fix)
+    function verifyCustomer() {
+        const mobile = document.getElementById("mobileInput").value.trim();
+        const ledgerDiv = document.getElementById("personalLedger");
 
-        function filterItems() {
-            let input = document.getElementById('itemSearch').value.toUpperCase();
-            let cards = document.getElementsByClassName('item-card');
-            for (let i = 0; i < cards.length; i++) {
-                let name = cards[i].innerText;
-                cards[i].style.display = name.toUpperCase().indexOf(input) > -1 ? "" : "none";
-            }
+        if (mobile.length < 10) {
+            alert("Please enter a valid 10-digit mobile number.");
+            return;
         }
-    </script>
+
+        // Search in 'clients' collection where phone == user input
+        db.collection("clients").where("phone", "==", mobile).get().then(snap => {
+            if (snap.empty) {
+                alert("No record found with this number.");
+                return;
+            }
+            
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("ledgerResult").classList.remove("hidden");
+            
+            ledgerDiv.innerHTML = "";
+            snap.forEach(doc => {
+                const c = doc.data();
+                ledgerDiv.innerHTML += `
+                    <div class="card">
+                        <div>
+                            <p style="font-weight: 700; font-size: 16px;">${c.name}</p>
+                            <p style="font-size: 12px; color: #64748b;">ID: ${doc.id}</p>
+                        </div>
+                        <span class="balance-tag ${c.openingDue > 0 ? 'due' : 'advance'}">
+                            ${c.openingDue > 0 ? 'Due: ₹'+c.openingDue : 'Clear'}
+                        </span>
+                    </div>`;
+            });
+        }).catch(err => {
+            console.error(err);
+            alert("Connection error. Try again.");
+        });
+    }
+
+    function logout() {
+        document.getElementById("loginForm").classList.remove("hidden");
+        document.getElementById("ledgerResult").classList.add("hidden");
+        document.getElementById("mobileInput").value = "";
+    }
+
+    function switchTab(type, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if(type === 'items') {
+            document.getElementById('itemSection').classList.remove('hidden');
+            document.getElementById('ledgerSection').classList.add('hidden');
+            document.getElementById('searchContainer').classList.remove('hidden');
+        } else {
+            document.getElementById('itemSection').classList.add('hidden');
+            document.getElementById('ledgerSection').classList.remove('hidden');
+            document.getElementById('searchContainer').classList.add('hidden');
+        }
+    }
+
+    function filterItems() {
+        let input = document.getElementById('itemSearch').value.toUpperCase();
+        let items = document.getElementsByClassName('item-card');
+        for (let i = 0; i < items.length; i++) {
+            items[i].style.display = items[i].innerText.toUpperCase().includes(input) ? "" : "none";
+        }
+    }
+</script>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
+</script>
 </body>
 </html>

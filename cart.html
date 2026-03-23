@@ -4,54 +4,97 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Cart - Surjya Bakery</title>
+    <title>Checkout - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* (Puraana Stylesheet waise hi rahega) */
-        .card:active { transform: scale(0.95); transition: 0.1s; }
-        body { animation: fadeIn 0.5s ease-in-out; background: linear-gradient(135deg,#667eea,#764ba2,#ec4899); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
-        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        .app{ display: flex; height: 100vh; }
-        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.2); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
-        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
-        .logo{ width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
-        .menu{ list-style: none; flex-grow: 1; }
-        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 15px; }
-        .menu li:hover, .menu li.active{ background: rgba(255,255,255,0.2); opacity: 1; }
-        .menu li.active{ border-left: 4px solid #fff; font-weight: bold; }
-        .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 220px; }
-        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .back-btn{ width: 35px; height: 35px; background: rgba(255,255,255,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: white; }
-        .quick-add-box { background: rgba(255,255,255,0.15); padding: 12px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); position: relative; }
-        .quick-add-box input { width: 100%; background: transparent; border: none; color: white; padding: 5px; outline: none; font-size: 15px; }
-        .search-results { position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border-radius: 0 0 10px 10px; z-index: 2000; max-height: 200px; overflow-y: auto; display: none; border: 1px solid rgba(255,255,255,0.1); }
-        .search-item { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; display: flex; justify-content: space-between; }
-        .order-settings { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .form-group label { display: block; font-size: 11px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
-        .form-group select, .form-group input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px; border-radius: 8px; outline: none; }
-        .cart-item{ background: rgba(255,255,255,0.12); padding: 12px 18px; border-radius: 15px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.15); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .qty-controls { display: flex; align-items: center; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 4px; }
-        .qty-btn { width: 28px; height: 28px; border: none; border-radius: 8px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; }
-        .qty-val { width: 35px; text-align: center; font-weight: bold; }
-        .remove-btn { color: #ff6b81; background: none; border: none; cursor: pointer; font-size: 18px; margin-left: 10px; }
-        .billing-summary { background: rgba(0,0,0,0.2); border-radius: 15px; padding: 15px; margin-top: 20px; border: 1px dashed rgba(255,255,255,0.2); }
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .summary-row input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; width: 80px; text-align: right; border-radius: 5px; }
-        .cart-footer { position: fixed; bottom: 0; right: 0; left: 260px; background: rgba(0,0,0,0.5); backdrop-filter: blur(25px); padding: 15px 40px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-        .btn-checkout { background: #2ecc71; color: white; padding: 12px 25px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); }
+        /* Minimal & Consistent Theme */
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        
+        body { background: #f8fafc; color: #1e293b; min-height: 100vh; transition: 0.3s; }
+        body.dark { background: #0f172a; color: #f1f5f9; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar - Same as Dashboard */
+        .sidebar { 
+            width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; 
+            padding: 30px 20px; display: flex; flex-direction: column; 
+            position: fixed; height: 100%; z-index: 1000; 
+        }
+        body.dark .sidebar { background: #1e293b; border-color: #334155; }
+
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; }
+        
+        .menu { list-style: none; flex-grow: 1; }
+        .menu li { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
+            border-radius: 12px; cursor: pointer; transition: 0.2s; 
+            margin-bottom: 4px; font-size: 14px; color: #64748b; font-weight: 500;
+        }
+        .menu li:hover { background: #f1f5f9; color: #0f172a; }
+        .menu li.active { background: #000; color: #fff; }
+        body.dark .menu li.active { background: #f8fafc; color: #000; }
+
+        /* Main Content Area */
+        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 220px; }
+        
+        .top-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
+
+        /* Quick Search Container */
+        .search-box { background: #fff; border-radius: 16px; padding: 12px 18px; border: 1px solid #e2e8f0; margin-bottom: 20px; position: relative; display: flex; align-items: center; gap: 10px; }
+        body.dark .search-box { background: #1e293b; border-color: #334155; }
+        .search-box input { flex: 1; border: none; background: transparent; outline: none; font-size: 15px; color: inherit; }
+        .search-results { position: absolute; top: 110%; left: 0; right: 0; background: #fff; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 2000; max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; display: none; }
+        body.dark .search-results { background: #1e293b; border-color: #334155; }
+        .search-item { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
+        body.dark .search-item { border-color: #334155; }
+
+        /* Cart Cards */
+        .cart-item { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        body.dark .cart-item { background: #1e293b; border-color: #334155; }
+        
+        .qty-controls { display: flex; align-items: center; background: #f1f5f9; border-radius: 12px; padding: 4px; gap: 8px; }
+        body.dark .qty-controls { background: #0f172a; }
+        .qty-btn { width: 32px; height: 32px; border: none; border-radius: 10px; background: #fff; color: #000; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        body.dark .qty-btn { background: #1e293b; color: #fff; }
+
+        /* Order Info Form */
+        .card { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
+        body.dark .card { background: #1e293b; border-color: #334155; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #94a3b8; margin-bottom: 6px; display: block; }
+        select, input[type="text"], input[type="number"] { width: 100%; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; font-size: 14px; color: inherit; }
+        body.dark select, body.dark input { background: #0f172a; border-color: #334155; }
+
+        /* Summary Section */
+        .summary-box { background: #f8fafc; border-radius: 16px; padding: 15px; margin-top: 15px; }
+        body.dark .summary-box { background: #0f172a; }
+        .summary-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+
+        /* Footer Checkout Bar */
+        .cart-footer { 
+            position: fixed; bottom: 0; right: 0; left: 260px; 
+            background: #ffffff; padding: 20px 40px; 
+            border-top: 1px solid #e2e8f0; display: flex; 
+            justify-content: space-between; align-items: center; z-index: 100;
+        }
+        body.dark .cart-footer { background: #1e293b; border-color: #334155; }
+        .btn-checkout { background: #10b981; color: white; padding: 16px 35px; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-checkout:hover { background: #059669; transform: translateY(-2px); }
 
         @media(max-width: 768px){
             .sidebar{ display: none; }
-            .content{ margin-left: 0; padding: 15px; padding-bottom: 240px; }
-            .cart-footer { left: 0; padding: 15px; }
-            .order-settings { grid-template-columns: 1fr; }
+            .content{ margin-left: 0; padding: 20px; padding-bottom: 180px; }
+            .cart-footer { left: 0; padding: 20px; flex-direction: column; gap: 15px; }
+            .btn-checkout { width: 100%; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -62,94 +105,88 @@
     <aside class="sidebar">
         <div class="profile">
             <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin</p></div>
+            <div class="profile-info"><h4>Surjya Bakery</h4><p>POS Admin</p></div>
         </div>
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
-            <li onclick="go('items.html')"><i class="fa-solid fa-box"></i> Items</li>
-            <li class="active" onclick="go('cart.html')"><i class="fa-solid fa-cart-shopping"></i> Cart</li>
-            <li onclick="go('orders.html')"><i class="fa-solid fa-list"></i> Orders</li>
+            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="go('items.html')"><i class="fa-solid fa-cookie"></i> Items</li>
+            <li class="active"><i class="fa-solid fa-cart-shopping"></i> Checkout</li>
             <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <div class="back-btn" onclick="go('items.html')"><i class="fa-solid fa-chevron-left"></i></div>
-            <h2>🛒 Checkout</h2>
-            <div style="width: 35px;"></div>
+            <button class="back-btn" onclick="go('items.html')"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2 style="font-weight: 800; letter-spacing: -0.5px;">Review Order</h2>
         </header>
 
-        <div class="quick-add-box">
-            <input type="text" id="quickSearch" placeholder="Search & Add Item..." oninput="searchItems(this.value)">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8"></i>
+            <input type="text" id="quickSearch" placeholder="Fast Add: Type Item Name..." oninput="searchItems(this.value)">
             <div class="search-results" id="searchResults"></div>
         </div>
 
-        <div class="order-settings" id="orderSettings" style="display: none;">
-            <div class="form-group">
-                <label>Customer</label>
-                <select id="customerSelect"></select>
+        <div id="orderSettings" class="card" style="display: none;">
+            <div class="form-row">
+                <div>
+                    <label>Customer Name</label>
+                    <select id="customerSelect"></select>
+                </div>
+                <div>
+                    <label>Payment Method</label>
+                    <select id="paymentMode">
+                        <option value="Cash">Cash Payment</option>
+                        <option value="Online">Online / UPI</option>
+                        <option value="Due">Udhaar (Due)</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Payment</label>
-                <select id="paymentMode">
-                    <option value="Cash">Cash</option>
-                    <option value="Online">Online / UPI</option>
-                    <option value="Due">Udhaar (Due)</option>
-                </select>
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-                <label>Note</label>
-                <input type="text" id="orderNote" placeholder="Order details...">
+            <div>
+                <label>Add Order Note</label>
+                <input type="text" id="orderNote" placeholder="e.g. Less spicy, Packing instruction...">
             </div>
         </div>
 
         <div id="cartContainer"></div>
 
-        <div id="summarySection" class="billing-summary" style="display: none;">
-            <div class="summary-row"><span>Sub Total:</span><span id="subTotal">₹ 0</span></div>
-            <div class="summary-row"><span>Discount (₹):</span><input type="number" id="discountVal" value="0" oninput="calculateTotal()"></div>
-            <div class="summary-row"><span>Final:</span><b id="finalDisplay" style="color: #4ade80;">₹ 0</b></div>
+        <div id="summarySection" class="card" style="display: none; border-style: dashed;">
+            <div class="summary-line"><span>Sub Total:</span><span id="subTotal">₹ 0</span></div>
+            <div class="summary-line" style="margin-top:10px;">
+                <span>Discount (₹):</span>
+                <input type="number" id="discountVal" value="0" oninput="calculateTotal()" style="width: 80px; padding: 5px 10px; text-align: right;">
+            </div>
+            <div class="summary-box">
+                <div class="summary-line" style="margin-bottom:0; font-weight:800; color:#10b981;">
+                    <span>Final Amount:</span>
+                    <span id="finalDisplay" style="font-size: 18px;">₹ 0</span>
+                </div>
+            </div>
         </div>
     </main>
 
-    <div class="cart-footer" id="cartFooter" style="display: none;">
+    <footer class="cart-footer" id="cartFooter" style="display: none;">
         <div class="total-info">
-            <p>Total Payable</p>
-            <h2 id="grandTotalDisplay">₹ 0</h2>
+            <p style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Total Payable</p>
+            <h2 id="grandTotalDisplay" style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">₹ 0</h2>
         </div>
-        <div class="checkout-actions">
-            <button class="btn-checkout" id="checkoutBtn" onclick="placeOrder()">Place Order <i class="fa-solid fa-check"></i></button>
-        </div>
-    </div>
+        <button class="btn-checkout" id="checkoutBtn" onclick="placeOrder()">PLACE ORDER <i class="fa-solid fa-arrow-right" style="margin-left:10px;"></i></button>
+    </footer>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
         projectId: "billingbuddy-551f9",
-        storageBucket: "billingbuddy-551f9.firebasestorage.app",
-        messagingSenderId: "287026017084",
         appId: "1:287026017084:web:aae879570ad706e5a2a439"
     };
-
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Offline support (Internet jane par bhi kaam karega)
-    db.enablePersistence().catch(err => console.log("Offline mode error", err.code));
-
-    // --- APP LOGIC ---
-    function go(p) { window.location.href = p; }
-
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    let clients = JSON.parse(localStorage.getItem("clients")) || [];
     let items = JSON.parse(localStorage.getItem("items")) || [];
-    let orders = JSON.parse(localStorage.getItem("orders")) || [];
-    let ledger = JSON.parse(localStorage.getItem("ledger")) || [];
+    let clients = JSON.parse(localStorage.getItem("clients")) || [];
 
     function searchItems(val) {
         const res = document.getElementById("searchResults");
@@ -160,7 +197,7 @@
             res.style.display = "block";
             filtered.forEach(item => {
                 res.innerHTML += `<div class="search-item" onclick='quickAdd("${item.id}")'>
-                    <span>${item.name}</span><b>₹${item.price}</b>
+                    <span>${item.name}</span><b style="color:#3b82f6">₹${item.price}</b>
                 </div>`;
             });
         } else { res.style.display="none"; }
@@ -183,12 +220,12 @@
         
         container.innerHTML = "";
         if (cart.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding-top:50px; opacity:0.5;"><h3>Cart khali hai</h3></div>`;
+            container.innerHTML = `<div style="text-align:center; padding-top:100px; color:#94a3b8;"><i class="fa-solid fa-cart-arrow-down" style="font-size:48px; margin-bottom:15px;"></i><h3>Cart is empty</h3></div>`;
             footer.style.display="none"; summary.style.display="none"; settings.style.display="none";
             return;
         }
 
-        footer.style.display="flex"; summary.style.display="block"; settings.style.display="grid";
+        footer.style.display="flex"; summary.style.display="block"; settings.style.display="block";
         
         const custSelect = document.getElementById("customerSelect");
         custSelect.innerHTML = '<option value="Walking Customer">Walking Customer</option>';
@@ -197,14 +234,17 @@
         cart.forEach((item, i) => {
             container.innerHTML += `
                 <div class="cart-item">
-                    <div><h4>${item.name}</h4><small>₹${item.price} × ${item.qty}</small></div>
-                    <div style="display:flex; align-items:center;">
+                    <div>
+                        <h4 style="font-weight:700;">${item.name}</h4>
+                        <p style="font-size:12px; color:#64748b; font-weight:600;">₹${item.price} per unit</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:15px;">
                         <div class="qty-controls">
                             <button class="qty-btn" onclick="updateQty(${i},-1)">-</button>
-                            <div class="qty-val">${item.qty}</div>
+                            <span style="font-weight:800; width:20px; text-align:center;">${item.qty}</span>
                             <button class="qty-btn" onclick="updateQty(${i},1)">+</button>
                         </div>
-                        <button class="remove-btn" onclick="remove(${i})"><i class="fa-solid fa-trash"></i></button>
+                        <i class="fa-solid fa-trash-can" style="color:#ef4444; cursor:pointer;" onclick="remove(${i})"></i>
                     </div>
                 </div>`;
         });
@@ -221,11 +261,10 @@
         return total;
     }
 
-    // --- FIREBASE SYNC LOGIC ---
     async function placeOrder() {
         const btn = document.getElementById("checkoutBtn");
         btn.disabled = true;
-        btn.innerText = "Syncing...";
+        btn.innerText = "Processing...";
 
         const customer = document.getElementById("customerSelect").value;
         const mode = document.getElementById("paymentMode").value;
@@ -234,51 +273,26 @@
 
         const orderId = "ORD-" + Date.now();
         const newOrder = {
-            orderId: orderId,
-            date: new Date().toLocaleString('en-IN'),
-            customer: customer,
-            items: [...cart],
-            total: amount,
-            mode: mode,
-            note: note,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp() // Cloud Time
+            orderId, date: new Date().toLocaleString('en-IN'),
+            customer, items: [...cart], total: amount, mode, note,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         try {
-            // 1. Save to Firebase
             await db.collection("orders").doc(orderId).set(newOrder);
-
-            // 2. Save to Local Storage (Legacy Support)
-            orders.unshift(newOrder);
-            localStorage.setItem("orders", JSON.stringify(orders));
-
-            // 3. Udhaar Entry
             if(mode === "Due" && customer !== "Walking Customer") {
-                const ledgerEntry = {
-                    name: customer,
-                    type: 'pay',
-                    amount: amount,
-                    note: "Order: " + orderId,
-                    date: new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short'}),
+                await db.collection("ledger").add({
+                    name: customer, type: 'pay', amount, note: "Order: " + orderId,
+                    date: new Date().toLocaleDateString('en-IN'),
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                await db.collection("ledger").add(ledgerEntry);
-                
-                ledger.push(ledgerEntry);
-                localStorage.setItem("ledger", JSON.stringify(ledger));
+                });
             }
-
-            alert("✅ Cloud Synced & Order Done!");
+            alert("✅ Order Placed Successfully!");
             cart = [];
             localStorage.setItem("cart", JSON.stringify(cart));
             go('orders.html');
-
         } catch (error) {
-            console.error("Firebase Error: ", error);
-            alert("⚠️ Error: Saved to local storage only.");
-            // Offline fall back
-            orders.unshift(newOrder);
-            localStorage.setItem("orders", JSON.stringify(orders));
+            alert("⚠️ Connection Error. Saving locally.");
             go('orders.html');
         }
     }
@@ -286,8 +300,17 @@
     function updateQty(i, c) { cart[i].qty += c; if(cart[i].qty < 1) remove(i); else save(); }
     function remove(i) { cart.splice(i, 1); save(); }
     function save() { localStorage.setItem("cart", JSON.stringify(cart)); renderCart(); }
+    function go(p) { window.location.href = p; }
 
-    renderCart();
+    window.onload = () => {
+        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+        renderCart();
+    };
+</script>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
 </script>
 </body>
 </html>

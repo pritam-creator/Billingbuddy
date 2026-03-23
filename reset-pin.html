@@ -4,74 +4,97 @@
   <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Reset PIN - Surjya Bakery</title>
+  <title>Security Settings - Surjya Bakery</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-*{ margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,sans-serif; }
+    :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --bg: #0f172a; }
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
 
-body{
-  min-height:100vh; display:flex; justify-content:center; align-items:center;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);
-  background-size: 400% 400%; animation: bgMove 12s ease infinite;
-  color:white; overflow:hidden;
-}
+    body {
+        min-height:100vh; display:flex; justify-content:center; align-items:center;
+        background: var(--bg); color:white; overflow:hidden; padding: 20px;
+    }
 
-@keyframes bgMove{ 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+    /* Consistent Glow Background */
+    .bg-glow {
+        position: absolute; width: 350px; height: 350px;
+        background: var(--primary); filter: blur(160px);
+        opacity: 0.15; z-index: -1; animation: orbit 15s linear infinite;
+    }
+    @keyframes orbit { from { transform: rotate(0deg) translateX(80px) rotate(0deg); } to { transform: rotate(360deg) translateX(80px) rotate(-360deg); } }
 
-.reset-box{
-  width:340px; padding:40px 25px; border-radius:28px;
-  backdrop-filter:blur(30px); background:rgba(255,255,255,0.18);
-  border:1px solid rgba(255,255,255,0.3); text-align:center;
-  box-shadow:0 20px 45px rgba(0,0,0,0.35); animation:fadeUp 0.7s ease;
-}
+    .reset-card {
+        width: 100%; max-width: 380px; padding: 40px 25px; border-radius: 32px;
+        background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1); text-align: center;
+        box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+    }
 
-@keyframes fadeUp{ from{opacity:0; transform:translateY(30px);} to{opacity:1; transform:translateY(0);} }
+    .icon-header {
+        width: 65px; height: 65px; background: rgba(255, 255, 255, 0.05);
+        color: var(--primary); border-radius: 20px; display: inline-flex;
+        align-items: center; justify-content: center; font-size: 28px;
+        margin-bottom: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-h2{ margin-bottom:25px; font-weight:700; font-size:22px; }
+    h2 { font-size: 26px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+    p { font-size: 13px; color: #94a3b8; margin-bottom: 30px; font-weight: 500; }
 
-input{
-  width:100%; padding:14px; margin:8px 0; border-radius:16px; border:none; outline:none;
-  font-size:16px; background:rgba(255,255,255,0.25); color:white; text-align:center; letter-spacing: 5px;
-}
+    input {
+        width: 100%; padding: 18px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.04); color: white; text-align: center;
+        font-size: 20px; font-weight: 800; letter-spacing: 10px; outline: none; transition: 0.3s;
+        margin-bottom: 15px;
+    }
+    input::placeholder { letter-spacing: normal; font-size: 14px; font-weight: 400; color: #475569; }
+    input:focus { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
 
-input::placeholder{ color:rgba(255,255,255,0.8); letter-spacing: normal; }
+    .btn {
+        width: 100%; padding: 18px; border-radius: 18px; border: none;
+        font-size: 14px; font-weight: 800; cursor: pointer; transition: 0.3s;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        letter-spacing: 0.5px;
+    }
+    .btn-update { background: white; color: #000; margin-top: 10px; }
+    .btn-update:active { transform: scale(0.97); }
+    
+    .btn-back { background: transparent; color: #64748b; margin-top: 12px; }
 
-button{
-  width:100%; padding:14px; margin-top:10px; border:none; border-radius:16px;
-  font-size:15px; font-weight:600; cursor:pointer; transition:0.3s;
-}
+    .status-msg { margin-top: 20px; font-size: 12px; font-weight: 700; transition: 0.3s; text-transform: uppercase; }
+    .error { color: var(--danger); }
+    .success { color: var(--success); }
+    .loading { color: var(--primary); }
 
-.update-btn{ background:#2ecc71; color:white; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3); }
-.back-btn{ background:rgba(255,255,255,0.2); color:white; margin-top: 15px; }
-
-.message{ margin-top:14px; font-size:13px; font-weight: 500; }
-.success{ color:#2ecc71; }
-.error{ color:#ff4d4d; }
 </style>
 </head>
 
 <body>
+<div class="bg-glow"></div>
 
-<div class="reset-box">
-  <i class="fa-solid fa-shield-halved" style="font-size: 40px; margin-bottom: 15px;"></i>
-  <h2>Security Settings</h2>
+<div class="reset-card">
+    <div class="icon-header">
+        <i class="fa-solid fa-lock"></i>
+    </div>
+    <h2>Security</h2>
+    <p>Secure your administrative access</p>
 
-  <input type="password" id="oldPin" placeholder="Enter Old PIN" inputmode="numeric" maxlength="4">
-  <input type="password" id="newPin" placeholder="New 4-Digit PIN" inputmode="numeric" maxlength="4">
-  <input type="password" id="confirmPin" placeholder="Confirm New PIN" inputmode="numeric" maxlength="4">
+    <input type="password" id="oldPin" placeholder="ENTER CURRENT PIN" inputmode="numeric" maxlength="4">
+    <input type="password" id="newPin" placeholder="SET NEW PIN" inputmode="numeric" maxlength="4">
+    <input type="password" id="confirmPin" placeholder="CONFIRM NEW PIN" inputmode="numeric" maxlength="4">
 
-  <button class="update-btn" onclick="savePin()">Update Admin PIN</button>
-  <button class="back-btn" onclick="goBack()">Back to Login</button>
+    <button class="btn btn-update" onclick="savePin()">
+        UPDATE ACCESS PIN
+    </button>
+    <button class="btn btn-back" onclick="goBack()">Return to Login</button>
 
-  <div id="message" class="message"></div>
+    <div id="message" class="status-msg"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
   authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -88,67 +111,45 @@ window.savePin = async function(){
   const newPin = document.getElementById("newPin").value.trim();
   const confirmPin = document.getElementById("confirmPin").value.trim();
 
-  // Reset Message
-  messageBox.innerText = "Processing...";
-  messageBox.className = "message";
+  if(!oldPin || !newPin || !confirmPin) return updateStatus("All fields required", "error");
+  if(newPin.length !== 4) return updateStatus("PIN must be 4 digits", "error");
+  if(newPin !== confirmPin) return updateStatus("Confirmation mismatch", "error");
 
-  // Validation
-  if(!oldPin || !newPin || !confirmPin) {
-    showError("Please fill all fields");
-    return;
-  }
-  if(newPin.length !== 4) {
-    showError("PIN must be 4 digits");
-    return;
-  }
-  if(newPin !== confirmPin) {
-    showError("Confirm PIN doesn't match");
-    return;
-  }
+  updateStatus("Syncing with Cloud...", "loading");
 
   try {
     const adminRef = doc(db, "settings", "admin");
     const adminSnap = await getDoc(adminRef);
 
-    if(!adminSnap.exists()){
-      showError("System error: Admin not found");
-      return;
-    }
+    if(!adminSnap.exists()) return updateStatus("System Database Error", "error");
 
     const currentSavedPin = String(adminSnap.data().pin);
 
-    // Verify Old PIN
-    if(oldPin !== currentSavedPin) {
-      showError("Incorrect Old PIN");
-      return;
-    }
+    if(oldPin !== currentSavedPin) return updateStatus("Wrong Current PIN", "error");
 
-    // Update PIN in Cloud
     await updateDoc(adminRef, { pin: newPin });
+    updateStatus("PIN Successfully Updated", "success");
 
-    messageBox.className = "message success";
-    messageBox.innerText = "PIN Updated Successfully!";
-
-    // Redirect after 1.5 seconds
-    setTimeout(() => {
-      window.location.replace("index.html");
-    }, 1500);
+    setTimeout(() => window.location.replace("index.html"), 1500);
 
   } catch (err) {
-    console.error(err);
-    showError("Cloud Sync Failed");
+    updateStatus("Connection Failed", "error");
   }
 };
 
-function showError(text) {
-  messageBox.className = "message error";
-  messageBox.innerText = text;
+function updateStatus(text, type) {
+    messageBox.innerText = text;
+    messageBox.className = "status-msg " + type;
 }
 
 window.goBack = function() {
   window.location.replace("index.html");
 };
 </script>
-
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
+</script>
 </body>
 </html>

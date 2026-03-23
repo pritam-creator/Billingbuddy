@@ -4,134 +4,216 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Khatabook Cloud - Surjya Bakery</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Khatabook Pro - Surjya Bakery</title>
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{ background: #0f172a; color: #fff; height: 100vh; overflow: hidden; }
-        .app{ display: flex; height: 100vh; }
-        .sidebar{ width: 260px; background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px 15px; display: flex; flex-direction: column; }
-        .menu{ list-style: none; margin-top: 20px; }
-        .menu li{ padding: 12px 15px; border-radius: 12px; cursor: pointer; opacity: 0.7; margin-bottom: 5px; display: flex; gap: 10px; }
-        .menu li.active{ background: #3b82f6; opacity: 1; }
-        .content{ flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-        .top-header{ width: 100%; max-width: 600px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
-        .back-btn{ background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .search-box { width: 100%; max-width: 600px; margin-bottom: 20px; position: relative; }
-        .search-box input { width: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); padding: 12px 40px; border-radius: 12px; color: white; outline: none; }
-        .search-box i { position: absolute; left: 15px; top: 15px; opacity: 0.5; }
-        .grid-summary { width: 100%; max-width: 600px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #1e293b; padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .text-green { color: #4ade80; }
-        .text-red { color: #ff6b81; }
-        .list-container { width: 100%; max-width: 600px; background: #1e293b; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
-        .customer-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 10; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 100; flex-direction: column; }
-        .modal-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; }
-        .modal-body { flex: 1; padding: 20px; overflow-y: auto; width: 100%; max-width: 600px; margin: 0 auto; }
-        .entry-section { background: #1e293b; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 600px; margin: 0 auto; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        .entry-input { flex: 1; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; color: white; outline: none; }
-        .modal-footer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .trans-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .btn-pay { background: #ff6b81; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .btn-collect { background: #4ade80; color: #064e3b; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        @media(max-width: 768px){ .sidebar { display: none; } }
+        :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --bg: #0f172a; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        
+        body { background: #f8fafc; color: #1e293b; min-height: 100vh; overflow-x: hidden; }
+        body.dark { background: var(--bg); color: #f1f5f9; }
+
+        .app { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { 
+            width: 260px; background: #fff; border-right: 1px solid #e2e8f0; 
+            padding: 30px 20px; display: flex; flex-direction: column; 
+            position: fixed; height: 100%; z-index: 1000;
+        }
+        body.dark .sidebar { background: #1e293b; border-color: #334155; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; margin-bottom: 30px; cursor: pointer; }
+        
+        .menu li { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
+            border-radius: 12px; cursor: pointer; transition: 0.2s; 
+            margin-bottom: 5px; font-size: 14px; color: #64748b; font-weight: 500;
+        }
+        .menu li.active { background: #000; color: #fff; }
+        body.dark .menu li.active { background: #f8fafc; color: #000; }
+
+        /* Content Area */
+        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        
+        .top-header { width: 100%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
+
+        /* Summary Cards */
+        .grid-summary { width: 100%; max-width: 650px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #fff; padding: 22px; border-radius: 24px; border: 1px solid #e2e8f0; text-align: left; position: relative; }
+        body.dark .stat-card { background: #1e293b; border-color: #334155; }
+        .stat-card p { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card h3 { font-size: 20px; font-weight: 900; margin-top: 5px; }
+
+        /* Search Box */
+        .search-box { width: 100%; max-width: 650px; margin-bottom: 20px; position: relative; }
+        .search-box input { 
+            width: 100%; background: #fff; border: 1px solid #e2e8f0; 
+            padding: 15px 45px; border-radius: 18px; color: #1e293b; outline: none; font-size: 14px; font-weight: 500;
+        }
+        body.dark .search-box input { background: #1e293b; border-color: #334155; color: #fff; }
+        .search-box i { position: absolute; left: 18px; top: 18px; color: #94a3b8; }
+
+        /* Customer List */
+        .list-container { width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 10px; }
+        .customer-card { 
+            background: #fff; padding: 18px; border-radius: 22px; 
+            border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;
+            transition: 0.2s; cursor: pointer;
+        }
+        body.dark .customer-card { background: #1e293b; border-color: #334155; }
+        .customer-card:hover { transform: scale(1.01); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        
+        .avatar { width: 45px; height: 45px; border-radius: 14px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary); font-size: 18px; }
+
+        .text-green { color: var(--success); }
+        .text-red { color: var(--danger); }
+
+        /* FAB */
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #000; color: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none; }
+        body.dark .fab { background: #fff; color: #000; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: flex-end; }
+        .modal-content { width: 100%; max-width: 600px; background: #fff; border-radius: 30px 30px 0 0; padding: 25px; animation: slideUp 0.3s ease-out; }
+        body.dark .modal-content { background: #1e293b; }
+        
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .entry-input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 16px; margin-bottom: 12px; outline: none; font-weight: 600; font-size: 14px; }
+        body.dark .entry-input { background: #0f172a; border-color: #334155; color: #fff; }
+
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
+        .btn-pay { background: #fef2f2; color: #ef4444; border: none; padding: 18px; border-radius: 18px; font-weight: 800; cursor: pointer; }
+        .btn-collect { background: #f0fdf4; color: #10b981; border: none; padding: 18px; border-radius: 18px; font-weight: 800; cursor: pointer; }
+
+        .chip { background: #f1f5f9; border: none; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s; color: #64748b; }
+        body.dark .chip { background: #334155; color: #cbd5e1; }
+
+        .trans-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        body.dark .trans-item { border-color: rgba(255,255,255,0.05); }
+
+        @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 20px; padding-bottom: 100px; } }
     </style>
 </head>
 <body>
 
 <div class="app">
     <aside class="sidebar">
-        <h2 style="margin-bottom: 20px;">Surjya Bakery</h2>
+        <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" onclick="go('dashboard.html')">
         <ul class="menu">
             <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
-            <li class="active"><i class="fa-solid fa-book"></i> Khatabook</li>
-            <li onclick="go('pos.html')"><i class="fa-solid fa-receipt"></i> Billing</li>
+            <li class="active"><i class="fa-solid fa-book-open"></i> Khatabook</li>
+            <li onclick="go('items.html')"><i class="fa-solid fa-cookie-bite"></i> Items</li>
+            <li onclick="go('records.html')"><i class="fa-solid fa-chart-pie"></i> Records</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
-            <div>
-                <h2>Khatabook Cloud</h2>
-                <div id="dateNow" style="font-size: 12px; opacity: 0.6;"></div>
+            <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-chevron-left"></i></button>
+            <div style="text-align: right;">
+                <h2 style="font-weight: 900; letter-spacing: -1px;">Ledger Pro</h2>
+                <p id="dateNow" style="font-size: 11px; font-weight: 700; opacity: 0.5;"></p>
             </div>
         </header>
 
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="custSearch" placeholder="Search customer..." oninput="renderCustomerList()">
-        </div>
-
         <div class="grid-summary">
             <div class="stat-card">
-                <p style="font-size: 11px; opacity:0.6;">TOTAL YOU GET (LENA)</p>
-                <h3 id="mainTotalCollect" class="text-green">₹ 0</h3>
+                <p>Today Collection</p>
+                <h3 id="todayCollect" class="text-green">₹ 0</h3>
             </div>
             <div class="stat-card">
-                <p style="font-size: 11px; opacity:0.6;">TOTAL YOU GIVE (DENA)</p>
-                <h3 id="mainTotalPay" class="text-red">₹ 0</h3>
+                <p>Today Payment</p>
+                <h3 id="todayPay" class="text-red">₹ 0</h3>
             </div>
+        </div>
+
+        <div class="grid-summary" style="margin-top: -10px; opacity: 0.8;">
+            <div class="stat-card" style="padding: 15px;">
+                <p style="font-size: 8px;">Total Market Credit</p>
+                <h3 id="mainTotalCollect" style="font-size: 16px; color: var(--danger);">₹ 0</h3>
+            </div>
+            <div class="stat-card" style="padding: 15px;">
+                <p style="font-size: 8px;">Due Accounts</p>
+                <h3 id="dueCount" style="font-size: 16px;">0</h3>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="custSearch" placeholder="Search customer name or phone..." oninput="renderCustomerList()">
         </div>
 
         <div class="list-container" id="customerList"></div>
     </main>
 </div>
 
-<div class="fab" onclick="showClientPicker()"><i class="fa-solid fa-plus"></i></div>
+<button class="fab" onclick="showAddModal()"><i class="fa-solid fa-user-plus"></i></button>
 
-<div class="modal" id="pickerModal">
-    <div class="modal-header">
-        <h3>New Customer</h3>
-        <i class="fa-solid fa-xmark" onclick="closePicker()"></i>
-    </div>
-    <div class="modal-body">
-        <div class="input-group" style="flex-direction: column;">
-            <input type="text" id="newManualName" class="entry-input" placeholder="Enter Name" style="margin-bottom: 10px; width: 100%;">
-            <input type="tel" id="newManualPhone" class="entry-input" placeholder="Mobile Number" style="margin-bottom: 10px; width: 100%;">
-            <button class="btn-collect" style="padding: 15px; width: 100%;" onclick="addNewManualCustomer()">Add Customer</button>
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="font-weight: 900;">Add New Customer</h3>
+            <i class="fa-solid fa-xmark" onclick="closeModals()" style="cursor:pointer; opacity:0.3"></i>
         </div>
-        <div id="pickerList"></div>
+        <input type="text" id="newName" class="entry-input" placeholder="Full Name">
+        <input type="tel" id="newPhone" class="entry-input" placeholder="Phone Number (10 digits)">
+        <input type="number" id="openingDue" class="entry-input" placeholder="Opening Due Balance (Optional)">
+        <button class="btn-collect" style="width:100%; background:#000; color:#fff;" onclick="createNewCustomer()">CREATE ACCOUNT</button>
     </div>
 </div>
 
-<div class="modal" id="customerModal">
-    <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <i class="fa-solid fa-arrow-left" onclick="closeHistory()"></i>
-            <div>
-                <h3 id="activeCustName">Name</h3>
-                <p id="activeCustPhone" style="font-size: 11px; opacity: 0.7;"></p>
-                <p id="activeCustBalance" style="font-size: 12px; font-weight: bold;">Balance: ₹0</p>
+<div class="modal" id="customerModal" style="align-items: center;">
+    <div class="modal-content" style="height: 94vh; border-radius: 32px; display: flex; flex-direction: column;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div id="modalAvatar" class="avatar">?</div>
+                <div>
+                    <h3 id="activeCustName" style="font-weight: 900;">Name</h3>
+                    <p id="activeCustPhone" style="font-size: 12px; opacity:0.6; font-weight: 600;"></p>
+                </div>
+            </div>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <i class="fa-solid fa-file-pdf" style="color:#ef4444; font-size:20px; cursor:pointer;" onclick="downloadPDF()"></i>
+                <i class="fa-brands fa-whatsapp" style="color:#22c55e; font-size:24px; cursor:pointer;" onclick="sendWhatsAppReminder()"></i>
+                <i class="fa-solid fa-xmark" onclick="closeModals()" style="font-size:20px; cursor:pointer; opacity:0.3"></i>
             </div>
         </div>
-        <div style="display:flex; gap:15px;">
-            <i class="fa-brands fa-whatsapp" style="color:#25D366; font-size:22px;" onclick="sendWhatsAppReminder()"></i>
-            <i class="fa-solid fa-trash" style="opacity:0.5; font-size:20px;" onclick="settleAccount()"></i>
-        </div>
-    </div>
-    <div class="modal-body" id="transactionHistory"></div>
-    
-    <div class="entry-section">
-        <div class="input-group">
-            <input type="number" id="entryAmount" class="entry-input" placeholder="₹ Amount">
-            <input type="text" id="entryNote" class="entry-input" placeholder="Note (Cake, Milk, etc.)">
-        </div>
-        <div class="modal-footer-btns">
-            <button class="btn-pay" onclick="saveEntry('pay')">GAVE (DENA)</button>
-            <button class="btn-collect" onclick="saveEntry('collect')">GOT (LENA)</button>
+
+        <div id="activeCustBalance" style="padding:15px; border-radius:18px; text-align:center; font-weight:900; font-size:22px; margin-bottom:15px;">₹ 0</div>
+        
+        <div id="transactionHistory" style="flex:1; overflow-y:auto; margin-bottom:15px;"></div>
+
+        <div style="padding-top:15px; border-top:1px solid rgba(0,0,0,0.05);">
+            <div style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:5px;">
+                <button class="chip" onclick="quickFillBalance()">FULL SETTLE</button>
+                <button class="chip" onclick="fillAmt(100)">₹100</button>
+                <button class="chip" onclick="fillAmt(500)">₹500</button>
+                <button class="chip" onclick="fillAmt(1000)">₹1000</button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="entryAmount" class="entry-input" placeholder="₹ Amount" style="flex:1">
+                <input type="text" id="entryNote" class="entry-input" placeholder="Note (Optional)" style="flex:2">
+            </div>
+            <div class="btn-row">
+                <button class="btn-pay" onclick="saveEntry('pay')">GAVE (DENA)</button>
+                <button class="btn-collect" onclick="saveEntry('collect')">GOT (LENA)</button>
+            </div>
+            <center><p onclick="deleteCustomer()" style="font-size:10px; color:var(--danger); margin-top:15px; cursor:pointer; font-weight:700; opacity:0.4;">DELETE CUSTOMER ACCOUNT</p></center>
         </div>
     </div>
 </div>
 
 <script>
+    // Firebase Setup
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -143,12 +225,22 @@
 
     let activeCustomer = null;
     let activeCustomerPhone = "";
+    let currentBalanceRaw = 0;
+    let allClients = [];
+    let allLedger = [];
 
     function init() {
-        document.getElementById('dateNow').innerText = new Date().toDateString();
-        db.collection("ledger").onSnapshot(() => {
+        document.getElementById('dateNow').innerText = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+
+        // Sync Clients & Ledger
+        db.collection("clients").onSnapshot(snap => {
+            allClients = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderCustomerList();
-            if(activeCustomer) renderHistory();
+        });
+        db.collection("ledger").onSnapshot(snap => {
+            allLedger = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderCustomerList();
         });
     }
 
@@ -156,131 +248,205 @@
         const container = document.getElementById('customerList');
         const search = document.getElementById('custSearch').value.toLowerCase();
         
-        const snapshot = await db.collection("ledger").get();
-        let customers = {};
-        let totalCollect = 0, totalPay = 0;
-
-        snapshot.forEach(doc => {
-            const entry = doc.data();
-            if (!customers[entry.name]) {
-                customers[entry.name] = { balance: 0, phone: entry.phone || "" };
-            }
-            let amt = parseFloat(entry.amount);
-            customers[entry.name].balance += (entry.type === 'collect' ? amt : -amt);
-        });
+        let grandTotal = 0;
+        let dueAccounts = 0;
+        let dayCollect = 0;
+        let dayPay = 0;
+        const todayStr = new Date().toLocaleDateString('en-GB'); // Standardize date format
 
         container.innerHTML = '';
-        const names = Object.keys(customers).filter(n => n.toLowerCase().includes(search));
-        
-        names.forEach(name => {
-            const data = customers[name];
-            const balance = data.balance;
-            if(balance > 0) totalCollect += balance; else totalPay += Math.abs(balance);
-            const isCollect = balance >= 0;
+
+        // Filter and Process
+        const filteredClients = allClients.filter(c => 
+            c.name.toLowerCase().includes(search) || (c.phone && c.phone.includes(search))
+        ).sort((a, b) => a.name.localeCompare(b.name));
+
+        filteredClients.forEach(client => {
+            const history = allLedger.filter(l => l.name === client.name);
+            let balance = parseFloat(client.openingDue || 0);
+
+            history.forEach(t => {
+                const amt = parseFloat(t.amount);
+                // Unified logic for types from both pages
+                if (t.type === 'collect' || t.type === 'Sale' || t.type === 'Due') {
+                    balance += amt;
+                    if(t.date === todayStr) dayPay += amt; // In your logic, Sale/Due is giving credit
+                } else if (t.type === 'pay' || t.type === 'Payment') {
+                    balance -= amt;
+                    if(t.date === todayStr) dayCollect += amt;
+                }
+            });
+
+            grandTotal += balance;
+            if(balance > 0) dueAccounts++;
+
             container.innerHTML += `
-                <div class="customer-row" onclick="openCustomer('${name}', '${data.phone}')">
-                    <div>
-                        <h4>${name}</h4>
-                        <small style="opacity: 0.5;">${data.phone || 'No mobile'}</small>
+                <div class="customer-card" onclick="openCustomer('${client.name}', '${client.phone}')">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="avatar">${client.name[0].toUpperCase()}</div>
+                        <div>
+                            <h4 style="font-weight:800;">${client.name}</h4>
+                            <p style="font-size:11px; opacity:0.5;">${client.phone || 'No Contact'}</p>
+                        </div>
                     </div>
-                    <div style="text-align: right">
-                        <h4 class="${isCollect ? 'text-green' : 'text-red'}">₹${Math.abs(balance).toLocaleString()}</h4>
-                        <p style="font-size: 10px; opacity: 0.5;">${isCollect ? 'Lena hai' : 'Dena hai'}</p>
+                    <div style="text-align:right">
+                        <h4 class="${balance <= 0 ? 'text-green' : 'text-red'}" style="font-weight:900;">₹${Math.abs(balance).toLocaleString()}</h4>
+                        <span style="font-size:9px; font-weight:900; opacity:0.6;">${balance <= 0 ? 'SETTLED' : 'YOU GET'}</span>
                     </div>
                 </div>`;
         });
 
-        document.getElementById('mainTotalCollect').innerText = `₹${totalCollect.toLocaleString()}`;
-        document.getElementById('mainTotalPay').innerText = `₹${totalPay.toLocaleString()}`;
+        document.getElementById('mainTotalCollect').innerText = `₹${grandTotal.toLocaleString()}`;
+        document.getElementById('dueCount').innerText = dueAccounts;
+        document.getElementById('todayCollect').innerText = `₹${dayCollect.toLocaleString()}`;
+        document.getElementById('todayPay').innerText = `₹${dayPay.toLocaleString()}`;
+        
+        if(activeCustomer) renderHistory();
     }
 
     function openCustomer(name, phone) {
         activeCustomer = name;
-        activeCustomerPhone = phone || "";
+        activeCustomerPhone = phone;
         document.getElementById('activeCustName').innerText = name;
-        document.getElementById('activeCustPhone').innerText = activeCustomerPhone ? "📞 " + activeCustomerPhone : "No Number";
+        document.getElementById('activeCustPhone').innerText = phone ? "📞 " + phone : "No phone";
+        document.getElementById('modalAvatar').innerText = name[0].toUpperCase();
         document.getElementById('customerModal').style.display = 'flex';
         renderHistory();
     }
 
-    async function renderHistory() {
-        const historyBody = document.getElementById('transactionHistory');
-        const snapshot = await db.collection("ledger").where("name", "==", activeCustomer).orderBy("timestamp", "desc").get();
+    function renderHistory() {
+        const hist = document.getElementById('transactionHistory');
+        const client = allClients.find(c => c.name === activeCustomer);
+        const filtered = allLedger.filter(l => l.name === activeCustomer)
+                         .sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         
-        historyBody.innerHTML = '';
-        let balance = 0;
-        
-        snapshot.forEach(doc => {
-            const e = doc.data();
-            const isCollect = e.type === 'collect';
-            balance += isCollect ? parseFloat(e.amount) : -parseFloat(e.amount);
-            historyBody.innerHTML += `
+        hist.innerHTML = '';
+        let balance = parseFloat(client?.openingDue || 0);
+
+        // Display Opening Balance if exists
+        if(balance !== 0) {
+            hist.innerHTML += `<div style="text-align:center; padding:10px; font-size:10px; opacity:0.4; font-weight:700;">OPENING BALANCE: ₹${balance}</div>`;
+        }
+
+        filtered.forEach(e => {
+            const isCredit = (e.type === 'collect' || e.type === 'Sale' || e.type === 'Due');
+            const amt = parseFloat(e.amount);
+            
+            hist.innerHTML += `
                 <div class="trans-item">
-                    <div><p>${e.date}</p><small style="opacity:0.5">${e.note || ''}</small></div>
-                    <h4 class="${isCollect ? 'text-green' : 'text-red'}">₹${e.amount}</h4>
+                    <div style="flex:1">
+                        <p style="font-size:14px; font-weight:700;">${e.note || e.type || 'Entry'}</p>
+                        <small style="font-size:10px; opacity:0.5;">${e.date}</small>
+                    </div>
+                    <div style="text-align:right; display:flex; align-items:center; gap:12px;">
+                        <h4 class="${isCredit ? 'text-red' : 'text-green'}" style="font-weight:800;">${isCredit ? '+' : '-'} ₹${amt.toLocaleString()}</h4>
+                        <i class="fa-solid fa-trash-can" onclick="deleteEntry('${e.id}')" style="font-size:12px; opacity:0.2; cursor:pointer;"></i>
+                    </div>
                 </div>`;
+            
+            if(isCredit) balance += amt; else balance -= amt;
         });
-        document.getElementById('activeCustBalance').innerText = `Total Balance: ₹${balance}`;
+
+        currentBalanceRaw = balance;
+        const balBox = document.getElementById('activeCustBalance');
+        balBox.innerText = `Pending: ₹${Math.abs(balance).toLocaleString()}`;
+        balBox.style.background = balance <= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+        balBox.style.color = balance <= 0 ? 'var(--success)' : 'var(--danger)';
     }
 
     async function saveEntry(type) {
-        const amtInput = document.getElementById('entryAmount');
-        const noteInput = document.getElementById('entryNote');
-        const amt = amtInput.value;
-        if (!amt) return alert("Enter amount!");
+        const amt = document.getElementById('entryAmount').value;
+        const note = document.getElementById('entryNote').value;
+        if(!amt || amt <= 0) return;
 
         await db.collection("ledger").add({
             name: activeCustomer,
             phone: activeCustomerPhone,
-            type: type,
-            amount: amt,
-            note: noteInput.value,
-            date: new Date().toLocaleDateString('en-IN', {day:'2-digit', month:'short'}),
+            type: type, // 'pay' or 'collect'
+            amount: parseFloat(amt),
+            note: note,
+            date: new Date().toLocaleDateString('en-GB'),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        amtInput.value = ''; noteInput.value = '';
-        renderHistory();
+        document.getElementById('entryAmount').value = ''; 
+        document.getElementById('entryNote').value = '';
     }
 
-    async function settleAccount() {
-        if(confirm("Settle this account? (Clear all data for this person)")) {
-            const snapshot = await db.collection("ledger").where("name", "==", activeCustomer).get();
+    async function createNewCustomer() {
+        const n = document.getElementById('newName').value.trim();
+        const p = document.getElementById('newPhone').value.trim();
+        const due = document.getElementById('openingDue').value || 0;
+        
+        if(!n) return alert("Name is required");
+
+        await db.collection("clients").add({
+            name: n,
+            phone: p,
+            openingDue: parseFloat(due),
+            created: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        closeModals();
+    }
+
+    async function deleteEntry(id) {
+        if(confirm("Delete this transaction?")) await db.collection("ledger").doc(id).delete();
+    }
+
+    async function deleteCustomer() {
+        if(confirm(`Are you sure you want to delete ${activeCustomer}? All history will be lost.`)) {
+            const clientDoc = allClients.find(c => c.name === activeCustomer);
+            if(clientDoc) await db.collection("clients").doc(clientDoc.id).delete();
+            
+            // Batch delete ledger history
             const batch = db.batch();
-            snapshot.forEach(doc => batch.delete(doc.ref));
+            allLedger.filter(l => l.name === activeCustomer).forEach(l => {
+                batch.delete(db.collection("ledger").doc(l.id));
+            });
             await batch.commit();
-            closeHistory();
+            closeModals();
         }
+    }
+
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text("SURJYA BAKERY - LEDGER REPORT", 14, 20);
+        doc.setFontSize(12);
+        doc.text(`Customer: ${activeCustomer}`, 14, 30);
+        doc.text(`Current Pending: Rs. ${currentBalanceRaw}`, 14, 38);
+
+        const rows = allLedger.filter(l => l.name === activeCustomer).map(e => [
+            e.date, e.note || '-', e.type.toUpperCase(), `Rs. ${e.amount}`
+        ]);
+
+        doc.autoTable({ startY: 45, head: [['Date', 'Description', 'Type', 'Amount']], body: rows });
+        doc.save(`${activeCustomer}_Khata.pdf`);
     }
 
     function sendWhatsAppReminder() {
-        const bal = document.getElementById('activeCustBalance').innerText;
-        if(activeCustomerPhone) {
-            window.open(`https://wa.me/91${activeCustomerPhone}?text=Hello, Surjya Bakery reminder: Aapka ${bal} baaki hai. Kripya bhugtan karein.`);
-        } else {
-            window.open(`https://wa.me/?text=Surjya Bakery: ${activeCustomer}'s ${bal} is pending.`);
-        }
+        if(!activeCustomerPhone) return alert("No phone number saved!");
+        const msg = `Namaste ${activeCustomer}, Surjya Bakery se reminder: Aapka pending balance ₹${currentBalanceRaw} hai. Kripya bhugtan karein. Dhanyawad!`;
+        window.open(`https://wa.me/91${activeCustomerPhone}?text=${encodeURIComponent(msg)}`);
     }
 
-    function showClientPicker() { document.getElementById('pickerModal').style.display = 'flex'; }
-    function closePicker() { document.getElementById('pickerModal').style.display = 'none'; }
-    function closeHistory() { activeCustomer = null; document.getElementById('customerModal').style.display = 'none'; }
-    
-    function addNewManualCustomer() {
-        let name = document.getElementById('newManualName').value;
-        let phone = document.getElementById('newManualPhone').value;
-        if(name) { 
-            openCustomer(name, phone); 
-            closePicker(); 
-            document.getElementById('newManualName').value=''; 
-            document.getElementById('newManualPhone').value=''; 
-        } else {
-            alert("Please enter a name");
-        }
+    function fillAmt(v) { document.getElementById('entryAmount').value = v; }
+    function quickFillBalance() { document.getElementById('entryAmount').value = Math.abs(currentBalanceRaw); }
+    function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+    function closeModals() { 
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
+        activeCustomer = null; 
     }
-
     function go(p) { window.location.href = p; }
+
     window.onload = init;
+</script>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
 </script>
 </body>
 </html>

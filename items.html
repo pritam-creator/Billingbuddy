@@ -4,114 +4,167 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Items Pro - Surjya Bakery Cloud</title>
+    <title>Sales - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* (Styles same as provided for brand consistency) */
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-        body{ background: linear-gradient(135deg,#1e293b,#0f172a,#1e1b4b); background-size: 400% 400%; animation: bgMove 15s ease infinite; color: #fff; height: 100vh; overflow: hidden; }
-        @keyframes bgMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-        .app{ display: flex; height: 100vh; }
-        .sidebar{ width: 260px; backdrop-filter: blur(20px); background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px 15px; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
-        .profile{ display: flex; align-items: center; gap: 12px; margin-bottom: 25px; padding: 10px; }
-        .logo{ width: 45px; height: 45px; border-radius: 12px; object-fit: cover; }
-        .menu{ list-style: none; flex-grow: 1; }
-        .menu li{ display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; opacity: 0.8; font-size: 14px; margin-bottom: 5px;}
-        .menu li:hover, .menu li.active{ background: #3b82f6; opacity: 1; }
-        .content{ flex: 1; padding: 20px 30px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
+        :root { --primary: #000; --accent: #10b981; --bg: #f8fafc; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
         
-        /* Back Button Style */
-        .top-header{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .back-btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .back-btn:hover { background: rgba(255,255,255,0.2); }
+        body { background: var(--bg); color: #1e293b; min-height: 100vh; }
+        body.dark { background: #0f172a; color: #f1f5f9; }
 
-        .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-input { position: relative; flex: 1; }
-        .search-input input { padding: 10px 40px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; width: 100%; outline: none; }
-        .search-input i { position: absolute; left: 15px; top: 12px; color: rgba(255,255,255,0.5); }
-        .add-box { background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
-        .form-grid { display: flex; gap: 10px; flex-wrap: wrap; }
-        input, select { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 10px; color: #fff; flex: 1; }
-        .file-label { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.3); padding: 10px; border-radius: 10px; cursor: pointer; font-size: 12px; flex: 1; }
-        .btn-add { background: #3b82f6; border: none; color: #fff; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-        .item-card{ background: rgba(30, 41, 59, 0.7); border-radius: 18px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; transition: 0.3s; }
-        .item-img-container { width: 100%; height: 150px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
-        .item-img-container img { width: 100%; height: 100%; object-fit: cover; }
-        .item-card-body { padding: 15px; }
-        .item-price { color: #4ade80; font-size: 18px; font-weight: bold; }
-        .floating-cart{ position: fixed; bottom: 30px; right: 30px; background: #fff; color: #1e293b; width: 55px; height: 55px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; z-index: 100; }
-        .cart-count{ position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; font-size: 11px; padding: 2px 6px; border-radius: 8px; }
-        @media(max-width: 768px){ .sidebar{ display:none; } .content{ margin-left: 0; padding: 15px; } .items-grid { grid-template-columns: 1fr 1fr; } }
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Customization */
+        .sidebar { 
+            width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; 
+            padding: 30px 20px; display: flex; flex-direction: column; 
+            position: fixed; height: 100%; transition: 0.4s; z-index: 1000; 
+        }
+        body.dark .sidebar { background: #1e293b; border-color: #334155; }
+
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; }
+        
+        .menu { list-style: none; flex-grow: 1; }
+        .menu li { 
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
+            border-radius: 12px; cursor: pointer; transition: 0.2s; 
+            margin-bottom: 4px; font-size: 14px; color: #64748b; font-weight: 600;
+        }
+        .menu li.active { background: var(--primary); color: #fff; }
+        body.dark .menu li.active { background: #f8fafc; color: #000; }
+
+        /* Main Content */
+        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
+        
+        /* New Back Button Style */
+        .back-btn { 
+            background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; 
+            border-radius: 12px; cursor: pointer; display: flex; align-items: center; 
+            justify-content: center; margin-right: 15px; color: #1e293b;
+        }
+        body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
+
+        /* Category Chips */
+        .category-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0 25px; scrollbar-width: none; }
+        .cat-chip { 
+            padding: 8px 20px; background: #fff; border: 1px solid #e2e8f0; 
+            border-radius: 100px; cursor: pointer; font-size: 13px; font-weight: 600; 
+            white-space: nowrap; transition: 0.2s;
+        }
+        .cat-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        body.dark .cat-chip { background: #1e293b; border-color: #334155; }
+
+        /* Search Bar */
+        .search-container { position: sticky; top: 0; background: var(--bg); z-index: 10; padding-bottom: 15px; }
+        .search-input { position: relative; width: 100%; max-width: 500px; }
+        .search-input input { 
+            width: 100%; padding: 15px 15px 15px 50px; border-radius: 18px; 
+            border: 1px solid #e2e8f0; outline: none; font-size: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        body.dark .search-input input { background: #1e293b; border-color: #334155; color: #fff; }
+        .search-input i { position: absolute; left: 20px; top: 18px; color: #94a3b8; }
+
+        /* Items Grid */
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+        .item-card { 
+            background: #fff; border-radius: 24px; border: 1px solid #e2e8f0; 
+            overflow: hidden; transition: 0.3s ease; position: relative;
+        }
+        body.dark .item-card { background: #1e293b; border-color: #334155; }
+        .item-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+
+        .img-container { width: 100%; height: 150px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+        .img-container img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .card-info { padding: 15px; }
+        .card-info h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .price-tag { color: var(--accent); font-size: 18px; font-weight: 800; display: block; margin-bottom: 12px; }
+
+        .btn-add-bill { 
+            width: 100%; background: var(--primary); color: #fff; border: none; 
+            padding: 12px; border-radius: 14px; font-weight: 700; cursor: pointer; 
+            font-size: 12px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-add-bill:active { transform: scale(0.95); }
+        body.dark .btn-add-bill { background: #f8fafc; color: #000; }
+
+        /* Floating Cart */
+        .floating-cart { 
+            position: fixed; bottom: 30px; right: 30px; background: var(--primary); 
+            color: #fff; width: 65px; height: 65px; border-radius: 22px; 
+            display: flex; align-items: center; justify-content: center; font-size: 24px; 
+            cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 100; 
+        }
+        body.dark .floating-cart { background: #f8fafc; color: #000; }
+        .cart-count { 
+            position: absolute; top: -5px; right: -5px; background: #ef4444; 
+            color: white; font-size: 11px; padding: 4px 8px; border-radius: 10px; font-weight: 800; border: 2px solid var(--bg);
+        }
+
+        @media(max-width: 768px){ 
+            .sidebar { display: none; } 
+            .content { margin-left: 0; padding: 20px; } 
+            .items-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="app">
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar">
         <div class="profile">
             <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
-            <div class="profile-info"><h4>Surjya Bakery</h4><p>Admin Panel</p></div>
+            <div><h4 style="font-size: 14px;">Surjya Bakery</h4><p style="font-size: 11px; opacity: 0.6;">Sales Terminal</p></div>
         </div>
         <ul class="menu">
             <li onclick="goPage('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
-            <li class="active" onclick="goPage('items.html')"><i class="fa-solid fa-box"></i> Inventory</li>
-            <li onclick="goPage('pos.html')"><i class="fa-solid fa-receipt"></i> Billing</li>
-            <li onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</li>
+            <li class="active"><i class="fa-solid fa-cookie-bite"></i> Items</li>
+            <li onclick="goPage('inventory.html')"><i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('invoice.html')"><i class="fa-solid fa-file-invoice"></i> Invoice</li>
         </ul>
     </aside>
 
     <main class="content">
-        <header class="top-header">
-            <div class="header-left">
-                <button class="back-btn" onclick="goPage('dashboard.html')">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <h2 id="pageTitle">📦 Inventory Cloud</h2>
+        <div class="search-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center;">
+                    <button class="back-btn" onclick="goPage('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h2 style="font-weight: 800; letter-spacing: -1px;">Digital Menu</h2>
+                </div>
+                <div id="liveClock" style="font-size: 12px; font-weight: 600; opacity: 0.5;"></div>
             </div>
-            <div id="greeting" style="font-size: 12px; opacity: 0.7;"></div>
-        </header>
-
-        <div class="add-box" id="adminForm">
-            <div class="form-grid">
-                <input id="name" placeholder="Item Name">
-                <input id="price" type="number" placeholder="Price">
-                <select id="category">
-                    <option value="Bakery">Bakery</option>
-                    <option value="Cakes">Cakes</option>
-                    <option value="General">General</option>
-                </select>
-                <label class="file-label" for="itemPhoto">
-                    <i class="fa-solid fa-camera"></i> <span id="photoLabel">Photo</span>
-                    <input type="file" id="itemPhoto" accept="image/*" hidden onchange="document.getElementById('photoLabel').innerText='Ready'">
-                </label>
-                <button class="btn-add" id="addBtn" onclick="uploadItem()">Add Item</button>
+            
+            <div class="search-input">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search delicious items..." oninput="fetchItems()">
             </div>
         </div>
 
-        <div class="filter-bar">
-            <div class="search-input">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Search items..." oninput="fetchItems()">
-            </div>
+        <div class="category-scroll">
+            <div class="cat-chip active" onclick="filterCategory('All', this)">All Items</div>
+            <div class="cat-chip" onclick="filterCategory('Bakery', this)">Bakery</div>
+            <div class="cat-chip" onclick="filterCategory('Cakes', this)">Cakes</div>
+            <div class="cat-chip" onclick="filterCategory('Drinks', this)">Drinks</div>
+            <div class="cat-chip" onclick="filterCategory('General', this)">General</div>
         </div>
 
         <div class="items-grid" id="list"></div>
     </main>
 </div>
 
-<div class="floating-cart" id="cartBtn" onclick="goPage('cart.html')">
-    <i class="fa-solid fa-cart-shopping"></i>
+<div class="floating-cart" onclick="goPage('cart.html')">
+    <i class="fa-solid fa-basket-shopping"></i>
     <div class="cart-count" id="cartCount">0</div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -121,47 +174,24 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    let currentCategory = "All";
+
     window.onload = () => {
+        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
         fetchItems();
         updateCartCount();
+        setInterval(() => {
+            document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
     };
 
-    // --- ADD ITEM TO CLOUD ---
-    async function uploadItem() {
-        const name = document.getElementById("name").value;
-        const price = document.getElementById("price").value;
-        const cat = document.getElementById("category").value;
-        const photoFile = document.getElementById("itemPhoto").files[0];
-
-        if(!name || !price) return alert("Fill details!");
-
-        const btn = document.getElementById("addBtn");
-        btn.innerText = "Syncing...";
-        btn.disabled = true;
-
-        let photoBase64 = "";
-        if(photoFile) {
-            const reader = new FileReader();
-            photoBase64 = await new Promise(resolve => {
-                reader.onload = e => resolve(e.target.result);
-                reader.readAsDataURL(photoFile);
-            });
-        }
-
-        await db.collection("inventory").add({
-            name, price: parseFloat(price), category: cat, photo: photoBase64, stock: 10,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        document.getElementById("name").value = "";
-        document.getElementById("price").value = "";
-        document.getElementById("photoLabel").innerText = "Photo";
-        btn.innerText = "Add Item";
-        btn.disabled = false;
+    function filterCategory(cat, el) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
         fetchItems();
     }
 
-    // --- FETCH LIVE ITEMS ---
     function fetchItems() {
         const query = document.getElementById("searchInput").value.toLowerCase();
         db.collection("inventory").orderBy("name").onSnapshot(snap => {
@@ -169,20 +199,22 @@
             list.innerHTML = "";
             snap.forEach(doc => {
                 const item = doc.data();
-                if(item.name.toLowerCase().includes(query)) {
+                const matchesSearch = item.name.toLowerCase().includes(query);
+                const matchesCat = currentCategory === "All" || item.category === currentCategory;
+
+                if(matchesSearch && matchesCat) {
                     const card = document.createElement("div");
                     card.className = "item-card";
                     card.innerHTML = `
-                        <div class="item-img-container" onclick="goPage('item-details.html?id=${doc.id}')">
-                            ${item.photo ? `<img src="${item.photo}">` : `<i class="fa-solid fa-image" style="opacity:0.2; font-size:40px;"></i>`}
+                        <div class="img-container" onclick="goPage('item-details.html?id=${doc.id}')">
+                            ${item.photo ? `<img src="${item.photo}">` : `<i class="fa-solid fa-cookie" style="opacity:0.1; font-size:50px;"></i>`}
                         </div>
-                        <div class="item-card-body">
-                            <h3 style="font-size:15px;">${item.name}</h3>
-                            <div class="item-price">₹${item.price}</div>
-                            <div style="display:flex; gap:5px; margin-top:10px;">
-                                <button class="btn-add" style="flex:1; padding:8px;" onclick="addToCart('${doc.id}', '${item.name}', ${item.price})">Add</button>
-                                <button class="btn-add" style="background:rgba(255,107,129,0.1); color:#ff6b81; padding:8px;" onclick="deleteItem('${doc.id}')"><i class="fa-solid fa-trash"></i></button>
-                            </div>
+                        <div class="card-info">
+                            <h3>${item.name}</h3>
+                            <span class="price-tag">₹${item.price}</span>
+                            <button class="btn-add-bill" onclick="addToCart('${doc.id}', '${item.name}', ${item.price})">
+                                <i class="fa-solid fa-cart-plus"></i> ADD TO BILL
+                            </button>
                         </div>
                     `;
                     list.appendChild(card);
@@ -197,6 +229,9 @@
         if(existing) existing.qty++; else cart.push({id, name, price, qty: 1});
         localStorage.setItem("cart", JSON.stringify(cart));
         updateCartCount();
+        
+        // Haptic feedback feel (vibration for mobile)
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
     }
 
     function updateCartCount() {
@@ -204,14 +239,13 @@
         document.getElementById("cartCount").innerText = cart.reduce((s, i) => s + i.qty, 0);
     }
 
-    async function deleteItem(id) {
-        if(confirm("Delete this item from Cloud?")) {
-            await db.collection("inventory").doc(id).delete();
-        }
-    }
-
     function goPage(p) { window.location.href = p; }
-    function logout() { localStorage.clear(); window.location.href = "index.html"; }
 </script>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Error:", message, "at", source, lineno);
+    };
+</script>
+
 </body>
 </html>
