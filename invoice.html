@@ -102,7 +102,7 @@
 <div class="app">
     <aside class="sidebar">
         <div class="profile">
-            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+            <img id="storeLogo" src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
             <div class="profile-info"><h4>Surjya Bakery</h4><p>POS Terminal</p></div>
         </div>
         <ul class="menu">
@@ -184,26 +184,33 @@
     const db = firebase.firestore();
 
     let cart = [];
-    let invNo = "INV-" + Date.now().toString().slice(-6);
-    // Default values taaki undefined na dikhe
-    let storeData = { name: "Surjya Bakery", address: "Kolkata, WB", template: "tpl-premium-orange" };
+    let currentInvNo = "001"; 
+    let storeData = { name: "Surjya Bakery", address: " Tripura (N)", template: "tpl-premium-orange" };
 
-    // 1. Fetch current settings on load
     window.addEventListener('DOMContentLoaded', async () => {
         try {
+            // 1. Settings load karein
             const doc = await db.collection("settings").doc("admin").get();
             if (doc.exists) {
                 const data = doc.data();
-                storeData.name = data.name || "Surjya Bakery";
-                storeData.address = data.address || "Kolkata, WB";
+                storeData.name = data.name || "New Surjya Bakery";
+                storeData.address = data.address || "Churaibari,Tripura (N)";
                 storeData.template = data.template || "tpl-premium-orange";
-                
-                // UI inputs update karein
                 document.getElementById("setStoreName").value = storeData.name;
                 document.getElementById("setStoreAddress").value = storeData.address;
                 document.getElementById("setInvTemplate").value = storeData.template;
             }
-        } catch (err) { console.error("Data load failed:", err); }
+            
+            // 2. 001 Sequence Generate Karein
+            const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const salesSnap = await db.collection("sales")
+                .where("dateRaw", "==", today)
+                .get();
+            
+            let nextNum = salesSnap.size + 1;
+            currentInvNo = today + "-" + String(nextNum).padStart(3, '0');
+            
+        } catch (err) { console.error("Load Error:", err); }
     });
 
     function addItem() {
@@ -231,30 +238,21 @@
         const newName = document.getElementById("setStoreName").value;
         const newAddress = document.getElementById("setStoreAddress").value;
         const newTemplate = document.getElementById("setInvTemplate").value;
-
         try {
             await db.collection("settings").doc("admin").update({
-                name: newName,
-                address: newAddress,
-                template: newTemplate
+                name: newName, address: newAddress, template: newTemplate
             });
-            storeData.name = newName;
-            storeData.address = newAddress;
-            storeData.template = newTemplate;
-            alert("Settings updated!");
-            closeSettings();
-        } catch (e) { alert("Error updating settings."); }
+            storeData.name = newName; storeData.address = newAddress; storeData.template = newTemplate;
+            alert("Updated!"); closeSettings();
+        } catch (e) { alert("Error."); }
     }
 
     function buildInvoice() {
         const cName = document.getElementById("custName").value || "Guest Customer";
+        const cPhone = document.getElementById("custPhone").value || "N/A";
         const total = document.getElementById("grandTotal").innerText;
         const date = new Date().toLocaleDateString('en-GB');
-        
-        // Safety checks for undefined values
-        const sName = storeData.name || "Surjya Bakery";
-        const sAddr = storeData.address || "";
-        const template = storeData.template || "tpl-premium-orange";
+        const logoUrl = document.getElementById("storeLogo").src;
 
         let rows = "";
         cart.forEach(item => {
@@ -262,29 +260,32 @@
         });
 
         const printArea = document.getElementById("printSection");
-        printArea.className = template;
+        printArea.className = storeData.template;
         
         printArea.innerHTML = `
             <div class="inv-header">
-                <div class="header-content">
-                    <h1 style="font-size: 35px; margin:0;">INVOICE</h1>
-                    <p># ${invNo}</p>
+                <div class="header-content" style="display:flex; align-items:center; gap:15px;">
+                    <img src="${logoUrl}" style="width:60px; height:60px; border-radius:10px; background:#fff; padding:5px;">
+                    <div>
+                        <h1 style="font-size: 28px; margin:0;">INVOICE</h1>
+                        <p style="margin:0; font-size:14px; opacity:0.8;"># ${currentInvNo}</p>
+                    </div>
                 </div>
                 <div class="header-content" style="text-align: right;">
-                    <h2 style="margin:0;">${sName}</h2>
-                    <p style="font-size:12px;">${sAddr}</p>
+                    <h2 style="margin:0;">${storeData.name}</h2>
+                    <p style="font-size:11px; margin:0; opacity:0.9;">${storeData.address}</p>
                 </div>
             </div>
             <div class="inv-body">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
                     <div>
                         <span class="section-title">BILL TO</span>
-                        <h3 style="margin:0;">${cName}</h3>
-                        <p style="font-size:13px;">${document.getElementById("custPhone").value || ""}</p>
+                        <h3 style="margin:0; color:#000;">${cName}</h3>
+                        <p style="font-size:13px; color:#444;">${cPhone}</p>
                     </div>
                     <div style="text-align: right;">
                         <span class="section-title">DATE</span>
-                        <h3 style="margin:0;">${date}</h3>
+                        <h3 style="margin:0; color:#000;">${date}</h3>
                     </div>
                 </div>
                 <table>
@@ -292,18 +293,28 @@
                     <tbody>${rows}</tbody>
                 </table>
                 <div class="total-box">
-                    <p style="margin:0; font-size:14px;">Total Amount</p>
+                    <p style="margin:0; font-size:14px; color:#666;">Grand Total</p>
                     <h1 class="grand-total">${total}</h1>
                 </div>
-                <div style="text-align:center; margin-top:50px; color:#94a3b8; font-size:12px;">
-                    <p>Thank you for shopping at ${sName}!</p>
+                <div style="text-align:center; margin-top:40px; color:#777; font-size:11px;">
+                    <p>Computer Generated Invoice - Surjya Bakery</p>
                 </div>
             </div>`;
     }
 
-    function saveAndPrint() {
-        if(cart.length === 0) return alert("Cart is empty!");
+    async function saveAndPrint() {
+        if(cart.length === 0) return alert("Add items!");
         buildInvoice();
+        
+        // Firebase mein save karein sequence maintain karne ke liye
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        await db.collection("sales").add({
+            invNo: currentInvNo,
+            total: document.getElementById("grandTotal").innerText,
+            dateRaw: today,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
         setTimeout(() => { window.print(); location.reload(); }, 500);
     }
 
