@@ -48,18 +48,6 @@
         .back-btn, .set-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         body.dark .back-btn, body.dark .set-btn { background: #1e293b; border-color: #334155; color: #fff; }
 
-        /* Quick Tiles */
-        .quick-tiles { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 20px; scrollbar-width: none; }
-        .tile { 
-            min-width: 100px; background: #fff; border: 1px solid #e2e8f0; 
-            padding: 15px 10px; border-radius: 16px; text-align: center; cursor: pointer; 
-            transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        body.dark .tile { background: #1e293b; border-color: #334155; }
-        .tile:hover { transform: translateY(-3px); border-color: #000; }
-        .tile i { font-size: 20px; color: #3b82f6; margin-bottom: 8px; display: block; }
-        .tile span { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; }
-
         /* Billing Cards */
         .card { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
         body.dark .card { background: #1e293b; border-color: #334155; }
@@ -79,41 +67,34 @@
         .btn-add { background: #000; color: white; }
         body.dark .btn-add { background: #f8fafc; color: #000; }
         .btn-print { background: #10b981; color: white; width: 100%; }
-        .btn-khata { background: #f59e0b; color: white; width: 100%; }
 
         /* MODAL */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
         .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 100%; max-width: 450px; }
         body.dark .modal-content { background: #1e293b; color: #fff; }
 
-        /* PRINT STYLES - TEMPLATES */
+        /* PRINT STYLES */
         #printSection { display: none; }
         @media print {
             body * { visibility: hidden; }
             #printSection, #printSection * { visibility: visible; }
-            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; padding: 10px; }
+            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; color: #000 !important; }
         }
 
-        /* --- Design Templates --- */
-        .tpl-abstract { border-top: 10px solid #3b82f6; padding: 20px; }
-        .tpl-thermal { width: 80mm; font-size: 12px; font-family: monospace; }
-        .tpl-elegant { border: 5px double #d4af37; padding: 25px; background: #fffaf0; }
-        .tpl-bakery { border: 2px dashed #8b4513; color: #5d4037; padding: 20px; background: #fffcf5; }
-        .tpl-corporate { border-bottom: 8px solid #1e293b; padding: 20px; }
-        .tpl-modern { border-left: 10px solid #10b981; padding: 20px; background: #f0fff4; }
-        .tpl-minimal { border: 1px solid #000; padding: 15px; }
-        .tpl-compact { font-size: 13px; line-height: 1.1; }
+        /* --- DESIGN TEMPLATE: PREMIUM ORANGE --- */
+        .tpl-premium-orange { padding: 0; font-family: 'Inter', sans-serif; background: #fff !important; }
+        .tpl-premium-orange .inv-header { background: #0f172a !important; color: #fff !important; padding: 40px; position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange .inv-header::after { content: ""; position: absolute; right: 0; top: 0; width: 40%; height: 100%; background: #f97316 !important; transform: skewX(-20deg) translateX(50%); z-index: 1; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange .header-content { position: relative; z-index: 2; }
+        .tpl-premium-orange .inv-body { padding: 40px; background: #fff; color: #333; }
+        .tpl-premium-orange .section-title { background: #f97316 !important; color: #fff !important; padding: 5px 12px; font-weight: 800; display: inline-block; margin-bottom: 8px; border-radius: 4px; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .tpl-premium-orange th { background: #f97316 !important; color: #fff !important; padding: 12px; text-align: left; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #000; }
+        .tpl-premium-orange .total-box { margin-top: 30px; text-align: right; background: #f8fafc !important; padding: 20px; border-radius: 12px; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange .grand-total { color: #f97316 !important; font-size: 32px; font-weight: 900; -webkit-print-color-adjust: exact; }
 
-        .inv-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .inv-table th { border-bottom: 2px solid #000; text-align: left; padding: 5px; color: #000; }
-        .inv-table td { border-bottom: 1px solid #eee; padding: 8px 5px; color: #000; }
-
-        @media(max-width: 768px){ 
-            .sidebar { display: none; } 
-            .content { margin-left: 0; padding: 20px; } 
-            .grid-inputs { grid-template-columns: 1fr 1fr; } 
-            .btn-add { grid-column: span 2; }
-        }
+        @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 20px; } }
     </style>
 </head>
 <body>
@@ -125,10 +106,8 @@
             <div class="profile-info"><h4>Surjya Bakery</h4><p>POS Terminal</p></div>
         </div>
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
             <li class="active"><i class="fa-solid fa-file-invoice"></i> Billing</li>
-            <li onclick="go('items.html')"><i class="fa-solid fa-cookie"></i> Items</li>
-            <li onclick="go('ledger.html')"><i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="window.location.href='ledger.html'"><i class="fa-solid fa-book"></i> Ledger</li>
             <li onclick="openSettings()"><i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
     </aside>
@@ -136,102 +115,63 @@
     <main class="content">
         <header class="top-header">
             <div style="display:flex; align-items:center; gap:15px;">
-                <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-arrow-left"></i></button>
-                <div>
-                    <h2 style="font-weight: 800; letter-spacing: -0.5px;">New Bill</h2>
-                    <p id="invMeta" style="color: #64748b; font-size: 11px; font-weight: 600;"></p>
-                </div>
+                <button class="back-btn" onclick="window.history.back()"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 style="font-weight: 800;">Billing</h2>
             </div>
-            <div class="header-actions">
-                <button class="set-btn" onclick="openSettings()" title="Settings"><i class="fa-solid fa-gear"></i></button>
-            </div>
+            <button class="set-btn" onclick="openSettings()"><i class="fa-solid fa-gear"></i></button>
         </header>
-
-        <div class="quick-tiles">
-            <div class="tile" onclick="quickAdd('Bread', 25)"><i class="fa-solid fa-bread-slice"></i><span>Bread</span></div>
-            <div class="tile" onclick="quickAdd('Cake 1Lb', 350)"><i class="fa-solid fa-cake-candles"></i><span>Cake</span></div>
-            <div class="tile" onclick="quickAdd('Cookies', 60)"><i class="fa-solid fa-cookie"></i><span>Cookies</span></div>
-            <div class="tile" onclick="quickAdd('Patties', 20)"><i class="fa-solid fa-hotdog"></i><span>Patties</span></div>
-            <div class="tile" onclick="quickAdd('Pastry', 45)"><i class="fa-solid fa-ice-cream"></i><span>Pastry</span></div>
-        </div>
 
         <div class="card">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <input id="custName" placeholder="Customer Name (Optional)">
+                <input id="custName" placeholder="Customer Name">
                 <input id="custPhone" type="tel" placeholder="Mobile Number">
             </div>
         </div>
 
         <div class="card">
-            <input id="iName" placeholder="🔍 Search Product..." list="inventoryList" style="margin-bottom: 12px; font-weight: 600;">
-            <datalist id="inventoryList"></datalist>
+            <input id="iName" placeholder="🔍 Search Product..." style="margin-bottom: 12px;">
             <div class="grid-inputs">
                 <input id="iQty" type="number" placeholder="Qty" value="1">
                 <input id="iPrice" type="number" placeholder="Price">
-                <input id="iDiscount" type="number" placeholder="Disc ₹">
-                <button class="btn btn-add" onclick="addItem()"><i class="fa-solid fa-plus"></i> ADD</button>
+                <button class="btn btn-add" onclick="addItem()">+ ADD</button>
             </div>
         </div>
 
-        <div class="card" style="padding: 10px; overflow-x: auto;">
+        <div class="card">
             <table>
-                <thead><tr><th>Item</th><th>Qty</th><th>Total</th><th style="width:50px;"></th></tr></thead>
+                <thead><tr><th>Item</th><th>Qty</th><th>Total</th><th style="width:40px;"></th></tr></thead>
                 <tbody id="cartTable"></tbody>
             </table>
         </div>
 
         <div style="max-width: 400px; margin-left: auto;">
-            <div class="card" style="background: #000; color: #fff;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; opacity: 0.7; font-size: 13px;">
-                    <span>Sub-total</span><span id="subTotal">₹0.00</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <span style="font-weight: 700; font-size: 18px;">Grand Total</span>
-                    <h2 id="grandTotal" style="color: #10b981; font-size: 26px;">₹0.00</h2>
-                </div>
+            <div class="card" style="background: #000; color: #fff; text-align: center;">
+                <p style="opacity: 0.7;">Grand Total</p>
+                <h2 id="grandTotal" style="color: #10b981; font-size: 32px;">₹0.00</h2>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <button class="btn btn-print" onclick="saveAndProcess('share')"><i class="fa-solid fa-print"></i> PRINT BILL</button>
-                <button class="btn btn-khata" onclick="saveAndProcess('khata')"><i class="fa-solid fa-clock"></i> KHATA</button>
-            </div>
+            <button class="btn btn-print" onclick="saveAndPrint()"><i class="fa-solid fa-print"></i> PRINT INVOICE</button>
         </div>
     </main>
 </div>
 
 <div id="settingsModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-bottom: 20px; font-weight: 800;">Store & Invoice Settings</h3>
+        <h3 style="margin-bottom: 20px;">Store Settings</h3>
         <input type="text" id="setStoreName" placeholder="Bakery Name" style="margin-bottom:10px;">
-        <input type="text" id="setStorePhone" placeholder="Phone" style="margin-bottom:10px;">
         <input type="text" id="setStoreAddress" placeholder="Address" style="margin-bottom:15px;">
         
-        <label style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Invoice Design</label>
+        <label style="font-size: 12px; font-weight: 700; color: #64748b;">INVOICE DESIGN</label>
         <select id="setInvTemplate" style="margin-top:5px; margin-bottom:20px;">
-            <option value="tpl-abstract">Abstract Blue (Modern)</option>
-            <option value="tpl-thermal">Thermal Roll (58/80mm)</option>
-            <option value="tpl-elegant">Elegant Gold (Classic)</option>
-            <option value="tpl-bakery">Vintage Bakery (Brown)</option>
-            <option value="tpl-corporate">Corporate Dark (Pro)</option>
-            <option value="tpl-modern">Modern Green (Fresh)</option>
-            <option value="tpl-minimal">Minimalist (Black & White)</option>
-            <option value="tpl-compact">Compact (Small Label)</option>
+            <option value="tpl-premium-orange">Premium Orange (Photo Style)</option>
+            <option value="tpl-standard">Standard Minimal</option>
         </select>
         
-        <button class="btn btn-add" style="width:100%;" onclick="saveSettings()">Save & Update</button>
+        <button class="btn btn-add" style="width:100%;" onclick="saveSettings()">Save & Close</button>
         <button class="btn" style="width:100%; margin-top:10px; background:transparent; color:#94a3b8;" onclick="closeSettings()">Cancel</button>
     </div>
 </div>
 
 <div id="printSection"></div>
-
-<div id="successModal" class="modal">
-    <div class="modal-content" style="text-align:center;">
-        <i class="fa-solid fa-circle-check" style="font-size:50px; color:#10b981; margin-bottom:15px;"></i>
-        <h2 id="successTitle">Saved!</h2>
-        <p style="opacity:0.6; margin-bottom:20px;">Bill has been processed successfully.</p>
-        <button class="btn btn-add" style="width:100%;" onclick="location.reload()">NEXT BILL</button>
-    </div>
-</div>
 
 <script>
     const firebaseConfig = {
@@ -244,139 +184,124 @@
     const db = firebase.firestore();
 
     let cart = [];
-    let invNo = "SB-" + Date.now().toString().slice(-6);
-    let storeData = { name: "Surjya Bakery", address: "Local Street", phone: "0000" };
-    let selectedTemplate = "tpl-abstract";
+    let invNo = "INV-" + Date.now().toString().slice(-6);
+    let storeData = { name: "Surjya Bakery", address: "Loading...", template: "tpl-premium-orange" };
 
-    window.onload = () => {
-        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
-        syncSettings();
-        syncInventory();
-        document.getElementById("invMeta").innerText = `INV: ${invNo} | ${new Date().toLocaleDateString('en-GB')}`;
+    // 1. Fetch current settings on load
+    window.onload = async () => {
+        const doc = await db.collection("settings").doc("admin").get();
+        if (doc.exists) {
+            storeData = doc.data();
+            document.getElementById("setStoreName").value = storeData.name || "";
+            document.getElementById("setStoreAddress").value = storeData.address || "";
+            document.getElementById("setInvTemplate").value = storeData.template || "tpl-premium-orange";
+        }
     };
-
-    function syncSettings() {
-        db.collection("settings").doc("admin").onSnapshot((doc) => {
-            if (doc.exists) {
-                storeData = doc.data();
-                selectedTemplate = storeData.template || "tpl-abstract";
-                document.getElementById("setStoreName").value = storeData.name || "";
-                document.getElementById("setStorePhone").value = storeData.phone || "";
-                document.getElementById("setStoreAddress").value = storeData.address || "";
-                document.getElementById("setInvTemplate").value = selectedTemplate;
-            }
-        });
-    }
-
-    async function saveSettings() {
-        await db.collection("settings").doc("admin").set({
-            name: document.getElementById("setStoreName").value,
-            phone: document.getElementById("setStorePhone").value,
-            address: document.getElementById("setStoreAddress").value,
-            template: document.getElementById("setInvTemplate").value
-        });
-        closeSettings();
-    }
-
-    function syncInventory() {
-        db.collection("inventory").onSnapshot(snap => {
-            const dl = document.getElementById("inventoryList");
-            dl.innerHTML = "";
-            snap.forEach(doc => {
-                let opt = document.createElement("option");
-                opt.value = doc.data().name;
-                dl.appendChild(opt);
-            });
-        });
-    }
-
-    function quickAdd(name, price) {
-        document.getElementById("iName").value = name;
-        document.getElementById("iPrice").value = price;
-        addItem();
-    }
 
     function addItem() {
         let name = document.getElementById("iName").value;
         let qty = parseFloat(document.getElementById("iQty").value) || 1;
         let price = parseFloat(document.getElementById("iPrice").value);
-        let disc = parseFloat(document.getElementById("iDiscount").value) || 0;
         if(!name || !price) return;
-        cart.push({ name, qty, price, disc, total: (qty * price) - disc });
+        cart.push({ name, qty, price, total: qty * price });
         renderCart();
-        document.getElementById("iName").value = ""; document.getElementById("iPrice").value = ""; document.getElementById("iDiscount").value = "";
+        document.getElementById("iName").value = "";
+        document.getElementById("iPrice").value = "";
     }
 
     function renderCart() {
         let html = ""; let total = 0;
         cart.forEach((item, i) => {
             total += item.total;
-            html += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total.toFixed(2)}</td><td onclick="cart.splice(${i},1);renderCart()"><i class="fa-solid fa-circle-xmark" style="color:#ef4444; cursor:pointer;"></i></td></tr>`;
+            html += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total.toFixed(2)}</td><td onclick="cart.splice(${i},1);renderCart()"><i class="fa-solid fa-xmark" style="color:red; cursor:pointer;"></i></td></tr>`;
         });
-        document.getElementById("subTotal").innerText = `₹${total.toFixed(2)}`;
         document.getElementById("grandTotal").innerText = `₹${total.toFixed(2)}`;
         document.getElementById("cartTable").innerHTML = html;
     }
 
-    async function saveAndProcess(type) {
-        if(cart.length === 0) return;
-        buildInvoice();
-        await db.collection("sales").add({
-            invoice: invNo, customer: document.getElementById("custName").value || "Guest", 
-            items: cart, total: document.getElementById("grandTotal").innerText,
-            date: new Date().toLocaleDateString('en-GB'),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        if(type === 'share') {
-            setTimeout(() => { window.print(); location.reload(); }, 500);
-        } else {
-            document.getElementById("successModal").style.display = "flex";
+    // 2. Fixed Save Settings (Won't delete PIN)
+    async function saveSettings() {
+        const newName = document.getElementById("setStoreName").value;
+        const newAddress = document.getElementById("setStoreAddress").value;
+        const newTemplate = document.getElementById("setInvTemplate").value;
+
+        try {
+            // Using .update() so only these 3 fields change, PIN remains safe
+            await db.collection("settings").doc("admin").update({
+                name: newName,
+                address: newAddress,
+                template: newTemplate
+            });
+            storeData.name = newName;
+            storeData.address = newAddress;
+            storeData.template = newTemplate;
+            alert("Settings updated!");
+            closeSettings();
+        } catch (e) {
+            console.error(e);
+            alert("Error updating settings.");
         }
     }
 
     function buildInvoice() {
-        const cName = document.getElementById("custName").value || "Guest";
-        const cPhone = document.getElementById("custPhone").value || "N/A";
+        const cName = document.getElementById("custName").value || "Guest Customer";
         const total = document.getElementById("grandTotal").innerText;
         const date = new Date().toLocaleDateString('en-GB');
-        const template = document.getElementById("setInvTemplate").value;
+        const template = storeData.template || "tpl-premium-orange";
 
         let rows = "";
         cart.forEach(item => {
-            rows += `<tr><td>${item.name}</td><td>${item.qty}</td><td>${item.price}</td><td align="right">${item.total.toFixed(2)}</td></tr>`;
+            rows += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.price.toFixed(2)}</td><td align="right">₹${item.total.toFixed(2)}</td></tr>`;
         });
 
         const printArea = document.getElementById("printSection");
         printArea.className = template;
         
         printArea.innerHTML = `
-            <div style="width:100%; color:#000;">
-                <div style="text-align:center; margin-bottom:15px;">
-                    <h2 style="margin:0; text-transform:uppercase;">${storeData.name}</h2>
-                    <p style="margin:5px 0; font-size:13px;">${storeData.address}<br>Mob: ${storeData.phone}</p>
+            <div class="inv-header">
+                <div class="header-content">
+                    <h1 style="font-size: 35px; margin:0;">INVOICE</h1>
+                    <p># ${invNo}</p>
                 </div>
-                <div style="display:flex; justify-content:space-between; border-top:1px solid #000; padding-top:10px; font-size:12px;">
-                    <div><b>Customer:</b> ${cName}<br><b>Phone:</b> ${cPhone}</div>
-                    <div style="text-align:right;"><b>Invoice:</b> #${invNo}<br><b>Date:</b> ${date}</div>
+                <div class="header-content" style="text-align: right;">
+                    <h2 style="margin:0;">${storeData.name}</h2>
+                    <p style="font-size:12px;">${storeData.address}</p>
                 </div>
-                <table class="inv-table">
-                    <thead><tr><th>Product</th><th>Qty</th><th>Rate</th><th align="right">Total</th></tr></thead>
+            </div>
+            <div class="inv-body">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <div>
+                        <span class="section-title">BILL TO</span>
+                        <h3 style="margin:0;">${cName}</h3>
+                        <p style="font-size:13px;">${document.getElementById("custPhone").value || ""}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="section-title">DATE</span>
+                        <h3 style="margin:0;">${date}</h3>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>DESCRIPTION</th><th>QTY</th><th>PRICE</th><th align="right">TOTAL</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
-                <div style="text-align:right; margin-top:15px;">
-                    <p style="margin:0; font-size:13px;">Amount Payable</p>
-                    <h2 style="margin:0; font-size:26px;">${total}</h2>
+                <div class="total-box">
+                    <p style="margin:0; font-size:14px;">Total Amount</p>
+                    <h1 class="grand-total">${total}</h1>
                 </div>
-                <div style="text-align:center; margin-top:25px; border-top:1px dashed #000; padding-top:10px; font-size:11px;">
-                    <p>Thank You! Visit Again</p>
-                    <small>Software by BillingBuddy</small>
+                <div style="text-align:center; margin-top:50px; color:#94a3b8; font-size:12px;">
+                    <p>Thank you for shopping at ${storeData.name}!</p>
                 </div>
             </div>`;
     }
 
+    function saveAndPrint() {
+        if(cart.length === 0) return alert("Cart is empty!");
+        buildInvoice();
+        setTimeout(() => { window.print(); location.reload(); }, 500);
+    }
+
     function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
     function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
-    function go(p) { window.location.href = p; }
 </script>
 </body>
 </html>
