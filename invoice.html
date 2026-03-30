@@ -185,18 +185,26 @@
 
     let cart = [];
     let invNo = "INV-" + Date.now().toString().slice(-6);
-    let storeData = { name: "Surjya Bakery", address: "Loading...", template: "tpl-premium-orange" };
+    // Default values taaki undefined na dikhe
+    let storeData = { name: "Surjya Bakery", address: "Kolkata, WB", template: "tpl-premium-orange" };
 
     // 1. Fetch current settings on load
-    window.onload = async () => {
-        const doc = await db.collection("settings").doc("admin").get();
-        if (doc.exists) {
-            storeData = doc.data();
-            document.getElementById("setStoreName").value = storeData.name || "";
-            document.getElementById("setStoreAddress").value = storeData.address || "";
-            document.getElementById("setInvTemplate").value = storeData.template || "tpl-premium-orange";
-        }
-    };
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const doc = await db.collection("settings").doc("admin").get();
+            if (doc.exists) {
+                const data = doc.data();
+                storeData.name = data.name || "Surjya Bakery";
+                storeData.address = data.address || "Kolkata, WB";
+                storeData.template = data.template || "tpl-premium-orange";
+                
+                // UI inputs update karein
+                document.getElementById("setStoreName").value = storeData.name;
+                document.getElementById("setStoreAddress").value = storeData.address;
+                document.getElementById("setInvTemplate").value = storeData.template;
+            }
+        } catch (err) { console.error("Data load failed:", err); }
+    });
 
     function addItem() {
         let name = document.getElementById("iName").value;
@@ -219,14 +227,12 @@
         document.getElementById("cartTable").innerHTML = html;
     }
 
-    // 2. Fixed Save Settings (Won't delete PIN)
     async function saveSettings() {
         const newName = document.getElementById("setStoreName").value;
         const newAddress = document.getElementById("setStoreAddress").value;
         const newTemplate = document.getElementById("setInvTemplate").value;
 
         try {
-            // Using .update() so only these 3 fields change, PIN remains safe
             await db.collection("settings").doc("admin").update({
                 name: newName,
                 address: newAddress,
@@ -237,16 +243,17 @@
             storeData.template = newTemplate;
             alert("Settings updated!");
             closeSettings();
-        } catch (e) {
-            console.error(e);
-            alert("Error updating settings.");
-        }
+        } catch (e) { alert("Error updating settings."); }
     }
 
     function buildInvoice() {
         const cName = document.getElementById("custName").value || "Guest Customer";
         const total = document.getElementById("grandTotal").innerText;
         const date = new Date().toLocaleDateString('en-GB');
+        
+        // Safety checks for undefined values
+        const sName = storeData.name || "Surjya Bakery";
+        const sAddr = storeData.address || "";
         const template = storeData.template || "tpl-premium-orange";
 
         let rows = "";
@@ -264,8 +271,8 @@
                     <p># ${invNo}</p>
                 </div>
                 <div class="header-content" style="text-align: right;">
-                    <h2 style="margin:0;">${storeData.name}</h2>
-                    <p style="font-size:12px;">${storeData.address}</p>
+                    <h2 style="margin:0;">${sName}</h2>
+                    <p style="font-size:12px;">${sAddr}</p>
                 </div>
             </div>
             <div class="inv-body">
@@ -289,7 +296,7 @@
                     <h1 class="grand-total">${total}</h1>
                 </div>
                 <div style="text-align:center; margin-top:50px; color:#94a3b8; font-size:12px;">
-                    <p>Thank you for shopping at ${storeData.name}!</p>
+                    <p>Thank you for shopping at ${sName}!</p>
                 </div>
             </div>`;
     }
