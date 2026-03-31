@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History - Surjya Bakery Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background: #f8fafc; color: #1e293b; padding: 20px; min-height: 100vh; }
+        .container { max-width: 1000px; margin: auto; }
+        
+        header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        .back-btn { background: #fff; border: 1px solid #e2e8f0; padding: 10px 18px; border-radius: 12px; cursor: pointer; text-decoration: none; color: #000; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .back-btn:hover { background: #f1f5f9; }
+
+        /* Stats Cards */
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #fff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .stat-card p { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card h3 { font-size: 24px; font-weight: 800; color: #0f172a; }
+
+        /* Table Card */
+        .card { background: #fff; border-radius: 24px; border: 1px solid #e2e8f0; padding: 10px; overflow: hidden; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05); }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        th { text-align: left; padding: 16px; color: #94a3b8; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; border-bottom: 1px solid #f1f5f9; }
+        td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
+        
+        /* Status Badges */
+        .status { padding: 5px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; display: inline-block; }
+        .paid { background: #dcfce7; color: #15803d; }
+        .due { background: #ffedd5; color: #c2410c; }
+        
+        /* Action Buttons */
+        .btn-action { background: #f8fafc; border: 1px solid #e2e8f0; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; transition: 0.2s; color: #64748b; }
+        .btn-delete:hover { background: #fee2e2; color: #ef4444; border-color: #fecdd3; }
+
+        @media(max-width: 768px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            body { padding: 15px; }
+            header h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div style="display: flex; align-items:center; gap: 15px;">
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <h2 style="font-weight: 800;">Sales History</h2>
+        </div>
+        <button class="back-btn" onclick="location.reload()"><i class="fa-solid fa-rotate"></i></button>
+    </header>
+
+    <div class="summary-grid">
+        <div class="stat-card"><p>Total Sales</p><h3 id="statTotal">₹0.00</h3></div>
+        <div class="stat-card"><p>Received</p><h3 id="statPaid" style="color: #10b981;">₹0.00</h3></div>
+        <div class="stat-card"><p>Total Due</p><h3 id="statDue" style="color: #f97316;">₹0.00</h3></div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Inv No</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Grand Total</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTable">
+                    <tr><td colspan="6" style="text-align:center; padding:50px; color:#94a3b8;">Fetching records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function loadSales() {
+        const salesTable = document.getElementById("salesTable");
+        try {
+            const snap = await db.collection("sales").get();
+            
+            if (snap.empty) {
+                salesTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px;">No sales found.</td></tr>`;
+                return;
+            }
+
+            // Latest Invoices ko sabse upar laane ke liye manual sorting
+            const sortedDocs = snap.docs.sort((a, b) => {
+                const t1 = a.data().timestamp ? a.data().timestamp.toMillis() : 0;
+                const t2 = b.data().timestamp ? b.data().timestamp.toMillis() : 0;
+                return t2 - t1;
+            });
+
+            let html = "";
+            let sumTotal = 0, sumPaid = 0, sumDue = 0;
+
+            sortedDocs.forEach(doc => {
+                const data = doc.data();
+
+                // NaN FIX: parseFloat aur isNaN use karke values pakki ki
+                let rawTotal = parseFloat(data.netTotal || data.total || 0);
+                if(isNaN(rawTotal)) rawTotal = 0;
+
+                let rawPaid = parseFloat(data.paid || 0);
+                if(isNaN(rawPaid)) rawPaid = 0;
+
+                let rawDue = parseFloat(data.due || 0);
+                if(isNaN(rawDue)) rawDue = 0;
+
+                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : (data.dateRaw || 'N/A');
+                
+                sumTotal += rawTotal;
+                sumPaid += rawPaid;
+                sumDue += rawDue;
+
+                const statusClass = rawDue > 1 ? "due" : "paid";
+                const statusText = rawDue > 1 ? "DUE" : "PAID";
+
+                html += `
+                    <tr>
+                        <td><span style="font-weight:700; color:#000;">#${data.invNo || '---'}</span></td>
+                        <td>${data.customer || 'Guest'}</td>
+                        <td style="color:#64748b; font-size:13px;">${dateStr}</td>
+                        <td style="font-weight:700;">₹${rawTotal.toFixed(2)}</td>
+                        <td><span class="status ${statusClass}">${statusText}</span></td>
+                        <td style="text-align: right;">
+                            <button class="btn-action btn-delete" onclick="deleteInv('${doc.id}', '${data.invNo}')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            salesTable.innerHTML = html;
+            document.getElementById("statTotal").innerText = `₹${sumTotal.toFixed(2)}`;
+            document.getElementById("statPaid").innerText = `₹${sumPaid.toFixed(2)}`;
+            document.getElementById("statDue").innerText = `₹${sumDue.toFixed(2)}`;
+
+        } catch (err) {
+            console.error(err);
+            salesTable.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">Error: Data load nahi ho paya.</td></tr>`;
+        }
+    }
+
+    async function deleteInv(id, num) {
+        if (confirm(`Invoice #${num} ko hamesha ke liye delete karein?`)) {
+            try {
+                await db.collection("sales").doc(id).delete();
+                loadSales(); // Table refresh
+            } catch (e) {
+                alert("Error deleting invoice.");
+            }
+        }
+    }
+
+    window.onload = loadSales;
+</script>
+
+</body>
+</html>
