@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <link rel="manifest" href="manifest.json">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Invoice History - Surjya Bakery</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial,sans-serif;
+        }
+
+        body{
+            background:#f8fafc;
+            color:#0f172a;
+            overflow-x:hidden;
+        }
+
+        img{
+            max-width:100%;
+        }
+
+        .app{
+            display:flex;
+            min-height:100vh;
+            width:100%;
+            overflow-x:hidden;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar{
+            width:260px;
+            background:#fff;
+            border-right:1px solid #e2e8f0;
+            padding:30px 20px;
+            position:fixed;
+            height:100%;
+            overflow-y:auto;
+        }
+
+        .profile{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            margin-bottom:40px;
+        }
+
+        .logo{
+            width:45px;
+            height:45px;
+            border-radius:12px;
+            object-fit:cover;
+        }
+
+        .menu{
+            list-style:none;
+        }
+
+        .menu li{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:14px 16px;
+            border-radius:14px;
+            margin-bottom:10px;
+            cursor:pointer;
+            color:#64748b;
+            font-size:14px;
+            font-weight:600;
+            transition:0.3s;
+        }
+
+        .menu li:hover{
+            background:#f1f5f9;
+        }
+
+        .menu li.active{
+            background:#000;
+            color:#fff;
+        }
+
+        /* MAIN CONTENT */
+
+        .content{
+            flex:1;
+            margin-left:260px;
+            padding:25px;
+            width:100%;
+            overflow-x:hidden;
+        }
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:15px;
+            margin-bottom:25px;
+            flex-wrap:wrap;
+        }
+
+        .left-top{
+            display:flex;
+            align-items:center;
+            gap:15px;
+        }
+
+        .back-btn{
+            width:45px;
+            height:45px;
+            border:none;
+            border-radius:14px;
+            background:#fff;
+            border:1px solid #e2e8f0;
+            cursor:pointer;
+            font-size:16px;
+        }
+
+        .page-title h2{
+            font-size:28px;
+            font-weight:800;
+        }
+
+        .page-title p{
+            color:#64748b;
+            font-size:14px;
+            margin-top:4px;
+        }
+
+        .search-box{
+            background:#fff;
+            padding:14px 16px;
+            border-radius:14px;
+            border:1px solid #e2e8f0;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            width:320px;
+            max-width:100%;
+        }
+
+        .search-box input{
+            border:none;
+            outline:none;
+            width:100%;
+            background:transparent;
+            font-size:14px;
+        }
+
+        /* STATS */
+
+        .stats-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:18px;
+            margin-bottom:22px;
+        }
+
+        .stat-card{
+            background:#fff;
+            border-radius:22px;
+            padding:22px;
+            border:1px solid #e2e8f0;
+        }
+
+        .stat-card p{
+            color:#64748b;
+            font-size:13px;
+            margin-bottom:8px;
+            font-weight:600;
+        }
+
+        .stat-card h2{
+            font-size:30px;
+            font-weight:800;
+        }
+
+        /* TABLE */
+
+        .history-card{
+            background:#fff;
+            border-radius:24px;
+            border:1px solid #e2e8f0;
+            overflow:hidden;
+            width:100%;
+        }
+
+        .table-head{
+            padding:22px;
+            border-bottom:1px solid #f1f5f9;
+        }
+
+        .table-head h3{
+            font-size:18px;
+            font-weight:800;
+        }
+
+        .table-wrapper{
+            width:100%;
+            overflow-x:auto;
+            -webkit-overflow-scrolling:touch;
+        }
+
+        table{
+            width:100%;
+            min-width:700px;
+            border-collapse:collapse;
+        }
+
+        th{
+            text-align:left;
+            padding:16px;
+            background:#f8fafc;
+            color:#64748b;
+            font-size:12px;
+            text-transform:uppercase;
+        }
+
+        td{
+            padding:16px;
+            border-top:1px solid #f1f5f9;
+            font-size:14px;
+            vertical-align:top;
+        }
+
+        .invoice-id{
+            font-weight:800;
+        }
+
+        .customer{
+            font-weight:700;
+        }
+
+        .phone{
+            font-size:12px;
+            color:#64748b;
+            margin-top:4px;
+        }
+
+        .amount{
+            font-size:16px;
+            font-weight:800;
+            color:#10b981;
+        }
+
+        .badge{
+            padding:7px 12px;
+            border-radius:999px;
+            font-size:12px;
+            font-weight:700;
+            display:inline-block;
+        }
+
+        .paid{
+            background:#dcfce7;
+            color:#166534;
+        }
+
+        .due{
+            background:#fef3c7;
+            color:#92400e;
+        }
+
+        .action-btn{
+            border:none;
+            background:#000;
+            color:#fff;
+            padding:10px 14px;
+            border-radius:12px;
+            cursor:pointer;
+            font-size:13px;
+            font-weight:700;
+        }
+
+        .empty{
+            text-align:center;
+            padding:60px 20px;
+            color:#64748b;
+        }
+
+        .empty i{
+            font-size:55px;
+            margin-bottom:15px;
+            opacity:0.3;
+        }
+
+        /* MOBILE */
+
+        @media(max-width:768px){
+
+            .sidebar{
+                display:none;
+            }
+
+            .content{
+                margin-left:0;
+                padding:12px;
+            }
+
+            .topbar{
+                flex-direction:column;
+                align-items:flex-start;
+            }
+
+            .left-top{
+                width:100%;
+            }
+
+            .page-title h2{
+                font-size:22px;
+            }
+
+            .page-title p{
+                font-size:12px;
+            }
+
+            .search-box{
+                width:100%;
+            }
+
+            .stats-grid{
+                grid-template-columns:1fr;
+            }
+
+            table{
+                min-width:650px;
+            }
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+
+            <div>
+                <h4 id="storeName">Surjya Bakery</h4>
+                <p style="font-size:11px;color:#64748b;">POS System</p>
+            </div>
+        </div>
+
+        <ul class="menu">
+
+            <li onclick="window.location.href='dashboard.html'">
+                <i class="fa-solid fa-chart-line"></i>
+                Dashboard
+            </li>
+
+            <li onclick="window.location.href='invoice.html'">
+                <i class="fa-solid fa-file-invoice"></i>
+                Billing
+            </li>
+
+            <li class="active">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Invoice History
+            </li>
+
+            <li onclick="window.location.href='ledger.html'">
+                <i class="fa-solid fa-book"></i>
+                Ledger
+            </li>
+
+        </ul>
+
+    </aside>
+
+    <!-- CONTENT -->
+
+    <main class="content">
+
+        <div class="topbar">
+
+            <div class="left-top">
+
+                <button class="back-btn" onclick="window.location.href='dashboard.html'">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+
+                <div class="page-title">
+                    <h2>Invoice History</h2>
+                    <p>All created invoices appear here</p>
+                </div>
+
+            </div>
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search invoice or customer"
+                    onkeyup="filterInvoices()"
+                >
+            </div>
+
+        </div>
+
+        <!-- STATS -->
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <p>Total Invoices</p>
+                <h2 id="totalInvoices">0</h2>
+            </div>
+
+            <div class="stat-card">
+                <p>Total Sales</p>
+                <h2 id="totalSales">₹0</h2>
+            </div>
+
+            <div class="stat-card">
+                <p>Pending Due</p>
+                <h2 id="totalDue">₹0</h2>
+            </div>
+
+        </div>
+
+        <!-- TABLE -->
+
+        <div class="history-card">
+
+            <div class="table-head">
+                <h3>Recent Invoices</h3>
+            </div>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="invoiceTable"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+<script>
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+    authDomain: "billingbuddy-551f9.firebaseapp.com",
+    projectId: "billingbuddy-551f9",
+    appId: "1:287026017084:web:aae879570ad706e5a2a439"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.firestore();
+
+let allInvoices = [];
+
+window.onload = async () => {
+
+    loadStore();
+    loadInvoices();
+
+};
+
+async function loadStore(){
+
+    const doc = await db.collection("settings").doc("admin").get();
+
+    if(doc.exists){
+
+        const data = doc.data();
+
+        document.getElementById("storeName").innerText =
+        data.name || "Surjya Bakery";
+    }
+}
+
+async function loadInvoices(){
+
+    const snapshot = await db.collection("sales")
+    .orderBy("createdAt","desc")
+    .get();
+
+    let html = "";
+
+    let totalSales = 0;
+    let totalDue = 0;
+
+    allInvoices = [];
+
+    if(snapshot.empty){
+
+        document.getElementById("invoiceTable").innerHTML = `
+
+            <tr>
+                <td colspan="6">
+
+                    <div class="empty">
+
+                        <i class="fa-solid fa-file-circle-xmark"></i>
+
+                        <h3>No Invoice Found</h3>
+
+                        <p>Create invoice first</p>
+
+                    </div>
+
+                </td>
+            </tr>
+
+        `;
+
+        return;
+    }
+
+    snapshot.forEach(doc => {
+
+        const data = doc.data();
+
+        allInvoices.push({id:doc.id,...data});
+
+        const amount = data.finalTotal || 0;
+
+        const due = data.due || 0;
+
+        totalSales += amount;
+        totalDue += due;
+
+        html += `
+
+            <tr>
+
+                <td>
+                    <div class="invoice-id">
+                        ${data.invoiceNo || 'N/A'}
+                    </div>
+                </td>
+
+                <td>
+
+                    <div class="customer">
+                        ${data.customerName || 'Walk-in Customer'}
+                    </div>
+
+                    <div class="phone">
+                        ${data.customerPhone || '-'}
+                    </div>
+
+                </td>
+
+                <td>
+                    ${data.date || '-'}
+                </td>
+
+                <td>
+                    <div class="amount">
+                        ₹${amount.toFixed(2)}
+                    </div>
+                </td>
+
+                <td>
+
+                    <span class="badge ${due > 0 ? 'due':'paid'}">
+
+                        ${due > 0 ? 'Due':'Paid'}
+
+                    </span>
+
+                </td>
+
+                <td>
+
+                    <button
+                        class="action-btn"
+                        onclick="viewInvoice('${doc.id}')"
+                    >
+
+                        <i class="fa-solid fa-eye"></i>
+
+                        View
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `;
+    });
+
+    document.getElementById("invoiceTable").innerHTML = html;
+
+    document.getElementById("totalInvoices").innerText =
+    snapshot.size;
+
+    document.getElementById("totalSales").innerText =
+    `₹${totalSales.toFixed(0)}`;
+
+    document.getElementById("totalDue").innerText =
+    `₹${totalDue.toFixed(0)}`;
+}
+
+function filterInvoices(){
+
+    const keyword =
+    document.getElementById("searchInput")
+    .value
+    .toLowerCase();
+
+    const filtered = allInvoices.filter(inv =>
+
+        (inv.invoiceNo || '')
+        .toLowerCase()
+        .includes(keyword)
+
+        ||
+
+        (inv.customerName || '')
+        .toLowerCase()
+        .includes(keyword)
+
+        ||
+
+        (inv.customerPhone || '')
+        .toLowerCase()
+        .includes(keyword)
+
+    );
+
+    let html = "";
+
+    if(filtered.length === 0){
+
+        html = `
+
+            <tr>
+
+                <td colspan="6">
+
+                    <div class="empty">
+                        <h3>No Matching Invoice</h3>
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `;
+    }
+
+    filtered.forEach(data => {
+
+        const amount = data.finalTotal || 0;
+
+        const due = data.due || 0;
+
+        html += `
+
+            <tr>
+
+                <td>
+                    <div class="invoice-id">
+                        ${data.invoiceNo || 'N/A'}
+                    </div>
+                </td>
+
+                <td>
+
+                    <div class="customer">
+                        ${data.customerName || 'Walk-in Customer'}
+                    </div>
+
+                    <div class="phone">
+                        ${data.customerPhone || '-'}
+                    </div>
+
+                </td>
+
+                <td>${data.date || '-'}</td>
+
+                <td>
+
+                    <div class="amount">
+                        ₹${amount.toFixed(2)}
+                    </div>
+
+                </td>
+
+                <td>
+
+                    <span class="badge ${due > 0 ? 'due':'paid'}">
+
+                        ${due > 0 ? 'Due':'Paid'}
+
+                    </span>
+
+                </td>
+
+                <td>
+
+                    <button
+                        class="action-btn"
+                        onclick="viewInvoice('${data.id}')"
+                    >
+
+                        <i class="fa-solid fa-eye"></i>
+
+                        View
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `;
+    });
+
+    document.getElementById("invoiceTable").innerHTML = html;
+}
+
+async function viewInvoice(id){
+
+    alert("View invoice function working");
+
+}
+
+</script>
+
+</body>
+</html>
