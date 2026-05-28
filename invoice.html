@@ -26,7 +26,7 @@
         /* Content */
         .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
         
-        /* Updated Top Header with Back Btn */
+        /* Top Header */
         .top-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; gap: 15px; }
         .header-left { display: flex; align-items: center; gap: 15px; }
         .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #1e293b; transition: 0.2s; }
@@ -35,7 +35,8 @@
         .card { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
         
         .grid-inputs { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; }
-        input { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; width: 100%; font-size: 14px; outline: none; }
+        input { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; width: 100%; font-size: 14px; outline: none; transition: 0.2s; }
+        input:focus { border-color: #000; background: #fff; }
         
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 12px; color: #94a3b8; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
@@ -43,27 +44,30 @@
 
         .btn { padding: 14px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
         .btn-add { background: #000; color: white; }
+        .btn-add:hover { background: #1e293b; }
         .btn-print { background: #10b981; color: white; width: 100%; font-size: 16px; }
+        .btn-print:hover { background: #059669; }
 
         /* Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-content { background: #fff; padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; }
 
-        /* Print Section Styles */
+        /* Print Section Styles Fixes */
         #printSection { display: none; }
         @media print {
             body * { visibility: hidden; }
             #printSection, #printSection * { visibility: visible; }
-            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
+            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff; color: #000; }
+            .tpl-premium-orange th { background: #f97316 !important; color: white !important; padding: 10px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .tpl-premium-orange td { padding: 10px !important; border-bottom: 1px solid #e2e8f0 !important; }
         }
 
-        .tpl-premium-orange .inv-header { background: #0f172a !important; color: #fff !important; padding: 40px; display: flex; justify-content: space-between; align-items: center; position: relative; -webkit-print-color-adjust: exact; }
-        .tpl-premium-orange .inv-header::after { content: ""; position: absolute; right: 0; top: 0; width: 35%; height: 100%; background: #f97316 !important; transform: skewX(-15deg) translateX(50%); -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange .inv-header { background: #0f172a !important; color: #fff !important; padding: 40px; display: flex; justify-content: space-between; align-items: center; position: relative; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .tpl-premium-orange .inv-header::after { content: ""; position: absolute; right: 0; top: 0; width: 35%; height: 100%; background: #f97316 !important; transform: skewX(-15deg) translateX(50%); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .tpl-premium-orange .inv-body { padding: 40px; }
-        .tpl-premium-orange .section-title { background: #f97316 !important; color: #fff !important; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 800; -webkit-print-color-adjust: exact; }
-        .tpl-premium-orange th { background: #f97316 !important; color: white !important; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange .section-title { background: #f97316 !important; color: #fff !important; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 800; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .tpl-premium-orange .total-row { display: flex; justify-content: flex-end; margin-top: 20px; text-align: right; }
-        .tpl-premium-orange .grand-total { color: #f97316 !important; font-size: 28px; font-weight: 900; -webkit-print-color-adjust: exact; }
+        .tpl-premium-orange .grand-total { color: #f97316 !important; font-size: 28px; font-weight: 900; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
         @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 15px; } }
     </style>
@@ -85,17 +89,16 @@
 
     <main class="content">
         <header class="top-header">
-    <div class="header-left">
-        <button class="back-btn" onclick="window.location.href='dashboard.html'">
-            <i class="fa-solid fa-arrow-left"></i>
-        </button>
-        <h2 style="font-weight: 800;">New Sale</h2>
-    </div>
-    <button class="btn" style="background:#fff; border:1px solid #ddd; padding: 10px 15px;" onclick="openSettings()">
-        <i class="fa-solid fa-gear"></i>
-    </button>
-</header>
-
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='dashboard.html'">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <h2 style="font-weight: 800;">New Sale</h2>
+            </div>
+            <button class="btn" style="background:#fff; border:1px solid #ddd; padding: 10px 15px;" onclick="openSettings()">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </header>
 
         <div class="card">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -175,37 +178,51 @@
     let storeData = { name: "Surjya Bakery", address: "Tripura (N)", template: "tpl-premium-orange" };
 
     window.onload = async () => {
-        const doc = await db.collection("settings").doc("admin").get();
-        if (doc.exists) {
-            storeData = doc.data();
-            document.getElementById("sideStoreName").innerText = storeData.name;
-            document.getElementById("setStoreName").value = storeData.name;
-            document.getElementById("setStoreAddress").value = storeData.address;
+        try {
+            const doc = await db.collection("settings").doc("admin").get();
+            if (doc.exists) {
+                storeData = doc.data();
+                document.getElementById("sideStoreName").innerText = storeData.name;
+                document.getElementById("setStoreName").value = storeData.name;
+                document.getElementById("setStoreAddress").value = storeData.address;
+            }
+            await generateInvNo();
+        } catch (e) {
+            console.error("Initialization error:", e);
         }
-        generateInvNo();
     };
 
+    // Index safe dynamic unique ID generation method
     async function generateInvNo() {
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const snap = await db.collection("sales").where("dateRaw", "==", today).get();
-        currentInvNo = today + "-" + String(snap.size + 1).padStart(3, '0');
+        const d = new Date();
+        const today = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+        const rand = Math.floor(100 + Math.random() * 900); // Prevents failing on missing indexes
+        currentInvNo = `${today}-${rand}`;
     }
 
     function addItem() {
-        let name = document.getElementById("iName").value;
+        let name = document.getElementById("iName").value.trim();
         let qty = parseFloat(document.getElementById("iQty").value) || 1;
         let price = parseFloat(document.getElementById("iPrice").value);
         if(!name || !price) return;
+        
         cart.push({ name, qty, price, total: qty * price });
         renderCart();
+        
         document.getElementById("iName").value = "";
         document.getElementById("iPrice").value = "";
+        document.getElementById("iQty").value = "1";
     }
 
     function renderCart() {
         let html = "";
         cart.forEach((item, i) => {
-            html += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.total.toFixed(2)}</td><td onclick="cart.splice(${i},1);renderCart()"><i class="fa-solid fa-trash" style="color:#f87171; cursor:pointer;"></i></td></tr>`;
+            html += `<tr>
+                <td>${item.name}</td>
+                <td>${item.qty}</td>
+                <td>₹${item.total.toFixed(2)}</td>
+                <td><i class="fa-solid fa-trash" style="color:#f87171; cursor:pointer;" onclick="cart.splice(${i},1);renderCart()"></i></td>
+            </tr>`;
         });
         document.getElementById("cartTable").innerHTML = html;
         calcTotals();
@@ -241,7 +258,12 @@
         
         let rows = "";
         cart.forEach(item => {
-            rows += `<tr><td>${item.name}</td><td>${item.qty}</td><td>₹${item.price.toFixed(2)}</td><td align="right">₹${item.total.toFixed(2)}</td></tr>`;
+            rows += `<tr>
+                <td style="padding:10px; border-bottom:1px solid #e2e8f0;">${item.name}</td>
+                <td style="padding:10px; border-bottom:1px solid #e2e8f0;" align="center">${item.qty}</td>
+                <td style="padding:10px; border-bottom:1px solid #e2e8f0;">₹${item.price.toFixed(2)}</td>
+                <td style="padding:10px; border-bottom:1px solid #e2e8f0;" align="right">₹${item.total.toFixed(2)}</td>
+            </tr>`;
         });
 
         const printArea = document.getElementById("printSection");
@@ -250,29 +272,29 @@
             <div class="inv-header">
                 <div style="display:flex; align-items:center; gap:15px; position:relative; z-index:2;">
                     <img src="${document.getElementById("storeLogo").src}" style="width:60px; height:60px; background:#fff; border-radius:10px; padding:5px;">
-                    <div><h1 style="margin:0;">INVOICE</h1><p># ${currentInvNo}</p></div>
+                    <div><h1 style="margin:0; color:#fff;">INVOICE</h1><p style="color:#cbd5e1;"># ${currentInvNo}</p></div>
                 </div>
                 <div style="text-align:right; position:relative; z-index:2;">
-                    <h2 style="margin:0;">${storeData.name}</h2>
-                    <p style="font-size:11px;">${storeData.address}</p>
+                    <h2 style="margin:0; color:#fff;">${storeData.name}</h2>
+                    <p style="font-size:11px; color:#cbd5e1;">${storeData.address}</p>
                 </div>
             </div>
             <div class="inv-body">
                 <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
-                    <div><span class="section-title">BILL TO</span><h3>${document.getElementById("custName").value || 'Guest'}</h3><p>${document.getElementById("custPhone").value || ''}</p></div>
-                    <div style="text-align:right;"><span class="section-title">DATE</span><h3>${new Date().toLocaleDateString('en-GB')}</h3></div>
+                    <div><span class="section-title">BILL TO</span><h3 style="margin-top:5px;">${document.getElementById("custName").value || 'Guest'}</h3><p>${document.getElementById("custPhone").value || ''}</p></div>
+                    <div style="text-align:right;"><span class="section-title">DATE</span><h3 style="margin-top:5px;">${new Date().toLocaleDateString('en-GB')}</h3></div>
                 </div>
                 <table style="width:100%; border-collapse:collapse;">
-                    <thead><tr><th style="padding:10px; text-align:left;">ITEM</th><th>QTY</th><th>PRICE</th><th align="right">TOTAL</th></tr></thead>
+                    <thead><tr style="background:#f97316; color:#fff;"><th style="padding:10px; text-align:left; color:#fff;">ITEM</th><th style="color:#fff;" align="center">QTY</th><th style="color:#fff;">PRICE</th><th style="color:#fff;" align="right">TOTAL</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
                 <div class="total-row">
-                    <div style="width:230px;">
+                    <div style="width:250px; font-size:14px; line-height:1.6;">
                         <p>Items Total: ₹${subtotal.toFixed(2)}</p>
-                        ${discount > 0 ? `<p style="color:red;">Discount: -₹${discount.toFixed(2)}</p>` : ''}
+                        ${discount > 0 ? `<p style="color:#ef4444;">Discount: -₹${discount.toFixed(2)}</p>` : ''}
                         ${oldDue > 0 ? `<p style="color:#b45309;">Old Due: +₹${oldDue.toFixed(2)}</p>` : ''}
-                        <h1 class="grand-total">₹${finalTotal.toFixed(2)}</h1>
-                        <hr style="margin:10px 0;">
+                        <h1 class="grand-total" style="margin:10px 0;">₹${finalTotal.toFixed(2)}</h1>
+                        <hr style="margin:10px 0; border:0; border-top:1px solid #e2e8f0;">
                         <p>Paid: ₹${paid.toFixed(2)}</p>
                         <p style="font-weight:bold; font-size:16px; color:${currentDue > 0 ? '#f97316' : '#10b981'};">
                             ${currentDue > 0 ? `Net Due: ₹${currentDue.toFixed(2)}` : 'Balance Cleared'}
@@ -290,26 +312,38 @@
         const oldDue = parseFloat(document.getElementById("payOldDue").value) || 0;
         const discount = parseFloat(document.getElementById("payReturn").value) || 0;
         const paid = parseFloat(document.getElementById("payPaid").value) || 0;
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        
+        const d = new Date();
+        const today = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
 
-        await db.collection("sales").add({
-            invNo: currentInvNo,
-            customer: document.getElementById("custName").value,
-            itemsTotal: subtotal,
-            oldDue: oldDue,
-            discount: discount,
-            netTotal: (subtotal - discount) + oldDue,
-            paid: paid,
-            due: ((subtotal - discount) + oldDue) - paid,
-            dateRaw: today,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        try {
+            await db.collection("sales").add({
+                invNo: currentInvNo,
+                customer: document.getElementById("custName").value || 'Guest',
+                customerPhone: document.getElementById("custPhone").value || '',
+                itemsTotal: subtotal,
+                oldDue: oldDue,
+                discount: discount,
+                netTotal: (subtotal - discount) + oldDue,
+                paid: paid,
+                due: ((subtotal - discount) + oldDue) - paid,
+                dateRaw: today,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-        setTimeout(() => { window.print(); location.reload(); }, 500);
+            setTimeout(() => { 
+                window.print(); 
+                location.reload(); 
+            }, 500);
+        } catch (error) {
+            console.error("Error saving sale: ", error);
+            alert("Database Error! Resetting invoice format.");
+        }
     }
 
     function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
     function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
+    
     async function saveSettings() {
         const n = document.getElementById("setStoreName").value;
         const a = document.getElementById("setStoreAddress").value;
