@@ -110,15 +110,15 @@
         <div class="card">
             <input id="iName" placeholder="🔍 Search or Enter Product Name" style="margin-bottom: 12px;">
             <div class="grid-inputs">
-                <input id="iQty" type="number" placeholder="Qty" value="1">
-                <input id="iPrice" type="number" placeholder="Price">
+                <input id="iQty" type="number" placeholder="Qty" value="1" min="0.1" step="any">
+                <input id="iPrice" type="number" placeholder="Price" min="0" step="any">
                 <button class="btn btn-add" onclick="addItem()">ADD</button>
             </div>
         </div>
 
         <div class="card" style="padding:0; overflow:hidden;">
             <table>
-                <thead><tr><th>Item</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+                <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
                 <tbody id="cartTable"></tbody>
             </table>
         </div>
@@ -127,15 +127,15 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                 <div>
                     <label style="font-size: 11px; font-weight: 700; color: #64748b;">OLD DUE / BALANCE (+)</label>
-                    <input id="payOldDue" type="number" placeholder="₹ 0.00" oninput="calcTotals()" style="margin-top:5px; background: #fffbeb; border-color: #fde68a;">
+                    <input id="payOldDue" type="number" placeholder="₹ 0.00" oninput="calcTotals()" min="0" step="any" style="margin-top:5px; background: #fffbeb; border-color: #fde68a;">
                 </div>
                 <div>
                     <label style="font-size: 11px; font-weight: 700; color: #64748b;">RETURN / DISCOUNT (-)</label>
-                    <input id="payReturn" type="number" placeholder="₹ 0.00" oninput="calcTotals()" style="margin-top:5px; background: #fff1f2; border-color: #fecdd3;">
+                    <input id="payReturn" type="number" placeholder="₹ 0.00" oninput="calcTotals()" min="0" step="any" style="margin-top:5px; background: #fff1f2; border-color: #fecdd3;">
                 </div>
                 <div>
                     <label style="font-size: 11px; font-weight: 700; color: #64748b;">PAID BY CUSTOMER</label>
-                    <input id="payPaid" type="number" placeholder="₹ 0.00" oninput="calcTotals()" style="margin-top:5px; background: #f0fdf4; border-color: #bbf7d0;">
+                    <input id="payPaid" type="number" placeholder="₹ 0.00" oninput="calcTotals()" min="0" step="any" style="margin-top:5px; background: #f0fdf4; border-color: #bbf7d0;">
                 </div>
             </div>
         </div>
@@ -182,29 +182,32 @@
             const doc = await db.collection("settings").doc("admin").get();
             if (doc.exists) {
                 storeData = doc.data();
-                document.getElementById("sideStoreName").innerText = storeData.name;
-                document.getElementById("setStoreName").value = storeData.name;
-                document.getElementById("setStoreAddress").value = storeData.address;
+                document.getElementById("sideStoreName").innerText = storeData.name || "Surjya Bakery";
+                document.getElementById("setStoreName").value = storeData.name || "";
+                document.getElementById("setStoreAddress").value = storeData.address || "";
             }
-            await generateInvNo();
+            generateInvNo();
         } catch (e) {
             console.error("Initialization error:", e);
         }
     };
 
-    // Index safe dynamic unique ID generation method
-    async function generateInvNo() {
+    function generateInvNo() {
         const d = new Date();
         const today = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
-        const rand = Math.floor(100 + Math.random() * 900); // Prevents failing on missing indexes
+        const rand = Math.floor(1000 + Math.random() * 9000); 
         currentInvNo = `${today}-${rand}`;
     }
 
+    // Fix 2: Multiplier and quantity sanitization protection engine
     function addItem() {
         let name = document.getElementById("iName").value.trim();
-        let qty = parseFloat(document.getElementById("iQty").value) || 1;
+        let qty = parseFloat(document.getElementById("iQty").value);
         let price = parseFloat(document.getElementById("iPrice").value);
-        if(!name || !price) return;
+        
+        if(!name) return alert("Please enter a valid product name.");
+        if(isNaN(qty) || qty <= 0) return alert("Quantity must be greater than 0.");
+        if(isNaN(price) || price < 0) return alert("Price cannot be a negative value.");
         
         cart.push({ name, qty, price, total: qty * price });
         renderCart();
@@ -212,39 +215,46 @@
         document.getElementById("iName").value = "";
         document.getElementById("iPrice").value = "";
         document.getElementById("iQty").value = "1";
+        document.getElementById("iName").focus();
     }
 
     function renderCart() {
         let html = "";
         cart.forEach((item, i) => {
             html += `<tr>
-                <td>${item.name}</td>
+                <td><strong>${item.name}</strong></td>
                 <td>${item.qty}</td>
+                <td>₹${item.price.toFixed(2)}</td>
                 <td>₹${item.total.toFixed(2)}</td>
-                <td><i class="fa-solid fa-trash" style="color:#f87171; cursor:pointer;" onclick="cart.splice(${i},1);renderCart()"></i></td>
+                <td align="right"><i class="fa-solid fa-trash" style="color:#f87171; cursor:pointer;" onclick="cart.splice(${i},1);renderCart()"></i></td>
             </tr>`;
         });
         document.getElementById("cartTable").innerHTML = html;
         calcTotals();
     }
 
+    // Fix 1: Form structure NaN fallback evaluation filters
     function calcTotals() {
         let subtotal = cart.reduce((sum, item) => sum + item.total, 0);
         let oldDue = parseFloat(document.getElementById("payOldDue").value) || 0;
         let discount = parseFloat(document.getElementById("payReturn").value) || 0;
         let paid = parseFloat(document.getElementById("payPaid").value) || 0;
         
-        let finalTotal = (subtotal - discount) + oldDue;
+        let finalTotal = Math.max(0, (subtotal - discount) + oldDue);
         let currentDue = finalTotal - paid;
 
         document.getElementById("grandTotal").innerText = `₹${finalTotal.toFixed(2)}`;
         
+        const dueLabel = document.getElementById("dueLabel");
         if (currentDue > 0) {
-            document.getElementById("dueLabel").innerText = `Net Balance Due: ₹${currentDue.toFixed(2)}`;
+            dueLabel.innerText = `Net Balance Due: ₹${currentDue.toFixed(2)}`;
+            dueLabel.style.color = "#fb923c";
         } else if (currentDue < 0) {
-            document.getElementById("dueLabel").innerText = `Change to Return: ₹${Math.abs(currentDue).toFixed(2)}`;
+            dueLabel.innerText = `Change to Return: ₹${Math.abs(currentDue).toFixed(2)}`;
+            dueLabel.style.color = "#10b981";
         } else {
-            document.getElementById("dueLabel").innerText = "Full Paid";
+            dueLabel.innerText = "Full Paid";
+            dueLabel.style.color = "#10b981";
         }
     }
 
@@ -253,7 +263,7 @@
         const oldDue = parseFloat(document.getElementById("payOldDue").value) || 0;
         const discount = parseFloat(document.getElementById("payReturn").value) || 0;
         const paid = parseFloat(document.getElementById("payPaid").value) || 0;
-        const finalTotal = (subtotal - discount) + oldDue;
+        const finalTotal = Math.max(0, (subtotal - discount) + oldDue);
         const currentDue = finalTotal - paid;
         
         let rows = "";
@@ -281,7 +291,7 @@
             </div>
             <div class="inv-body">
                 <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
-                    <div><span class="section-title">BILL TO</span><h3 style="margin-top:5px;">${document.getElementById("custName").value || 'Guest'}</h3><p>${document.getElementById("custPhone").value || ''}</p></div>
+                    <div><span class="section-title">BILL TO</span><h3 style="margin-top:5px;">${document.getElementById("custName").value.trim() || 'Guest Customer'}</h3><p>${document.getElementById("custPhone").value.trim() || ''}</p></div>
                     <div style="text-align:right;"><span class="section-title">DATE</span><h3 style="margin-top:5px;">${new Date().toLocaleDateString('en-GB')}</h3></div>
                 </div>
                 <table style="width:100%; border-collapse:collapse;">
@@ -305,13 +315,14 @@
     }
 
     async function saveAndPrint() {
-        if (cart.length === 0) return alert("Cart is empty!");
+        if (cart.length === 0) return alert("Cart is empty! Add items before printing.");
         buildInvoice();
         
         const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
         const oldDue = parseFloat(document.getElementById("payOldDue").value) || 0;
         const discount = parseFloat(document.getElementById("payReturn").value) || 0;
         const paid = parseFloat(document.getElementById("payPaid").value) || 0;
+        const finalTotal = Math.max(0, (subtotal - discount) + oldDue);
         
         const d = new Date();
         const today = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
@@ -319,14 +330,15 @@
         try {
             await db.collection("sales").add({
                 invNo: currentInvNo,
-                customer: document.getElementById("custName").value || 'Guest',
-                customerPhone: document.getElementById("custPhone").value || '',
+                customer: document.getElementById("custName").value.trim() || 'Guest Customer',
+                customerPhone: document.getElementById("custPhone").value.trim() || '',
                 itemsTotal: subtotal,
                 oldDue: oldDue,
                 discount: discount,
-                netTotal: (subtotal - discount) + oldDue,
+                netTotal: finalTotal,
                 paid: paid,
-                due: ((subtotal - discount) + oldDue) - paid,
+                due: finalTotal - paid,
+                cart: cart,
                 dateRaw: today,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -337,18 +349,30 @@
             }, 500);
         } catch (error) {
             console.error("Error saving sale: ", error);
-            alert("Database Error! Resetting invoice format.");
+            alert("Database write failed. Invoice printing locked for protection.");
         }
     }
 
     function openSettings() { document.getElementById("settingsModal").style.display = "flex"; }
     function closeSettings() { document.getElementById("settingsModal").style.display = "none"; }
     
+    // Fix 3: Set document initialization block upgrade
     async function saveSettings() {
-        const n = document.getElementById("setStoreName").value;
-        const a = document.getElementById("setStoreAddress").value;
-        await db.collection("settings").doc("admin").update({ name: n, address: a });
-        location.reload();
+        const n = document.getElementById("setStoreName").value.trim();
+        const a = document.getElementById("setStoreAddress").value.trim();
+        if(!n) return alert("Store Name cannot be empty.");
+        
+        try {
+            await db.collection("settings").doc("admin").set({ 
+                name: n, 
+                address: a,
+                template: "tpl-premium-orange"
+            }, { merge: true });
+            location.reload();
+        } catch(e) {
+            console.error(e);
+            alert("Failed to update configurations.");
+        }
     }
 </script>
 </body>

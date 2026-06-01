@@ -94,6 +94,7 @@
             background: #fff; color: #000; width: 100%; max-width: 400px; 
             border-radius: 35px; padding: 35px; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        body.dark .modal-body { background: #ffffff; color: #000000; } /* Keep invoice clean white always */
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .invoice-hr { border: none; border-top: 2px dashed #e2e8f0; margin: 20px 0; }
 
@@ -146,7 +147,7 @@
         <div style="display:flex; justify-content:space-between; font-weight:900; font-size: 22px; letter-spacing: -1px;">
             <span>TOTAL</span><span id="invTotal" style="color: var(--accent);"></span>
         </div>
-        <button onclick="closeInvoice()" style="width:100%; margin-top:30px; padding:18px; border-radius:20px; border:none; background:#f1f5f9; font-weight:800; cursor:pointer; font-size: 14px;">CLOSE VIEW</button>
+        <button onclick="closeInvoice()" style="width:100%; margin-top:30px; padding:18px; border-radius:20px; border:none; background:#f1f5f9; color: #000; font-weight:800; cursor:pointer; font-size: 14px;">CLOSE VIEW</button>
     </div>
 </div>
 
@@ -161,26 +162,54 @@
     const db = firebase.firestore();
 
     let currentFilter = "All";
+    let cachedSnapDocs = []; // Fix 1: Persistent runtime listener caching engine
+    let orderStreamUnsubscribe = null;
 
     function init() {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
-        db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => render(snap));
+        initOrdersStream();
     }
 
-    function render(snap) {
+    // Fix 1: Single memory streamline caching connection block
+    function initOrdersStream() {
+        if (orderStreamUnsubscribe) orderStreamUnsubscribe();
+
+        orderStreamUnsubscribe = db.collection("orders").orderBy("timestamp", "desc")
+            .onSnapshot(snap => {
+                cachedSnapDocs = snap;
+                renderEngine();
+            }, err => {
+                console.error("Orders cloud connection error:", err);
+            });
+    }
+
+    // Fix 1 & 3: Extracted localized render layout standardizer matrix
+    function renderEngine() {
         const list = document.getElementById("ordersList");
         list.innerHTML = "";
+        
         let countAll = 0, countLive = 0, totalRev = 0;
 
-        snap.forEach(doc => {
+        if (!cachedSnapDocs || cachedSnapDocs.empty) {
+            list.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; opacity:0.5; font-weight:700;">No cloud records listed inside dataset.</div>`;
+            document.getElementById("statToday").innerText = "0";
+            document.getElementById("statPending").innerText = "0";
+            document.getElementById("statTotal").innerText = "₹0";
+            return;
+        }
+
+        cachedSnapDocs.forEach(doc => {
             const o = doc.data();
             const id = doc.id;
             const status = o.status || "Pending";
             
             countAll++;
             if(status !== "Delivered") countLive++;
-            totalRev += parseFloat(o.total || 0);
+            
+            const numericTotal = parseFloat(o.total) || 0;
+            totalRev += numericTotal;
 
+            // UI filter layer sorting block handled locally without disrupting pipeline data stream
             if(currentFilter !== "All" && status !== currentFilter) return;
 
             const card = document.createElement("div");
@@ -193,71 +222,103 @@
                     </div>
                     <span class="status-pill ${status.toLowerCase()}">${status}</span>
                 </div>
-                <h2 class="order-total">₹${parseFloat(o.total).toLocaleString()}</h2>
+                <h2 class="order-total">₹${numericTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</h2>
                 <div class="action-row">
                     <button class="act-btn btn-view" onclick="viewInv('${id}')"><i class="fa-solid fa-eye"></i> VIEW</button>
-                    <button class="act-btn btn-next" onclick="nextStep('${id}', '${status}')">NEXT <i class="fa-solid fa-chevron-right"></i></button>
+                    <button class="act-btn btn-next" id="nextBtn-${id}" onclick="nextStep('${id}', '${status}')">NEXT <i class="fa-solid fa-chevron-right"></i></button>
                     <button class="act-btn btn-wa" onclick="sendWhatsApp('${id}')"><i class="fa-brands fa-whatsapp"></i> WA</button>
                 </div>
-                <p onclick="deleteOrder('${id}')" style="font-size:10px; text-align:center; margin-top:20px; font-weight:800; opacity:0.2; cursor:pointer; text-transform:uppercase; letter-spacing:1px;">Cancel Order</p>
+                <p onclick="deleteOrder('${id}')" style="font-size:10px; text-align:center; margin-top:20px; font-weight:800; opacity:0.2; cursor:pointer; text-transform:uppercase; letter-spacing:1px; color: var(--danger)">Cancel Order</p>
             `;
             list.appendChild(card);
         });
 
         document.getElementById("statToday").innerText = countAll;
         document.getElementById("statPending").innerText = countLive;
-        document.getElementById("statTotal").innerText = "₹" + totalRev.toLocaleString();
+        document.getElementById("statTotal").innerText = "₹" + totalRev.toLocaleString('en-IN');
     }
 
+    // Fix 2: Safety runtime execution interceptor with button freezing blocks
     async function nextStep(id, current) {
         const steps = ["Pending", "Preparing", "Delivered"];
-        let nextIndex = (steps.indexOf(current) + 1);
-        if(nextIndex >= steps.length) return; // Already delivered
+        let nextIndex = steps.indexOf(current) + 1;
+        if(nextIndex >= steps.length || nextIndex <= 0) return; // Already finished optimization check
         
-        let next = steps[nextIndex];
-        await db.collection("orders").doc(id).update({ status: next });
-        if (window.navigator.vibrate) window.navigator.vibrate(40);
+        const targetBtn = document.getElementById(`nextBtn-${id}`);
+        if (targetBtn) targetBtn.disabled = true;
+
+        try {
+            let nextStatus = steps[nextIndex];
+            await db.collection("orders").doc(id).update({ status: nextStatus });
+            if (window.navigator.vibrate) window.navigator.vibrate(40);
+        } catch(e) {
+            console.error("Failed transition validation profile state update:", e);
+            alert("Status transition failed execution process.");
+            if (targetBtn) targetBtn.disabled = false;
+        }
     }
 
+    // Fix 1: Filter tabs no longer fetch from Firestore again, zero leak execution
     function filterBy(status, el) {
         currentFilter = status;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
-        db.collection("orders").orderBy("timestamp", "desc").get().then(snap => render(snap));
+        renderEngine();
     }
 
     async function viewInv(id) {
-        const doc = await db.collection("orders").doc(id).get();
-        const o = doc.data();
-        document.getElementById("invId").innerText = "BILLING ID: #" + (o.orderId || id.slice(0,5).toUpperCase());
-        document.getElementById("invTotal").innerText = "₹" + parseFloat(o.total).toLocaleString();
-        
-        let items = (o.items || []).map(i => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px">
-                <span>${i.name} <small style="opacity:0.5">x ${i.qty}</small></span>
-                <span>₹${i.price * i.qty}</span>
-            </div>`).join('');
-        document.getElementById("invItems").innerHTML = items || '<p style="text-align:center; opacity:0.5">No items listed</p>';
-        
-        document.getElementById("invoiceModal").style.display = "flex";
+        try {
+            const doc = await db.collection("orders").doc(id).get();
+            if(!doc.exists) return alert("Order documentation registry missing.");
+            
+            const o = doc.data();
+            document.getElementById("invId").innerText = "BILLING ID: #" + (o.orderId || id.slice(0,5).toUpperCase());
+            
+            const parsedTotal = parseFloat(o.total) || 0;
+            document.getElementById("invTotal").innerText = "₹" + parsedTotal.toLocaleString('en-IN', {minimumFractionDigits:2});
+            
+            let items = (o.items || []).map(i => {
+                const itemQty = parseInt(i.qty) || 0;
+                const itemPrice = parseFloat(i.price) || 0;
+                return `
+                <div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #f1f5f9; padding-bottom:8px">
+                    <span>${i.name || 'Unknown Item'} <small style="opacity:0.5">x ${itemQty}</small></span>
+                    <span>₹${(itemPrice * itemQty).toFixed(2)}</span>
+                </div>`;
+            }).join('');
+            
+            document.getElementById("invItems").innerHTML = items || '<p style="text-align:center; opacity:0.5">No items listed</p>';
+            document.getElementById("invoiceModal").style.display = "flex";
+        } catch(err) {
+            console.error(err);
+            alert("Error fetching billing ledger information record data.");
+        }
     }
 
     function sendWhatsApp(id) {
         db.collection("orders").doc(id).get().then(doc => {
+            if(!doc.exists) return;
             const o = doc.data();
-            const msg = `Surjya Bakery Order Update: Hi! Your Order #${o.orderId || id.slice(0,5)} is now ${o.status.toUpperCase()}. Total Bill: ₹${o.total}. Thank you for choosing us!`;
+            const msg = `Surjya Bakery Order Update: Hi! Your Order #${o.orderId || id.slice(0,5).toUpperCase()} is now ${o.status ? o.status.toUpperCase() : 'PENDING'}. Total Bill: ₹${parseFloat(o.total || 0).toFixed(2)}. Thank you for choosing us!`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-        });
+        }).catch(e => console.error("WhatsApp dispatcher mapping failed:", e));
     }
 
     async function deleteOrder(id) {
         if(confirm("Confirm to delete this order? This action cannot be undone.")) {
-            await db.collection("orders").doc(id).delete();
+            try {
+                await db.collection("orders").doc(id).delete();
+            } catch(err) {
+                alert("Purging operation tracking restricted data constraints error.");
+            }
         }
     }
 
     function closeInvoice() { document.getElementById("invoiceModal").style.display = "none"; }
-    function go(p) { window.location.href = p; }
+    function go(p) { 
+        if (orderStreamUnsubscribe) orderStreamUnsubscribe(); // Stop stream listening references
+        window.location.href = p; 
+    }
     window.onload = init;
 </script>
 </body>

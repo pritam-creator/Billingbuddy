@@ -68,7 +68,8 @@
         /* Employee Card */
         .emp-card { background: #fff; padding: 20px; border-radius: 22px; border: 1px solid #e2e8f0; margin-bottom: 15px; position: relative; }
         body.dark .emp-card { background: #1e293b; border-color: #334155; }
-        .del-emp { position: absolute; top: 20px; right: 20px; color: #ef4444; cursor: pointer; opacity: 0.5; }
+        .del-emp { position: absolute; top: 20px; right: 20px; color: #ef4444; cursor: pointer; opacity: 0.5; transition: 0.2s; }
+        .del-emp:hover { opacity: 1; }
 
         .salary-summary { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #f8fafc; padding: 12px; border-radius: 14px; margin: 15px 0; text-align: center; gap: 5px; }
         body.dark .salary-summary { background: #0f172a; }
@@ -76,20 +77,20 @@
         .salary-summary b { font-size: 14px; }
 
         .emp-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .btn-sm { padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #fff; transition: 0.2s; }
+        .btn-sm { padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; color: #fff; transition: 0.2s; text-align: center; }
         .btn-p { background: #10b981; }
-        .btn-p.marked { background: #f1f5f9; color: #10b981; pointer-events: none; border: 1px solid #e2e8f0; }
-        body.dark .btn-p.marked { background: #0f172a; border-color: #334155; }
+        .btn-p.marked { background: rgba(16, 185, 129, 0.15); color: #10b981; pointer-events: none; border: 1px solid transparent; }
+        body.dark .btn-p.marked { background: rgba(16, 185, 129, 0.2); color: #10b981; }
         .btn-adv { background: #f59e0b; }
         .btn-settle { background: #3b82f6; }
 
         /* Production List */
-        .prod-item { padding: 8px 12px; background: #f8fafc; border-left: 4px solid #f59e0b; border-radius: 8px; margin-top: 8px; font-size: 13px; font-weight: 500; }
+        .prod-item { padding: 10px 14px; background: #f8fafc; border-left: 4px solid #f59e0b; border-radius: 8px; margin-top: 8px; font-size: 13px; font-weight: 500; }
         body.dark .prod-item { background: #0f172a; }
 
-        /* Modal Design - FIXED POPUPS */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .modal-content { background: #fff; width: 90%; max-width: 380px; padding: 30px; border-radius: 24px; text-align: center; }
+        /* Modal Design */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content { background: #fff; width: 90%; max-width: 380px; padding: 30px; border-radius: 24px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         body.dark .modal-content { background: #1e293b; color: #fff; }
         .modal-btn-row { display: flex; gap: 12px; margin-top: 20px; }
         .modal-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
@@ -136,7 +137,9 @@
         <span class="section-label">Production Tracker</span>
         <div class="glass-box" style="border-left: 5px solid #f59e0b;">
             <div class="input-row">
-                <select id="prodWorkerSelect"></select>
+                <select id="prodWorkerSelect">
+                    <option value="">Choose Worker</option>
+                </select>
                 <input type="text" id="prodTask" placeholder="Ex: 50kg Biscuit Made">
                 <button class="btn-main" style="background:#f59e0b; color:#fff;" onclick="addProduction()">LOG</button>
             </div>
@@ -209,30 +212,60 @@
     let employees = [];
     let activeEmpId = null;
     let tempCurrentAdv = 0;
-    const todayStr = new Date().toLocaleDateString('en-GB');
+    const todayStr = new Date().toLocaleDateString('en-GB'); // "DD/MM/YYYY" format
 
     function initStaff() {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+        
+        // Listen to Employees
         db.collection("employees").onSnapshot((snapshot) => {
             employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderDropdown(); // Fix A: Alag engine se render hoga select menu
             render();
         });
-        db.collection("production").where("date", "==", todayStr).onSnapshot((snapshot) => {
-            const prods = snapshot.docs.map(doc => doc.data());
-            const pList = document.getElementById("productionList");
-            pList.innerHTML = prods.map(p => `<div class="prod-item"><b>${p.workerName}:</b> ${p.task}</div>`).join('');
+
+        // Listen to Production Log for Today
+        // YEH NAYA VALA BLOCK PASTE KAREIN
+db.collection("production").where("date", "==", todayStr).onSnapshot((snapshot) => {
+    const pList = document.getElementById("productionList");
+    if(snapshot.empty) {
+        pList.innerHTML = `<p style="opacity:0.4; font-size:12px; padding: 10px 0;">No production logged today.</p>`;
+        return;
+    }
+    
+    // Firebase se data lekar local browser mein safely sort karega
+    const prods = snapshot.docs.map(doc => doc.data());
+    prods.sort((a, b) => {
+        const tA = a.timestamp ? a.timestamp.toMillis() : 0;
+        const tB = b.timestamp ? b.timestamp.toMillis() : 0;
+        return tB - tA;
+    });
+
+    pList.innerHTML = prods.map(p => `<div class="prod-item"><b>${p.workerName || 'Unknown'}:</b> ${p.task}</div>`).join('');
+}, error => {
+    console.error("Production snap error:", error);
+});
+}
+
+    // Fix A: Production input box reset ko rokne ke liye independent mapping
+    function renderDropdown() {
+        const prodSelect = document.getElementById("prodWorkerSelect");
+        const currentSelection = prodSelect.value; 
+
+        prodSelect.innerHTML = `<option value="">Choose Worker</option>`;
+        employees.forEach(emp => {
+            prodSelect.innerHTML += `<option value="${emp.id}">${emp.name}</option>`;
         });
+
+        if(currentSelection) prodSelect.value = currentSelection;
     }
 
     function render() {
         const list = document.getElementById("employeeList");
-        const prodSelect = document.getElementById("prodWorkerSelect");
         list.innerHTML = "";
-        prodSelect.innerHTML = `<option value="">Choose Worker</option>`;
         let presentTodayCount = 0;
 
         employees.forEach((emp) => {
-            prodSelect.innerHTML += `<option value="${emp.id}">${emp.name}</option>`;
             const attendanceArr = emp.attendance || [];
             const isPresent = attendanceArr.some(a => a.date === todayStr);
             if(isPresent) presentTodayCount++;
@@ -241,19 +274,19 @@
             const wageRate = parseFloat(emp.wage) || 0;
             const earned = totalDays * wageRate;
             const adv = parseFloat(emp.advance) || 0;
-            const netDue = earned - adv;
+            const netDue = Math.max(0, earned - adv); 
 
             list.innerHTML += `
                 <div class="emp-card">
                     <i class="fa-solid fa-circle-minus del-emp" onclick="openDeleteModal('${emp.id}')"></i>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h4 style="font-weight:800;">${emp.name}</h4>
-                        <span style="font-size:12px; font-weight:700; color:#64748b;">₹${wageRate}/day</span>
+                        <span style="font-size:12px; font-weight:700; color:#64748b;">₹${wageRate.toLocaleString('en-IN')}/day</span>
                     </div>
                     <div class="salary-summary">
                         <div><span>Days</span><b>${totalDays}</b></div>
-                        <div><span>Advance</span><b style="color:#ef4444">₹${adv}</b></div>
-                        <div><span>Net Due</span><b style="color:#10b981">₹${netDue.toFixed(0)}</b></div>
+                        <div><span>Advance</span><b style="color:#ef4444">₹${adv.toLocaleString('en-IN')}</b></div>
+                        <div><span>Net Due</span><b style="color:#10b981">₹${Math.round(netDue).toLocaleString('en-IN')}</b></div>
                     </div>
                     <div class="emp-actions">
                         <button class="btn-sm btn-p ${isPresent ? 'marked' : ''}" onclick="openChoiceModal('${emp.id}', '${emp.name}')">
@@ -264,38 +297,48 @@
                     </div>
                 </div>`;
         });
+        
         document.getElementById("totalEmp").innerText = employees.length;
         document.getElementById("todayPresents").innerText = presentTodayCount;
     }
 
-    // MODAL OPEN/CLOSE LOGIC
+    // Modal Control Windows
     function openChoiceModal(id, name) { activeEmpId = id; document.getElementById("targetWorkerName").innerText = name; document.getElementById("choiceModal").style.display = "flex"; }
     function openAdvanceModal(id, currentAdv) { activeEmpId = id; tempCurrentAdv = currentAdv; document.getElementById("advanceModal").style.display = "flex"; }
-    function openSettleModal(id, netDue) { activeEmpId = id; document.getElementById("settleMsg").innerText = `Kya aap ₹${netDue.toFixed(0)} settle karke records clear karna chahte hain?`; document.getElementById("settleModal").style.display = "flex"; }
+    function openSettleModal(id, netDue) { activeEmpId = id; document.getElementById("settleMsg").innerText = `Kya aap ₹${Math.round(netDue).toLocaleString('en-IN')} settle karke records clear karna chahte hain?`; document.getElementById("settleModal").style.display = "flex"; }
     function openDeleteModal(id) { activeEmpId = id; document.getElementById("deleteModal").style.display = "flex"; }
     function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
     async function addEmployee() {
-        const name = document.getElementById("empName").value;
+        const name = document.getElementById("empName").value.trim();
         const wage = document.getElementById("empWage").value;
-        if(!name || !wage) return;
+        if(!name || !wage || isNaN(wage) || parseFloat(wage) <= 0) return alert("Valid name aur wage rate enter karein!");
+        
         await db.collection("employees").add({ name, wage: parseFloat(wage), advance: 0, attendance: [] });
         document.getElementById("empName").value = ""; document.getElementById("empWage").value = "";
     }
 
+    // Fix B: Same day par duplicate clicks ko filter karke single record lock karega
     async function confirmAttendance(val) {
         const emp = employees.find(e => e.id === activeEmpId);
-        const updatedAttendance = [...(emp.attendance || []), { date: todayStr, value: val }];
+        let updatedAttendance = [...(emp.attendance || [])];
+        
+        updatedAttendance = updatedAttendance.filter(a => a.date !== todayStr);
+        updatedAttendance.push({ date: todayStr, value: parseFloat(val) });
+
         await db.collection("employees").doc(activeEmpId).update({ attendance: updatedAttendance });
         closeModal('choiceModal');
     }
 
     async function confirmAdvance() {
-        const amt = document.getElementById("advAmountInput").value;
-        if(amt && !isNaN(amt)) {
-            await db.collection("employees").doc(activeEmpId).update({ advance: tempCurrentAdv + parseFloat(amt) });
+        const amtInput = document.getElementById("advAmountInput").value;
+        const amt = parseFloat(amtInput);
+        if(amtInput && !isNaN(amt) && amt > 0) {
+            await db.collection("employees").doc(activeEmpId).update({ advance: tempCurrentAdv + amt });
             document.getElementById("advAmountInput").value = "";
             closeModal('advanceModal');
+        } else {
+            alert("Kripya valid positive amount dalein!");
         }
     }
 
@@ -311,10 +354,17 @@
 
     async function addProduction() {
         const empId = document.getElementById("prodWorkerSelect").value;
-        const task = document.getElementById("prodTask").value;
-        if(!empId || !task) return;
+        const task = document.getElementById("prodTask").value.trim();
+        if(!empId || !task) return alert("Worker chunein aur task field fill karein!");
+        
         const worker = employees.find(e => e.id === empId);
-        await db.collection("production").add({ date: todayStr, workerName: worker.name, task, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+        await db.collection("production").add({ 
+            date: todayStr, 
+            workerID: empId, 
+            workerName: worker.name, 
+            task, 
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+        });
         document.getElementById("prodTask").value = "";
     }
 

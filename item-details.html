@@ -96,7 +96,7 @@
 
 <div class="detail-card">
     <div class="status-badge" id="statusBadge" style="background:var(--warning)">SYNCING...</div>
-    <i class="fa-solid fa-chevron-left back-nav" onclick="go('items.html')"></i>
+    <i class="fa-solid fa-chevron-left back-nav" onclick="go('inventory.html')"></i>
 
     <div class="header-content">
         <div id="viewMode">
@@ -105,7 +105,7 @@
         </div>
         <div id="editMode" style="display: none;">
             <input type="text" id="inputName" class="edit-input" placeholder="Item Name">
-            <input type="number" id="inputPrice" class="edit-input" placeholder="Price">
+            <input type="number" id="inputPrice" class="edit-input" placeholder="Price" step="any" min="0">
         </div>
     </div>
 
@@ -159,6 +159,7 @@
     let itemData = null;
     let isEditing = false;
     let currentStock = 0;
+    let isStockManuallyChanged = false; // Fix 1: Tracking block flag added
 
     window.onload = () => {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
@@ -170,30 +171,46 @@
         db.collection("inventory").doc(itemId).onSnapshot(doc => {
             if(doc.exists) {
                 itemData = doc.data();
-                if(!isEditing) {
-                    currentStock = itemData.stock;
-                    renderUI();
+                // Fix 1: State flag constraint block to protect overwrite loops
+                if(!isEditing && !isStockManuallyChanged) {
+                    currentStock = itemData.stock || 0;
                 }
+                renderUI();
             } else {
                 go('inventory.html');
             }
+        }, err => {
+            console.error("Firestore sync error:", err);
+            document.getElementById("statusBadge").innerText = "⚠️ OFFLINE";
         });
     }
 
     function renderUI() {
-        document.getElementById("itemName").innerText = itemData.name;
-        document.getElementById("itemPrice").innerText = "₹ " + itemData.price.toLocaleString();
+        if (!itemData) return;
+        document.getElementById("itemName").innerText = itemData.name || "Unnamed Item";
+        document.getElementById("itemPrice").innerText = "₹ " + (itemData.price || 0).toLocaleString('en-IN');
         document.getElementById("itemStock").innerText = currentStock;
         
         const badge = document.getElementById("statusBadge");
-        const isLow = currentStock <= (itemData.minLevel || 10);
+        const minAlert = parseFloat(itemData.minLevel) || 10;
+        const isLow = currentStock <= minAlert;
         badge.innerText = isLow ? "⚠️ LOW STOCK" : "✅ STOCK HEALTHY";
         badge.style.background = isLow ? "var(--danger)" : "var(--success)";
     }
 
     function changeStock(n) {
+        isStockManuallyChanged = true; // Block incoming snapshots from resetting local edits
         currentStock = Math.max(0, currentStock + n);
         document.getElementById("itemStock").innerText = currentStock;
+        
+        // Dynamic threshold analysis on keypress/click
+        if (itemData) {
+            const badge = document.getElementById("statusBadge");
+            const minAlert = parseFloat(itemData.minLevel) || 10;
+            const isLow = currentStock <= minAlert;
+            badge.innerText = isLow ? "⚠️ LOW STOCK" : "✅ STOCK HEALTHY";
+            badge.style.background = isLow ? "var(--danger)" : "var(--success)";
+        }
     }
 
     function toggleEdit() {
@@ -205,25 +222,35 @@
         if(isEditing) {
             view.style.display = "none";
             edit.style.display = "block";
-            document.getElementById("inputName").value = itemData.name;
-            document.getElementById("inputPrice").value = itemData.price;
-            btn.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+            document.getElementById("inputName").value = itemData.name || "";
+            document.getElementById("inputPrice").value = itemData.price || 0;
+            btn.innerHTML = `<i class="fa-solid fa-xmark"></i> CANCEL`;
             btn.style.color = "var(--danger)";
         } else {
             view.style.display = "block";
             edit.style.display = "none";
             btn.innerHTML = `<i class="fa-solid fa-pen"></i> EDIT`;
             btn.style.color = "var(--warning)";
+            isStockManuallyChanged = false; // Reset modification flags
+            if(itemData) currentStock = itemData.stock || 0;
             renderUI();
         }
     }
 
+    // Fix 3: Sanitized Type Extraction Logic Engine
     async function saveData() {
         const btn = document.getElementById("saveBtn");
-        const newName = isEditing ? document.getElementById("inputName").value : itemData.name;
-        const newPrice = isEditing ? parseFloat(document.getElementById("inputPrice").value) : itemData.price;
+        let newName = itemData ? itemData.name : "";
+        let newPrice = itemData ? itemData.price : 0;
 
-        if(!newName) return;
+        if(isEditing) {
+            newName = document.getElementById("inputName").value.trim();
+            const rawPrice = document.getElementById("inputPrice").value;
+            newPrice = parseFloat(rawPrice);
+            
+            if(!newName) return alert("Item Name cannot be left completely empty.");
+            if(isNaN(newPrice) || newPrice < 0) return alert("Please enter a valid evaluation price metric.");
+        }
 
         btn.classList.add("loading-pulse");
         btn.innerHTML = "SAVING...";
@@ -235,9 +262,12 @@
                 stock: currentStock,
                 lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
             });
+            isStockManuallyChanged = false; // Safe lock flush
             btn.innerHTML = "SUCCESS!";
             setTimeout(() => go('inventory.html'), 600);
         } catch(err) {
+            console.error(err);
+            alert("Execution failed while uploading values.");
             btn.innerHTML = "RETRY SAVE";
             btn.classList.remove("loading-pulse");
         }
@@ -246,9 +276,16 @@
     function openDeleteModal() { document.getElementById("deleteModal").style.display = "flex"; }
     function closeModal() { document.getElementById("deleteModal").style.display = "none"; }
 
+    // Fix 2: Safety transition engine wrapper setup
     async function confirmDelete() {
-        await db.collection("inventory").doc(itemId).delete();
-        go('inventory.html');
+        try {
+            closeModal();
+            await db.collection("inventory").doc(itemId).delete();
+            go('inventory.html');
+        } catch(e) {
+            console.error(e);
+            alert("Could not fulfill data purging task execution.");
+        }
     }
 
     function go(p) { window.location.href = p; }

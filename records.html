@@ -94,6 +94,7 @@
 
         .btn-save { width: 100%; padding: 18px; border-radius: 18px; border: none; background: #000; color: #fff; font-weight: 800; cursor: pointer; margin-top: 10px; }
         body.dark .btn-save { background: #fff; color: #000; }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
         @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 20px; } }
     </style>
@@ -122,15 +123,15 @@
 
         <div class="summary-card">
             <p class="balance-label">Current Cash Balance</p>
-            <h1 class="balance-amt" id="totalBalance">₹ 0</h1>
+            <h1 class="balance-amt" id="totalBalance">₹ 0.00</h1>
             <div class="stat-row">
                 <div class="stat-col">
                     <p>TOTAL CASH IN</p>
-                    <h4 id="incVal" style="color:#4ade80">₹ 0</h4>
+                    <h4 id="incVal" style="color:#4ade80">₹ 0.00</h4>
                 </div>
                 <div class="stat-col">
                     <p>TOTAL CASH OUT</p>
-                    <h4 id="expVal" style="color:#fb7185">₹ 0</h4>
+                    <h4 id="expVal" style="color:#fb7185">₹ 0.00</h4>
                 </div>
             </div>
         </div>
@@ -155,15 +156,15 @@
         
         <div class="input-group">
             <label>AMOUNT (₹)</label>
-            <input type="number" id="entryAmt" class="modal-input" placeholder="e.g. 500">
+            <input type="number" step="0.01" id="entryAmt" class="modal-input" placeholder="e.g. 500">
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <button onclick="setType('in')" id="btnIn" style="flex:1; padding:12px; border-radius:12px; border:2px solid #10b981; background:rgba(16, 185, 129, 0.1); color:#10b981; font-weight:800; cursor:pointer;">CASH IN</button>
-            <button onclick="setType('out')" id="btnOut" style="flex:1; padding:12px; border-radius:12px; border:2px solid transparent; background:#f1f5f9; color:#64748b; font-weight:800; cursor:pointer;">CASH OUT</button>
+            <button type="button" onclick="setType('in')" id="btnIn" style="flex:1; padding:12px; border-radius:12px; border:2px solid #10b981; background:rgba(16, 185, 129, 0.1); color:#10b981; font-weight:800; cursor:pointer;">CASH IN</button>
+            <button type="button" onclick="setType('out')" id="btnOut" style="flex:1; padding:12px; border-radius:12px; border:2px solid transparent; background:#f1f5f9; color:#64748b; font-weight:800; cursor:pointer;">CASH OUT</button>
         </div>
 
-        <button class="btn-save" onclick="saveEntry()">SAVE TRANSACTION</button>
+        <button class="btn-save" id="btnSaveTrans" onclick="saveEntry()">SAVE TRANSACTION</button>
     </div>
 </div>
 
@@ -178,12 +179,24 @@
     const db = firebase.firestore();
 
     let entryType = 'in';
+    let cashStreamUnsubscribe = null;
 
     function init() {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
         document.getElementById("dateLabel").innerText = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
         
-        db.collection("cashflow").orderBy("timestamp", "desc").onSnapshot(snap => render(snap));
+        initCashStream();
+    }
+
+    function initCashStream() {
+        if(cashStreamUnsubscribe) cashStreamUnsubscribe();
+        
+        cashStreamUnsubscribe = db.collection("cashflow").orderBy("timestamp", "desc")
+            .onSnapshot(snap => {
+                renderEngine(snap);
+            }, err => {
+                console.error("Firestore cache pipeline failure:", err);
+            });
     }
 
     function setType(t) {
@@ -200,74 +213,127 @@
         }
     }
 
-    function render(snap) {
+    // Fix 1 & 2: Structural Document Fragment rendering engine to prevent leakage
+    function renderEngine(snap) {
         const container = document.getElementById("recordContainer");
-        let net = 0; let inc = 0; let exp = 0;
         container.innerHTML = "";
+        
+        let net = 0; let inc = 0; let exp = 0;
+
+        if(!snap || snap.empty) {
+            container.innerHTML = `<div style="text-align:center; padding:30px; opacity:0.5; font-weight:700;">No transactions recorded today.</div>`;
+            document.getElementById("totalBalance").innerText = "₹ 0.00";
+            document.getElementById("incVal").innerText = "₹ 0.00";
+            document.getElementById("expVal").innerText = "₹ 0.00";
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
 
         snap.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-            const amt = parseFloat(data.amount);
-            const isInc = amt >= 0;
+            const amt = parseFloat(data.amount) || 0;
+            
+            // Fix 2: Strict structural mapping based on saved 'flow' field
+            const direction = data.flow || (amt >= 0 ? 'in' : 'out');
+            const isInc = (direction === 'in');
+            const absoluteAmt = Math.abs(amt);
 
-            net += amt;
-            if(isInc) inc += amt; else exp += Math.abs(amt);
+            net += (isInc ? absoluteAmt : -absoluteAmt);
+            if(isInc) inc += absoluteAmt; else exp += absoluteAmt;
 
-            container.innerHTML += `
-                <div class="record-card">
-                    <div style="display: flex; align-items: center; gap: 18px;">
-                        <div class="icon-box ${isInc ? 'inc-bg' : 'exp-bg'}">
-                            <i class="fa-solid ${isInc ? 'fa-plus' : 'fa-minus'}"></i>
-                        </div>
-                        <div>
-                            <h4 style="font-size:16px; font-weight:900; letter-spacing:-0.3px;">${data.title}</h4>
-                            <p style="font-size:12px; opacity:0.5; font-weight:700;">${data.date}</p>
-                        </div>
+            const row = document.createElement("div");
+            row.className = "record-card";
+            row.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 18px;">
+                    <div class="icon-box ${isInc ? 'inc-bg' : 'exp-bg'}">
+                        <i class="fa-solid ${isInc ? 'fa-plus' : 'fa-minus'}"></i>
                     </div>
-                    <div style="text-align: right; display: flex; align-items: center; gap: 18px;">
-                        <span class="amt-text ${isInc ? 'inc-clr' : 'exp-clr'}">
-                            ${isInc ? '+' : '-'} ₹${Math.abs(amt).toLocaleString()}
-                        </span>
-                        <i class="fa-solid fa-trash-can" onclick="deleteEntry('${id}')" style="opacity:0.1; cursor:pointer; font-size:14px;"></i>
+                    <div>
+                        <h4 style="font-size:16px; font-weight:900; letter-spacing:-0.3px;">${data.title || 'Untitled Transaction'}</h4>
+                        <p style="font-size:12px; opacity:0.5; font-weight:700;">${data.date || 'Today'}</p>
                     </div>
                 </div>
+                <div style="text-align: right; display: flex; align-items: center; gap: 18px;">
+                    <span class="amt-text ${isInc ? 'inc-clr' : 'exp-clr'}">
+                        ${isInc ? '+' : '-'} ₹${absoluteAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                    </span>
+                    <i class="fa-solid fa-trash-can system-delete-trigger" style="opacity:0.2; cursor:pointer; font-size:14px; transition: 0.2s;"></i>
+                </div>
             `;
+
+            // Fix 1: Event listener allocation architecture
+            row.querySelector('.system-delete-trigger').addEventListener('click', () => {
+                deleteEntry(id);
+            });
+
+            fragment.appendChild(row);
         });
 
-        document.getElementById("totalBalance").innerText = "₹ " + net.toLocaleString();
-        document.getElementById("incVal").innerText = "₹ " + inc.toLocaleString();
-        document.getElementById("expVal").innerText = "₹ " + exp.toLocaleString();
+        container.appendChild(fragment);
+
+        document.getElementById("totalBalance").innerText = "₹ " + net.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById("incVal").innerText = "₹ " + inc.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        document.getElementById("expVal").innerText = "₹ " + exp.toLocaleString('en-IN', {minimumFractionDigits: 2});
     }
 
     async function saveEntry() {
-        const title = document.getElementById('entryTitle').value.trim();
-        let amt = parseFloat(document.getElementById('entryAmt').value);
+        const titleInput = document.getElementById('entryTitle');
+        const amtInput = document.getElementById('entryAmt');
+        const saveBtn = document.getElementById('btnSaveTrans');
+
+        const title = titleInput.value.trim();
+        let amt = parseFloat(amtInput.value);
         
-        if(!title || isNaN(amt)) return alert("Please fill all details!");
-        if(entryType === 'out') amt = -Math.abs(amt);
+        if(!title || isNaN(amt) || amt <= 0) return alert("Please enter valid transaction credentials!");
+        
+        saveBtn.disabled = true;
 
-        await db.collection("cashflow").add({
-            title: title,
-            amount: amt,
-            date: new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short' }),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        try {
+            // Fix 2: Always log raw values clearly inside schema architecture
+            await db.collection("cashflow").add({
+                title: title,
+                amount: parseFloat(amt.toFixed(2)),
+                flow: entryType, 
+                date: new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short' }),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-        closeModal();
-        document.getElementById('entryTitle').value = "";
-        document.getElementById('entryAmt').value = "";
-        if (window.navigator.vibrate) window.navigator.vibrate(50);
+            closeModal();
+            titleInput.value = "";
+            amtInput.value = "";
+            setType('in'); // Reset default flow layout state
+            if (window.navigator.vibrate) window.navigator.vibrate(50);
+        } catch (error) {
+            console.error("Data tracking operation crashed:", error);
+            alert("Database syncing failure.");
+        } finally {
+            saveBtn.disabled = false;
+        }
     }
 
     function showModal() { document.getElementById('entryModal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('entryModal').style.display = 'none'; }
-
-    async function deleteEntry(id) {
-        if(confirm("Permanently delete this cash record?")) await db.collection("cashflow").doc(id).delete();
+    function closeModal() { 
+        document.getElementById('entryModal').style.display = 'none'; 
+        document.getElementById('entryTitle').value = "";
+        document.getElementById('entryAmt').value = "";
     }
 
-    function go(p) { window.location.href = p; }
+    async function deleteEntry(id) {
+        if(confirm("Permanently delete this cash record? This directly alters terminal accounting data.")) {
+            try {
+                await db.collection("cashflow").doc(id).delete();
+            } catch (err) {
+                alert("Operation restricted by cloud security configuration layer.");
+            }
+        }
+    }
+
+    function go(p) { 
+        if(cashStreamUnsubscribe) cashStreamUnsubscribe();
+        window.location.href = p; 
+    }
     window.onload = init;
 </script>
 </body>

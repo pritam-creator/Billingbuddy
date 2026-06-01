@@ -168,9 +168,7 @@
             <li onclick="goPage('orders.html')"><i class="fa-solid fa-basket-shopping"></i> Orders</li>
             <li onclick="goPage('records.html')"><i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')"><i class="fa-solid fa-user-group"></i> Employees</li>
-            <li onclick="window.location.href='history.html'">
-    <i class="fa-solid fa-clock-rotate-left"></i> Invoice History
-</li>
+            <li onclick="goPage('history.html')"><i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
         </ul>
     </aside>
 
@@ -256,6 +254,7 @@
 </div>
 
 <script>
+    // Firebase Configuration
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -265,12 +264,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // Elements & Auth Check
     if(localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
     const menuBtn = document.getElementById("menuBtn");
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("overlay");
     const darkToggle = document.getElementById("darkToggle");
 
+    // UI Toggle Actions
     menuBtn.onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
     overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
 
@@ -285,23 +286,46 @@
         darkToggle.innerText = "☀️";
     }
 
+    // Global trackers to safely manage profit without nested listener leaks
+    let globalSales = 0;
+    let globalExpenses = 0;
+
     async function updateDashboard() {
+        // 1. Live Orders Sync
         db.collection("orders").onSnapshot(snap => {
             const orders = snap.docs.map(doc => doc.data());
-            const totalSales = orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
-            document.getElementById("dash-sales").innerText = "₹ " + totalSales.toLocaleString();
+            
+            // Fixed NaN potential crash using explicit parsed values validation
+            globalSales = orders.reduce((sum, o) => {
+                const parsedVal = parseFloat(o.total);
+                return sum + (isNaN(parsedVal) ? 0 : parsedVal);
+            }, 0);
+            
+            document.getElementById("dash-sales").innerText = "₹ " + globalSales.toLocaleString('en-IN');
             const target = 5000; 
-            document.getElementById("salesProgress").style.width = Math.min((totalSales / target) * 100, 100) + "%";
+            document.getElementById("salesProgress").style.width = Math.min((globalSales / target) * 100, 100) + "%";
+            
             renderRecentActivity(orders);
             renderTopProducts(orders);
-            updateProfit(totalSales);
+            calculateAndRenderProfit(); 
         });
 
+        // 2. Live Expenses Sync (Kept separate to prevent massive loop duplication leaks)
+        db.collection("expenses").onSnapshot(snap => {
+            globalExpenses = snap.docs.reduce((sum, doc) => {
+                const parsedAmt = parseFloat(doc.data().amount);
+                return sum + (isNaN(parsedAmt) ? 0 : parsedAmt);
+            }, 0);
+            calculateAndRenderProfit();
+        });
+
+        // 3. Live Clients Sync
         db.collection("clients").onSnapshot(snap => {
             const clientsCount = document.getElementById("dash-clients");
             if(clientsCount) clientsCount.innerText = snap.size;
         });
 
+        // 4. Live Items Sync
         db.collection("items").onSnapshot(snap => {
             const items = snap.docs.map(doc => doc.data());
             const itemsCount = document.getElementById("dash-items");
@@ -309,34 +333,33 @@
             renderStockAlerts(items);
         });
 
+        // 5. Live Ledger Sync
         db.collection("ledger").onSnapshot(snap => {
             let collect = 0, pay = 0;
             snap.forEach(doc => {
-                const bal = doc.data().balance || 0;
+                const bal = parseFloat(doc.data().balance) || 0;
                 if(bal > 0) collect += bal; else pay += Math.abs(bal);
             });
-            document.getElementById("dash-collect").innerText = "₹ " + collect.toLocaleString();
-            document.getElementById("dash-pay").innerText = "₹ " + pay.toLocaleString();
+            document.getElementById("dash-collect").innerText = "₹ " + collect.toLocaleString('en-IN');
+            document.getElementById("dash-pay").innerText = "₹ " + pay.toLocaleString('en-IN');
         });
     }
 
-    async function updateProfit(sales) {
-        db.collection("expenses").onSnapshot(snap => {
-            const totalExp = snap.docs.reduce((sum, doc) => sum + parseFloat(doc.data().amount || 0), 0);
-            const profit = sales - totalExp;
-            const profitEl = document.getElementById("dash-profit");
-            
-            if(profitEl) {
-                profitEl.innerText = "₹ " + Math.abs(profit).toLocaleString();
-                if(profit >= 0) {
-                    profitEl.className = "txt-profit";
-                    document.getElementById("profit-label").innerText = "Net Profit";
-                } else {
-                    profitEl.className = "txt-loss";
-                    document.getElementById("profit-label").innerText = "Net Loss";
-                }
+    // Safely renders profits/losses based on aggregated live state values
+    function calculateAndRenderProfit() {
+        const profit = globalSales - globalExpenses;
+        const profitEl = document.getElementById("dash-profit");
+        
+        if(profitEl) {
+            profitEl.innerText = "₹ " + Math.abs(profit).toLocaleString('en-IN');
+            if(profit >= 0) {
+                profitEl.className = "txt-profit";
+                document.getElementById("profit-label").innerText = "Net Profit";
+            } else {
+                profitEl.className = "txt-loss";
+                document.getElementById("profit-label").innerText = "Net Loss";
             }
-        });
+        }
     }
 
     function sharePortal() {
@@ -348,7 +371,14 @@
 
     function renderTopProducts(orders) {
         const counts = {};
-        orders.forEach(order => { if(order.items) order.items.forEach(item => { counts[item.name] = (counts[item.name] || 0) + (parseFloat(item.qty) || 1); }); });
+        orders.forEach(order => { 
+            if(order.items) {
+                order.items.forEach(item => { 
+                    const qty = parseFloat(item.qty);
+                    counts[item.name] = (counts[item.name] || 0) + (isNaN(qty) ? 1 : qty); 
+                }); 
+            }
+        });
         const sorted = Object.entries(counts).sort(([,a],[,b]) => b - a).slice(0, 3);
         const container = document.getElementById("topProducts");
         if(sorted.length === 0) { container.innerHTML = `<p style="opacity:0.5; text-align:center; padding:20px;">No sales yet</p>`; return; }
@@ -368,7 +398,11 @@
         const container = document.getElementById("recentActivity");
         const lastThree = orders.slice(-3).reverse();
         if(lastThree.length === 0) { container.innerHTML = `<p style="opacity:0.5; text-align:center; padding:20px;">No recent orders</p>`; return; }
-        container.innerHTML = lastThree.map(o => `<div class="activity-row"><div><b>#${o.id || 'INV'}</b><div style="font-size:11px; opacity:0.6;">${o.date || 'Today'}</div></div><div style="text-align:right;"><b>₹${parseFloat(o.total).toLocaleString()}</b><br><span class="status-badge bg-success">PAID</span></div></div>`).join('');
+        container.innerHTML = lastThree.map(o => {
+            const totalVal = parseFloat(o.total);
+            const safeTotal = isNaN(totalVal) ? 0 : totalVal;
+            return `<div class="activity-row"><div><b>#${o.id || 'INV'}</b><div style="font-size:11px; opacity:0.6;">${o.date || 'Today'}</div></div><div style="text-align:right;"><b>₹${safeTotal.toLocaleString('en-IN')}</b><br><span class="status-badge bg-success">PAID</span></div></div>`;
+        }).join('');
     }
 
     function updateGreeting(){
@@ -381,7 +415,7 @@
 
     function goPage(page){ window.location.href = page; }
     
-    // MODAL FUNCTIONS
+    // Custom Modal System
     const logoutModal = document.getElementById("logoutModal");
     document.getElementById("logoutBtn").onclick = () => { logoutModal.style.display = "flex"; };
     function closeLogout() { logoutModal.style.display = "none"; }

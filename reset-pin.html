@@ -41,13 +41,16 @@
     h2 { font-size: 26px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
     p { font-size: 13px; color: #94a3b8; margin-bottom: 30px; font-weight: 500; }
 
+    /* Fix 1: Fixed character masking placeholder style engine */
     input {
         width: 100%; padding: 18px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08);
         background: rgba(255,255,255,0.04); color: white; text-align: center;
-        font-size: 20px; font-weight: 800; letter-spacing: 10px; outline: none; transition: 0.3s;
+        font-size: 22px; font-weight: 800; letter-spacing: 8px; outline: none; transition: 0.3s;
         margin-bottom: 15px;
     }
-    input::placeholder { letter-spacing: normal; font-size: 14px; font-weight: 400; color: #475569; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    input::placeholder { letter-spacing: normal; font-size: 13px; font-weight: 500; color: #475569; }
     input:focus { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
 
     .btn {
@@ -58,10 +61,11 @@
     }
     .btn-update { background: white; color: #000; margin-top: 10px; }
     .btn-update:active { transform: scale(0.97); }
+    .btn-update:disabled { opacity: 0.5; cursor: not-allowed; }
     
     .btn-back { background: transparent; color: #64748b; margin-top: 12px; }
 
-    .status-msg { margin-top: 20px; font-size: 12px; font-weight: 700; transition: 0.3s; text-transform: uppercase; }
+    .status-msg { margin-top: 20px; font-size: 12px; font-weight: 700; transition: 0.3s; text-transform: uppercase; line-height: 1.4; }
     .error { color: var(--danger); }
     .success { color: var(--success); }
     .loading { color: var(--primary); }
@@ -74,16 +78,16 @@
 
 <div class="reset-card">
     <div class="icon-header">
-        <i class="fa-solid fa-lock"></i>
+        <i class="fa-solid fa-shield-halved"></i>
     </div>
-    <h2>Security</h2>
-    <p>Secure your administrative access</p>
+    <h2>Security Dashboard</h2>
+    <p>Secure your administrative terminal</p>
 
-    <input type="password" id="oldPin" placeholder="ENTER CURRENT PIN" inputmode="numeric" maxlength="4">
-    <input type="password" id="newPin" placeholder="SET NEW PIN" inputmode="numeric" maxlength="4">
-    <input type="password" id="confirmPin" placeholder="CONFIRM NEW PIN" inputmode="numeric" maxlength="4">
+    <input type="password" id="oldPin" placeholder="ENTER CURRENT PIN" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+    <input type="password" id="newPin" placeholder="SET NEW 4-DIGIT PIN" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+    <input type="password" id="confirmPin" placeholder="CONFIRM NEW PIN" inputmode="numeric" pattern="[0-9]*" maxlength="4">
 
-    <button class="btn btn-update" onclick="savePin()">
+    <button class="btn btn-update" id="submitBtn" onclick="savePin()">
         UPDATE ACCESS PIN
     </button>
     <button class="btn btn-back" onclick="goBack()">Return to Login</button>
@@ -105,51 +109,90 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const messageBox = document.getElementById("message");
+const submitBtn = document.getElementById("submitBtn");
+
+let brutalAttemptsCounter = 0;
+
+// Fix 1: High-security cryptographic hash compiler block
+async function hashSHA256(string) {
+    const utf8 = new TextEncoder().encode(string);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 window.savePin = async function(){
-  const oldPin = document.getElementById("oldPin").value.trim();
-  const newPin = document.getElementById("newPin").value.trim();
-  const confirmPin = document.getElementById("confirmPin").value.trim();
+  if(brutalAttemptsCounter >= 5) {
+      return updateStatus("Terminal Locked! Too many attempts.", "error");
+  }
 
-  if(!oldPin || !newPin || !confirmPin) return updateStatus("All fields required", "error");
-  if(newPin.length !== 4) return updateStatus("PIN must be 4 digits", "error");
-  if(newPin !== confirmPin) return updateStatus("Confirmation mismatch", "error");
+  const oldPinRaw = document.getElementById("oldPin").value.trim();
+  const newPinRaw = document.getElementById("newPin").value.trim();
+  const confirmPinRaw = document.getElementById("confirmPin").value.trim();
 
-  updateStatus("Syncing with Cloud...", "loading");
+  // Field validation matrix
+  if(!oldPinRaw || !newPinRaw || !confirmPinRaw) return updateStatus("All authorization fields required", "error");
+  if(!/^\d{4}$/.test(newPinRaw) || !/^\d{4}$/.test(oldPinRaw)) return updateStatus("PIN structure must be 4 digits", "error");
+  if(newPinRaw !== confirmPinRaw) return updateStatus("Confirmation credentials mismatch", "error");
+  if(oldPinRaw === newPinRaw) return updateStatus("New PIN cannot match old identity", "error");
+
+  updateStatus("Verifying secure token...", "loading");
+  submitBtn.disabled = true;
 
   try {
     const adminRef = doc(db, "settings", "admin");
     const adminSnap = await getDoc(adminRef);
 
-    if(!adminSnap.exists()) return updateStatus("System Database Error", "error");
+    if(!adminSnap.exists()) {
+        submitBtn.disabled = false;
+        return updateStatus("System configuration registry missing", "error");
+    }
 
-    const currentSavedPin = String(adminSnap.data().pin);
+    const currentSavedDbPin = String(adminSnap.data().pin);
+    
+    // Hash execution layers
+    const hashedOldInput = await hashSHA256(oldPinRaw);
+    const hashedNewInput = await hashSHA256(newPinRaw);
 
-    if(oldPin !== currentSavedPin) return updateStatus("Wrong Current PIN", "error");
+    // Secure fallback verification check
+    const isMatched = (oldPinRaw === currentSavedDbPin || hashedOldInput === currentSavedDbPin);
 
-    await updateDoc(adminRef, { pin: newPin });
-    updateStatus("PIN Successfully Updated", "success");
+    if(!isMatched) {
+        brutalAttemptsCounter++;
+        submitBtn.disabled = false;
+        const remaining = 5 - brutalAttemptsCounter;
+        return updateStatus(`Access Denied. ${remaining} attempts remaining`, "error");
+    }
 
+    updateStatus("Deploying safe keys to Cloud...", "loading");
+    
+    // Cloud storage saves only cryptographically hashed strings
+    await updateDoc(adminRef, { pin: hashedNewInput });
+    updateStatus("PIN Encryption Updated Successfully", "success");
+
+    if (window.navigator.vibrate) window.navigator.vibrate([40, 40]);
     setTimeout(() => window.location.replace("index.html"), 1500);
 
   } catch (err) {
-    updateStatus("Connection Failed", "error");
+    console.error("Cryptographic sync failure:", err);
+    updateStatus("Connection Failure or Corrupted Token", "error");
+    submitBtn.disabled = false;
   }
 };
-
-function updateStatus(text, type) {
-    messageBox.innerText = text;
-    messageBox.className = "status-msg " + type;
-}
 
 window.goBack = function() {
   window.location.replace("index.html");
 };
-</script>
-<script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Error:", message, "at", source, lineno);
-    };
+
+// Automatic maximum constraint limit filters for 4 digits keyup events
+['oldPin', 'newPin', 'confirmPin'].forEach(id => {
+    const element = document.getElementById(id);
+    if(element) {
+        element.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+        });
+    }
+});
 </script>
 </body>
 </html>

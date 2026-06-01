@@ -1,223 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Khatabook Pro - Surjya Bakery</title>
-    
+    <title>Ledger - Surjya Bakery Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        :root { --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f8fafc; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
-        
-        body { background: var(--bg); color: #1e293b; min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
-        body.dark { background: #0f172a; color: #f1f5f9; --bg: #0f172a; }
+        body { background: #f8fafc; color: #1e293b; min-height: 100vh; }
+        .app { display: flex; height: 100vh; overflow: hidden; }
 
-        .app { display: flex; height: 100vh; }
-
-        /* Sidebar Customization */
-        .sidebar { 
-            width: 260px; background: #fff; border-right: 1px solid #e2e8f0; 
-            padding: 30px 20px; display: flex; flex-direction: column; 
-            position: fixed; height: 100%; z-index: 1000; transition: 0.4s;
-        }
-        body.dark .sidebar { background: #1e293b; border-color: #334155; }
-        .logo { width: 45px; height: 45px; border-radius: 12px; margin-bottom: 30px; cursor: pointer; object-fit: cover; }
-        
-        .menu { list-style: none; }
-        .menu li { 
-            display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
-            border-radius: 12px; cursor: pointer; transition: 0.2s; 
-            margin-bottom: 5px; font-size: 14px; color: #64748b; font-weight: 600;
-        }
+        /* Sidebar Theme Match */
+        .sidebar { width: 260px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 30px 20px; position: fixed; height: 100%; z-index: 1000; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .logo { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; }
+        .menu { list-style: none; flex-grow: 1; }
+        .menu li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; cursor: pointer; margin-bottom: 4px; font-size: 14px; color: #64748b; }
         .menu li.active { background: #000; color: #fff; }
-        body.dark .menu li.active { background: #f8fafc; color: #000; }
 
         /* Content Area */
-        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .content { flex: 1; padding: 30px 40px; margin-left: 260px; overflow-y: auto; padding-bottom: 100px; }
         
-        .top-header { width: 100%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        body.dark .back-btn { background: #1e293b; border-color: #334155; color: #fff; }
+        /* Top Header */
+        .top-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; gap: 15px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .back-btn { background: #fff; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #1e293b; transition: 0.2s; }
+        .back-btn:hover { background: #f1f5f9; }
 
-        /* Summary Cards */
-        .grid-summary { width: 100%; max-width: 650px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #fff; padding: 22px; border-radius: 28px; border: 1px solid #e2e8f0; text-align: left; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        body.dark .stat-card { background: #1e293b; border-color: #334155; }
-        .stat-card p { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-card h3 { font-size: 22px; font-weight: 900; margin-top: 6px; letter-spacing: -0.5px; }
-
-        /* Search Box */
-        .search-box { width: 100%; max-width: 650px; margin-bottom: 20px; position: relative; }
-        .search-box input { 
-            width: 100%; background: #fff; border: 1px solid #e2e8f0; 
-            padding: 16px 16px 16px 50px; border-radius: 20px; color: #1e293b; outline: none; font-size: 15px; font-weight: 600;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.03);
-        }
-        body.dark .search-box input { background: #1e293b; border-color: #334155; color: #fff; }
-        .search-box i { position: absolute; left: 20px; top: 20px; color: #94a3b8; }
-
-        /* Customer List */
-        .list-container { width: 100%; max-width: 650px; display: flex; flex-direction: column; gap: 12px; }
-        .customer-card { 
-            background: #fff; padding: 20px; border-radius: 24px; 
-            border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;
-            transition: 0.3s; cursor: pointer;
-        }
-        body.dark .customer-card { background: #1e293b; border-color: #334155; }
-        .customer-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); }
+        .card { background: #fff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 20px; }
         
-        .avatar { width: 48px; height: 48px; border-radius: 16px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--primary); font-size: 20px; }
+        /* Stats Dashboard Widgets */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .stat-card { padding: 20px; border-radius: 16px; color: white; }
+        .stat-due { background: #ef4444; }
+        .stat-received { background: #10b981; }
 
-        .text-green { color: var(--success); }
-        .text-red { color: var(--danger); }
+        /* Live Filter Search Box */
+        .search-box { background: #fff; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; width: 100%; font-size: 14px; outline: none; margin-bottom: 20px; transition: 0.2s; }
+        .search-box:focus { border-color: #000; }
 
-        /* FAB */
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: #000; color: #fff; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; border: none; transition: 0.3s; }
-        .fab:active { transform: scale(0.9); }
-        body.dark .fab { background: #fff; color: #000; }
-
-        /* Modals */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); z-index: 2000; justify-content: center; align-items: flex-end; }
-        .modal-content { width: 100%; max-width: 600px; background: #fff; border-radius: 35px 35px 0 0; padding: 30px; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        body.dark .modal-content { background: #1e293b; }
+        /* Table Design */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 14px; color: #94a3b8; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; background: #fafafa; }
+        td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        /* Reactive Badges */
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+        .badge-due { background: #ffeeeb; color: #ef4444; }
+        .badge-paid { background: #f0fdf4; color: #10b981; }
 
-        .entry-input { width: 100%; background: #f8fafc; border: 2px solid transparent; padding: 18px; border-radius: 18px; margin-bottom: 12px; outline: none; font-weight: 700; font-size: 15px; transition: 0.3s; }
-        body.dark .entry-input { background: #0f172a; color: #fff; }
-        .entry-input:focus { border-color: var(--primary); background: transparent; }
-
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
-        .btn-pay { background: #fef2f2; color: #ef4444; border: none; padding: 20px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 14px; letter-spacing: 0.5px; transition: 0.2s; }
-        .btn-collect { background: #f0fdf4; color: #10b981; border: none; padding: 20px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 14px; letter-spacing: 0.5px; transition: 0.2s; }
-
-        .chip { background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; color: #64748b; transition: 0.2s; }
-        body.dark .chip { background: #334155; color: #cbd5e1; }
-        .chip:active { transform: scale(0.9); }
-
-        .trans-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 10px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        body.dark .trans-item { border-color: rgba(255,255,255,0.05); }
-
-        @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 20px; padding-bottom: 100px; } }
+        @media(max-width: 768px){ .sidebar { display: none; } .content { margin-left: 0; padding: 15px; } .stats-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="app">
     <aside class="sidebar">
-        <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" onclick="go('dashboard.html')">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo">
+            <div><h4>Surjya Bakery</h4><p style="font-size: 10px;">POS System</p></div>
+        </div>
         <ul class="menu">
-            <li onclick="go('dashboard.html')"><i class="fa-solid fa-house"></i> Dashboard</li>
-            <li class="active"><i class="fa-solid fa-book-open"></i> Khatabook</li>
-            <li onclick="go('items.html')"><i class="fa-solid fa-cookie-bite"></i> Items</li>
-            <li onclick="go('records.html')"><i class="fa-solid fa-chart-pie"></i> Records</li>
+            <li onclick="window.location.href='index.html'"><i class="fa-solid fa-file-invoice"></i> Billing</li>
+            <li class="active"><i class="fa-solid fa-book"></i> Ledger</li>
         </ul>
     </aside>
 
     <main class="content">
         <header class="top-header">
-            <button class="back-btn" onclick="go('dashboard.html')"><i class="fa-solid fa-chevron-left"></i></button>
-            <div style="text-align: right;">
-                <h2 style="font-weight: 900; letter-spacing: -1.5px; font-size: 28px;">Ledger Pro</h2>
-                <p id="dateNow" style="font-size: 12px; font-weight: 800; color: var(--primary);"></p>
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='index.html'">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <h2 style="font-weight: 800;">Customer Ledger</h2>
             </div>
         </header>
 
-        <div class="grid-summary">
-            <div class="stat-card">
-                <p>Today Got (Lena)</p>
-                <h3 id="todayCollect" class="text-green">₹ 0</h3>
+        <div class="stats-grid">
+            <div class="stat-card stat-due">
+                <p style="opacity: 0.8; font-size: 13px;">Total Market Due (Udaari)</p>
+                <h2 id="totalMarketDue" style="font-size: 28px; font-weight: 800; margin-top: 5px;">₹0.00</h2>
             </div>
-            <div class="stat-card">
-                <p>Today Gave (Dena)</p>
-                <h3 id="todayPay" class="text-red">₹ 0</h3>
-            </div>
-        </div>
-
-        <div class="grid-summary" style="margin-top: -5px; opacity: 0.9;">
-            <div class="stat-card" style="padding: 18px; border-style: dashed;">
-                <p style="font-size: 9px;">Total Market Due</p>
-                <h3 id="mainTotalCollect" style="font-size: 18px; color: var(--danger);">₹ 0</h3>
-            </div>
-            <div class="stat-card" style="padding: 18px; border-style: dashed;">
-                <p style="font-size: 9px;">Active Accounts</p>
-                <h3 id="dueCount" style="font-size: 18px;">0</h3>
+            <div class="stat-card stat-received">
+                <p style="opacity: 0.8; font-size: 13px;">Total Cash Received</p>
+                <h2 id="totalCashReceived" style="font-size: 28px; font-weight: 800; margin-top: 5px;">₹0.00</h2>
             </div>
         </div>
 
-        <div class="search-box">
-            <i class="fa-solid fa-search"></i>
-            <input type="text" id="custSearch" placeholder="Search name or mobile..." oninput="renderCustomerList()">
-        </div>
+        <input type="text" id="searchLedger" class="search-box" placeholder="🔍 Search by Customer Name, Invoice, or Mobile Number..." oninput="filterLedger()">
 
-        <div class="list-container" id="customerList"></div>
+        <div class="card" style="padding:0; overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Inv No</th>
+                        <th>Customer Details</th>
+                        <th>Net Total</th>
+                        <th>Amount Paid</th>
+                        <th>Balance Due</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="ledgerTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">Loading historical transactions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </main>
 </div>
 
-<button class="fab" onclick="showAddModal()"><i class="fa-solid fa-user-plus"></i></button>
-
-<div class="modal" id="addModal">
-    <div class="modal-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
-            <h2 style="font-weight: 900; letter-spacing: -1px;">New Account</h2>
-            <i class="fa-solid fa-circle-xmark" onclick="closeModals()" style="cursor:pointer; opacity:0.3; font-size: 24px;"></i>
-        </div>
-        <input type="text" id="newName" class="entry-input" placeholder="Customer Name">
-        <input type="tel" id="newPhone" class="entry-input" placeholder="WhatsApp Number">
-        <input type="number" id="openingDue" class="entry-input" placeholder="Opening Balance (Optional)">
-        <button class="btn-collect" style="width:100%; background:#000; color:#fff;" onclick="createNewCustomer()">CREATE ACCOUNT</button>
-    </div>
-</div>
-
-<div class="modal" id="customerModal" style="align-items: center;">
-    <div class="modal-content" style="height: 94vh; border-radius: 35px; display: flex; flex-direction: column;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-            <div style="display:flex; align-items:center; gap:15px;">
-                <div id="modalAvatar" class="avatar">?</div>
-                <div>
-                    <h3 id="activeCustName" style="font-weight: 900; letter-spacing: -0.5px;">Name</h3>
-                    <p id="activeCustPhone" style="font-size: 13px; opacity:0.6; font-weight: 700;"></p>
-                </div>
-            </div>
-            <div style="display:flex; gap:20px; align-items:center;">
-                <i class="fa-solid fa-file-pdf" style="color:#ef4444; font-size:22px; cursor:pointer;" onclick="downloadPDF()"></i>
-                <i class="fa-brands fa-whatsapp" style="color:#22c55e; font-size:26px; cursor:pointer;" onclick="sendWhatsAppReminder()"></i>
-                <i class="fa-solid fa-xmark" onclick="closeModals()" style="font-size:24px; cursor:pointer; opacity:0.2"></i>
-            </div>
-        </div>
-
-        <div id="activeCustBalance" style="padding:20px; border-radius:24px; text-align:center; font-weight:900; font-size:26px; margin-bottom:15px; letter-spacing: -1px;">₹ 0</div>
-        
-        <div id="transactionHistory" style="flex:1; overflow-y:auto; margin-bottom:15px; scrollbar-width: none;"></div>
-
-        <div style="padding-top:15px; border-top:1px solid rgba(0,0,0,0.05);">
-            <div style="display:flex; gap:10px; margin-bottom:15px; overflow-x:auto; padding-bottom:5px; scrollbar-width: none;">
-                <button class="chip" onclick="quickFillBalance()">FULL SETTLE</button>
-                <button class="chip" onclick="fillAmt(100)">+ ₹100</button>
-                <button class="chip" onclick="fillAmt(500)">+ ₹500</button>
-                <button class="chip" onclick="fillAmt(1000)">+ ₹1000</button>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="entryAmount" class="entry-input" placeholder="Amount ₹" style="flex:1">
-                <input type="text" id="entryNote" class="entry-input" placeholder="Remark/Items" style="flex:2">
-            </div>
-            <div class="btn-row">
-                <button class="btn-pay" onclick="saveEntry('pay')">GAVE (DENA)</button>
-                <button class="btn-collect" onclick="saveEntry('collect')">GOT (LENA)</button>
-            </div>
-            <center><p onclick="deleteCustomer()" style="font-size:11px; color:var(--danger); margin-top:20px; cursor:pointer; font-weight:800; opacity:0.4; text-transform: uppercase;">Permanently Delete Account</p></center>
-        </div>
-    </div>
-</div>
-
 <script>
+    // Firebase credentials injection mapped with billing page
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
         authDomain: "billingbuddy-551f9.firebaseapp.com",
@@ -227,215 +127,94 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let activeCustomer = null;
-    let activeCustomerPhone = "";
-    let currentBalanceRaw = 0;
-    let allClients = [];
-    let allLedger = [];
+    let allTransactions = [];
 
-    function init() {
-        document.getElementById('dateNow').innerText = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-        if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
+    window.onload = async () => {
+        await loadLedgerData();
+    };
 
-        db.collection("clients").onSnapshot(snap => {
-            allClients = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderCustomerList();
-        });
-        db.collection("ledger").onSnapshot(snap => {
-            allLedger = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderCustomerList();
-        });
-    }
+    // Firebase live synchronization and parsing logic
+    async function loadLedgerData() {
+        try {
+            // Sorting files chronologically by server timestamp
+            const snapshot = await db.collection("sales").orderBy("timestamp", "desc").get();
+            allTransactions = [];
+            
+            let marketDue = 0;
+            let cashReceived = 0;
 
-    function renderCustomerList() {
-        const container = document.getElementById('customerList');
-        const search = document.getElementById('custSearch').value.toLowerCase();
-        
-        let grandTotal = 0;
-        let dueAccounts = 0;
-        let dayCollect = 0;
-        let dayPay = 0;
-        const todayStr = new Date().toLocaleDateString('en-GB');
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                allTransactions.push(data);
 
-        container.innerHTML = '';
-
-        const filtered = allClients.filter(c => 
-            c.name.toLowerCase().includes(search) || (c.phone && c.phone.includes(search))
-        ).sort((a, b) => a.name.localeCompare(b.name));
-
-        filtered.forEach(client => {
-            const history = allLedger.filter(l => l.name === client.name);
-            let balance = parseFloat(client.openingDue || 0);
-
-            history.forEach(t => {
-                const amt = parseFloat(t.amount);
-                if (t.type === 'collect' || t.type === 'Payment') {
-                    balance -= amt;
-                    if(t.date === todayStr) dayCollect += amt;
-                } else {
-                    balance += amt;
-                    if(t.date === todayStr) dayPay += amt;
-                }
+                marketDue += (data.due > 0) ? data.due : 0;
+                cashReceived += data.paid || 0;
             });
 
-            grandTotal += balance;
-            if(balance > 0) dueAccounts++;
+            // Updating layout summaries
+            document.getElementById("totalMarketDue").innerText = `₹${marketDue.toFixed(2)}`;
+            document.getElementById("totalCashReceived").innerText = `₹${cashReceived.toFixed(2)}`;
 
-            container.innerHTML += `
-                <div class="customer-card" onclick="openCustomer('${client.name}', '${client.phone}')">
-                    <div style="display:flex; align-items:center; gap:15px;">
-                        <div class="avatar">${client.name[0].toUpperCase()}</div>
-                        <div>
-                            <h4 style="font-weight:900; letter-spacing:-0.5px;">${client.name}</h4>
-                            <p style="font-size:12px; opacity:0.5; font-weight:700;">${client.phone || 'No Phone'}</p>
-                        </div>
-                    </div>
-                    <div style="text-align:right">
-                        <h4 class="${balance <= 0 ? 'text-green' : 'text-red'}" style="font-weight:900; font-size:18px;">₹${Math.abs(balance).toLocaleString()}</h4>
-                        <span style="font-size:10px; font-weight:900; opacity:0.6;">${balance <= 0 ? 'SETTLED' : 'YOU GET'}</span>
-                    </div>
-                </div>`;
-        });
-
-        document.getElementById('mainTotalCollect').innerText = `₹${grandTotal.toLocaleString()}`;
-        document.getElementById('dueCount').innerText = dueAccounts;
-        document.getElementById('todayCollect').innerText = `₹${dayCollect.toLocaleString()}`;
-        document.getElementById('todayPay').innerText = `₹${dayPay.toLocaleString()}`;
-        
-        if(activeCustomer) renderHistory();
-    }
-
-    function openCustomer(name, phone) {
-        activeCustomer = name;
-        activeCustomerPhone = phone;
-        document.getElementById('activeCustName').innerText = name;
-        document.getElementById('activeCustPhone').innerText = phone ? "WhatsApp: " + phone : "Phone not saved";
-        document.getElementById('modalAvatar').innerText = name[0].toUpperCase();
-        document.getElementById('customerModal').style.display = 'flex';
-        renderHistory();
-    }
-
-    function renderHistory() {
-        const hist = document.getElementById('transactionHistory');
-        const client = allClients.find(c => c.name === activeCustomer);
-        const filtered = allLedger.filter(l => l.name === activeCustomer)
-                         .sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-        
-        hist.innerHTML = '';
-        let balance = parseFloat(client?.openingDue || 0);
-
-        if(balance !== 0) {
-            hist.innerHTML += `<div style="text-align:center; padding:12px; font-size:11px; opacity:0.5; font-weight:800; color:var(--primary);">OPENING BALANCE: ₹${balance}</div>`;
-        }
-
-        filtered.forEach(e => {
-            const isPlus = !(e.type === 'collect' || e.type === 'Payment');
-            const amt = parseFloat(e.amount);
-            
-            hist.innerHTML += `
-                <div class="trans-item">
-                    <div style="flex:1">
-                        <p style="font-size:15px; font-weight:800;">${e.note || (isPlus ? 'Credit Entry' : 'Payment Received')}</p>
-                        <small style="font-size:11px; opacity:0.5; font-weight:700;">${e.date}</small>
-                    </div>
-                    <div style="text-align:right; display:flex; align-items:center; gap:15px;">
-                        <h4 class="${isPlus ? 'text-red' : 'text-green'}" style="font-weight:900;">${isPlus ? '+' : '-'} ₹${amt.toLocaleString()}</h4>
-                        <i class="fa-solid fa-trash-can" onclick="deleteEntry('${e.id}')" style="font-size:14px; opacity:0.15; cursor:pointer;"></i>
-                    </div>
-                </div>`;
-            
-            if(isPlus) balance += amt; else balance -= amt;
-        });
-
-        currentBalanceRaw = balance;
-        const balBox = document.getElementById('activeCustBalance');
-        balBox.innerText = `Pending: ₹${Math.abs(balance).toLocaleString()}`;
-        balBox.style.background = balance <= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-        balBox.style.color = balance <= 0 ? 'var(--success)' : 'var(--danger)';
-    }
-
-    async function saveEntry(type) {
-        const amt = document.getElementById('entryAmount').value;
-        const note = document.getElementById('entryNote').value;
-        if(!amt || amt <= 0) return;
-
-        await db.collection("ledger").add({
-            name: activeCustomer,
-            phone: activeCustomerPhone,
-            type: type, 
-            amount: parseFloat(amt),
-            note: note,
-            date: new Date().toLocaleDateString('en-GB'),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        document.getElementById('entryAmount').value = ''; 
-        document.getElementById('entryNote').value = '';
-        if (window.navigator.vibrate) window.navigator.vibrate(50);
-    }
-
-    async function createNewCustomer() {
-        const n = document.getElementById('newName').value.trim();
-        const p = document.getElementById('newPhone').value.trim();
-        const due = document.getElementById('openingDue').value || 0;
-        
-        if(!n) return alert("Name is required");
-
-        await db.collection("clients").add({
-            name: n, phone: p, openingDue: parseFloat(due),
-            created: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        closeModals();
-    }
-
-    async function deleteEntry(id) {
-        if(confirm("Delete this entry?")) await db.collection("ledger").doc(id).delete();
-    }
-
-    async function deleteCustomer() {
-        if(confirm(`Are you sure you want to delete ${activeCustomer}?`)) {
-            const clientDoc = allClients.find(c => c.name === activeCustomer);
-            if(clientDoc) await db.collection("clients").doc(clientDoc.id).delete();
-            const batch = db.batch();
-            allLedger.filter(l => l.name === activeCustomer).forEach(l => {
-                batch.delete(db.collection("ledger").doc(l.id));
-            });
-            await batch.commit();
-            closeModals();
+            renderTable(allTransactions);
+        } catch (error) {
+            console.error("Critical Ledger Fetch Exception:", error);
+            document.getElementById("ledgerTableBody").innerHTML = `<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:30px;">Failed to secure database sync. Check cloud indexing permissions.</td></tr>`;
         }
     }
 
-    function downloadPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFont("helvetica", "bold");
-        doc.text("SURJYA BAKERY - CUSTOMER LEDGER", 105, 20, null, null, "center");
-        doc.setFontSize(12);
-        doc.text(`Customer: ${activeCustomer}`, 14, 35);
-        doc.text(`Total Pending: Rs. ${currentBalanceRaw}`, 14, 43);
+    // Dynamic virtual table rendering engine
+    function renderTable(dataList) {
+        let html = "";
+        if(dataList.length === 0) {
+            html = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">No historical matching dataset found.</td></tr>`;
+            document.getElementById("ledgerTableBody").innerHTML = html;
+            return;
+        }
 
-        const rows = allLedger.filter(l => l.name === activeCustomer).map(e => [
-            e.date, e.note || '-', e.type === 'collect' ? 'GOT (Lena)' : 'GAVE (Dena)', `Rs. ${e.amount}`
-        ]);
+        dataList.forEach(item => {
+            let dateStr = "N/A";
+            if(item.timestamp) {
+                const dateObj = item.timestamp.toDate();
+                dateStr = dateObj.toLocaleDateString('en-GB') + " " + dateObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+            }
 
-        doc.autoTable({ startY: 50, head: [['Date', 'Remark', 'Type', 'Amount']], body: rows, theme: 'striped' });
-        doc.save(`${activeCustomer}_Bakery_Ledger.pdf`);
+            const statusBadge = item.due > 0 
+                ? `<span class="badge badge-due"><i class="fa-solid fa-clock"></i> DUE</span>` 
+                : `<span class="badge badge-paid"><i class="fa-solid fa-circle-check"></i> PAID</span>`;
+
+            html += `<tr>
+                <td style="font-weight:500; color:#475569;">${dateStr}</td>
+                <td style="font-family:monospace; font-weight:bold; color:#0f172a;">#${item.invNo || '---'}</td>
+                <td>
+                    <div style="font-weight:600; color:#1e293b;">${item.customer || 'Guest'}</div>
+                    <div style="font-size:11px; color:#64748b;">${item.customerPhone || 'No Phone Registered'}</div>
+                </td>
+                <td style="font-weight:600;">₹${(item.netTotal || 0).toFixed(2)}</td>
+                <td style="color:#10b981; font-weight:600;">₹${(item.paid || 0).toFixed(2)}</td>
+                <td style="color:${item.due > 0 ? '#ef4444' : '#1e293b'}; font-weight:700;">₹${(item.due || 0).toFixed(2)}</td>
+                <td>${statusBadge}</td>
+            </tr>`;
+        });
+        document.getElementById("ledgerTableBody").innerHTML = html;
     }
 
-    function sendWhatsAppReminder() {
-        if(!activeCustomerPhone) return alert("Please save a phone number first!");
-        const msg = `Namaste ${activeCustomer}, Surjya Bakery se reminder: Aapka pending balance ₹${currentBalanceRaw} hai. Kripya time se bhugtan karein. Dhanyawad!`;
-        window.open(`https://wa.me/91${activeCustomerPhone}?text=${encodeURIComponent(msg)}`);
+    // Instant query filter selector execution
+    function filterLedger() {
+        const query = document.getElementById("searchLedger").value.toLowerCase().trim();
+        if(!query) {
+            renderTable(allTransactions);
+            return;
+        }
+
+        const filtered = allTransactions.filter(item => {
+            const name = (item.customer || '').toLowerCase();
+            const phone = (item.customerPhone || '').toLowerCase();
+            const inv = (item.invNo || '').toLowerCase();
+            return name.includes(query) || phone.includes(query) || inv.includes(query);
+        });
+
+        renderTable(filtered);
     }
-
-    function fillAmt(v) { document.getElementById('entryAmount').value = v; }
-    function quickFillBalance() { document.getElementById('entryAmount').value = Math.abs(currentBalanceRaw); }
-    function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); activeCustomer = null; }
-    function go(p) { window.location.href = p; }
-
-    window.onload = init;
 </script>
 </body>
 </html>

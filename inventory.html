@@ -27,6 +27,8 @@
         }
         body.dark .sidebar { background: #1e293b; border-color: #334155; }
         
+        .logo { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; margin-bottom: 20px; }
+
         .menu { list-style: none; flex-grow: 1; margin-top: 20px; }
         .menu li { 
             display: flex; align-items: center; gap: 12px; padding: 12px 16px; 
@@ -188,7 +190,6 @@
     let inventory = [];
     let currentTab = 'Bakery';
     let editingId = null;
-    let updatingStockInfo = { id: null, current: 0, mode: '' };
 
     function initInventory() {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
@@ -212,13 +213,19 @@
         const filteredData = inventory.filter(item => (item.type || 'Bakery') === currentTab);
 
         filteredData.forEach((item) => {
-            const min = item.minLevel || 10;
-            const isLow = item.stock <= min;
+            const min = parseFloat(item.minLevel) || 10;
+            const currentStock = parseFloat(item.stock) || 0;
+            const isLow = currentStock <= min;
+            
             if(isLow) lowCount++; else healthyCount++;
+            
             const price = parseFloat(item.price) || 0;
-            const itemValue = item.stock * price;
+            const itemValue = currentStock * price;
             totalVal += itemValue;
-            const progress = Math.min((item.stock / (min * 5)) * 100, 100); 
+            
+            // Fix 2: Smart alert scaling calculation to dynamic bar mapping
+            const maxTrackTarget = min > 0 ? min * 4 : 100;
+            const progress = Math.min((currentStock / maxTrackTarget) * 100, 100); 
             
             list.innerHTML += `
                 <div class="card">
@@ -230,7 +237,7 @@
                         </div>
                     </div>
                     <div class="stock-display">
-                        <span class="stock-level" style="color: ${isLow ? 'var(--danger)' : 'var(--primary)'}">${item.stock}</span>
+                        <span class="stock-level" style="color: ${isLow ? 'var(--danger)' : 'var(--primary)'}">${currentStock}</span>
                         <span class="unit">${item.unit || (currentTab==='Raw'?'Kg':'Pcs')}</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
@@ -239,27 +246,27 @@
                     </div>
                     <div class="progress-track"><div class="progress-fill" style="width: ${progress}%; background: ${isLow ? 'var(--danger)' : 'var(--success)'}"></div></div>
                     <div class="btn-group">
-                        <button class="qty-btn minus" onclick="openStockUpdate('${item.id}', ${item.stock}, 'minus', '${item.name}')">- Use</button>
-                        <button class="qty-btn plus" onclick="openStockUpdate('${item.id}', ${item.stock}, 'plus', '${item.name}')">+ Stock</button>
+                        <button class="qty-btn minus" onclick="openStockUpdate('${item.id}', ${currentStock}, 'minus', '${item.name}')">- Use</button>
+                        <button class="qty-btn plus" onclick="openStockUpdate('${item.id}', ${currentStock}, 'plus', '${item.name}')">+ Stock</button>
                     </div>
                     <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-size:10px; font-weight:800; opacity:0.4;">VALUATION</span>
-                        <span style="font-size:13px; font-weight:900;">₹${itemValue.toLocaleString()}</span>
+                        <span style="font-size:13px; font-weight:900;">₹${itemValue.toLocaleString('en-IN')}</span>
                     </div>
                 </div>`;
         });
         document.getElementById("totalItemsCount").innerText = filteredData.length;
         document.getElementById("lowStockCount").innerText = lowCount;
         document.getElementById("healthyCount").innerText = healthyCount;
-        document.getElementById("totalStockValue").innerText = "₹" + totalVal.toLocaleString();
+        document.getElementById("totalStockValue").innerText = "₹" + totalVal.toLocaleString('en-IN');
     }
 
-    // MODAL FUNCTIONS
     function closeModal(id) { document.getElementById(id).style.display = "none"; editingId = null; }
 
+    // Fix 1: Form inputs clear state reset engine
     function openAddModal() {
         editingId = null;
-        document.getElementById("modalTitle").innerText = "Add " + currentTab;
+        document.getElementById("modalTitle").innerText = "Add " + (currentTab === 'Bakery' ? "Product" : "Raw Material");
         document.getElementById("itemName").value = "";
         document.getElementById("itemPrice").value = "";
         document.getElementById("itemStock").value = "";
@@ -270,31 +277,40 @@
     function openEditModal(id) {
         editingId = id;
         const item = inventory.find(i => i.id === id);
+        if(!item) return;
         document.getElementById("modalTitle").innerText = "Edit Item";
-        document.getElementById("itemName").value = item.name;
-        document.getElementById("itemPrice").value = item.price;
-        document.getElementById("itemStock").value = item.stock;
-        document.getElementById("itemMin").value = item.minLevel;
+        document.getElementById("itemName").value = item.name || "";
+        document.getElementById("itemPrice").value = item.price || 0;
+        document.getElementById("itemStock").value = item.stock || 0;
+        document.getElementById("itemMin").value = item.minLevel || 10;
         document.getElementById("itemModal").style.display = "flex";
     }
 
     async function saveItem() {
+        const nameVal = document.getElementById("itemName").value.trim();
+        if(!nameVal) return alert("Item name is required!");
+
         const data = {
-            name: document.getElementById("itemName").value,
+            name: nameVal,
             price: parseFloat(document.getElementById("itemPrice").value) || 0,
             stock: parseFloat(document.getElementById("itemStock").value) || 0,
             minLevel: parseFloat(document.getElementById("itemMin").value) || 0,
             type: currentTab,
             unit: currentTab === 'Raw' ? 'Kg' : 'Pcs'
         };
-        if(!data.name) return;
-        if(editingId) await db.collection("inventory").doc(editingId).update(data);
-        else await db.collection("inventory").add({...data, timestamp: firebase.firestore.FieldValue.serverTimestamp()});
+
+        if(editingId) {
+            await db.collection("inventory").doc(editingId).update(data);
+        } else {
+            await db.collection("inventory").add({
+                ...data, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
         closeModal('itemModal');
     }
 
     function openStockUpdate(id, current, mode, name) {
-        updatingStockInfo = { id, current, mode };
         document.getElementById("updateTitle").innerText = mode === 'plus' ? "Restock Item" : "Quick Use";
         document.getElementById("updateItemName").innerText = name;
         document.getElementById("updateQty").value = "";
@@ -303,7 +319,8 @@
         
         document.getElementById("confirmUpdateBtn").onclick = async function() {
             const val = parseFloat(document.getElementById("updateQty").value);
-            if(isNaN(val)) return;
+            if(isNaN(val) || val <= 0) return alert("Please enter a valid quantity!");
+            
             const newStock = mode === 'plus' ? current + val : Math.max(0, current - val);
             await db.collection("inventory").doc(id).update({ stock: newStock });
             closeModal('stockUpdateModal');
@@ -311,16 +328,20 @@
     }
 
     async function deleteItem(id, name) {
-        if (confirm(`Remove ${name}?`)) await db.collection("inventory").doc(id).delete();
+        if (confirm(`Are you sure you want to remove ${name}?`)) {
+            await db.collection("inventory").doc(id).delete();
+        }
     }
 
     function downloadReport() {
         let csv = "Type,Item,Stock,Unit,Price,TotalValue\n";
-        inventory.forEach(i => { csv += `${i.type},${i.name},${i.stock},${i.unit},${i.price},${i.stock * i.price}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' });
+        inventory.forEach(i => { 
+            csv += `"${i.type || 'Bakery'}","${i.name || 'Unnamed'}",${i.stock || 0},"${i.unit || 'Pcs'}",${i.price || 0},${(i.stock || 0) * (i.price || 0)}\n`; 
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `Stock_Report.csv`;
+        a.download = `Stock_Report_${new Date().toLocaleDateString('en-GB')}.csv`;
         a.click();
     }
 

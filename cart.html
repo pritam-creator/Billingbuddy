@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* CSS Same as before with Modal Updates */
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, sans-serif; }
         body { background: #f8fafc; color: #1e293b; min-height: 100vh; transition: 0.3s; }
         body.dark { background: #0f172a; color: #f1f5f9; }
@@ -111,7 +110,7 @@
             <div class="summary-line" style="display:flex; justify-content: space-between;"><span>Sub Total:</span><span id="subTotal">₹ 0</span></div>
             <div class="summary-line" style="margin-top:10px; display:flex; justify-content: space-between; align-items:center;">
                 <span>Discount (₹):</span>
-                <input type="number" id="discountVal" value="0" oninput="calculateTotal()" style="width: 80px; text-align: right;">
+                <input type="number" id="discountVal" value="0" min="0" oninput="calculateTotal()" style="width: 80px; text-align: right;">
             </div>
             <div style="background:rgba(16, 185, 129, 0.1); padding:15px; border-radius:12px; margin-top:15px; display:flex; justify-content: space-between; font-weight:800; color:#10b981;">
                 <span>Final Amount:</span>
@@ -159,13 +158,14 @@
     const db = firebase.firestore();
 
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    let clients = JSON.parse(localStorage.getItem("clients")) || [];
 
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
     function showLogout() { showModal('logoutModal'); }
 
     async function placeOrder() {
+        if(cart.length === 0) return alert("Cart khali hai!");
+
         const btn = document.getElementById("checkoutBtn");
         btn.disabled = true;
         btn.innerText = "Processing...";
@@ -177,40 +177,70 @@
 
         const orderId = "ORD-" + Date.now();
         const newOrder = {
-            orderId, date: new Date().toLocaleString('en-IN'),
-            customer, items: [...cart], total: amount, mode, note,
+            orderId, 
+            date: new Date().toLocaleString('en-IN'),
+            customer, 
+            items: [...cart], 
+            total: amount, 
+            mode, 
+            note,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         try {
+            // 1. Order save karein
             await db.collection("orders").doc(orderId).set(newOrder);
+            
+            // Fix A: Alignment with Dashboard/Customer Portal Ledger system
             if(mode === "Due" && customer !== "Walking Customer") {
                 await db.collection("ledger").add({
-                    name: customer, type: 'pay', amount, note: "Order: " + orderId,
+                    name: customer, 
+                    balance: amount, // 'balance' name use kiya jo upni collect calculation se maps hai
+                    note: "Order: " + orderId,
                     date: new Date().toLocaleDateString('en-IN'),
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
-            // SUCCESS! No alert, just modal.
+            
             cart = [];
             localStorage.setItem("cart", JSON.stringify(cart));
             showModal('successModal');
         } catch (error) {
+            console.error("Order error:", error);
             btn.disabled = false;
             btn.innerText = "RETRY ORDER";
-            // Optional: Add a small error toast here
+            alert("Order save karne mein dikkat aayi. Fir se koshish karein.");
         }
     }
 
-    // Logic functions same as your code...
     function calculateTotal() {
-        let sub = cart.reduce((s, i) => s + (i.price * i.qty), 0);
-        let disc = parseFloat(document.getElementById("discountVal").value) || 0;
+        let sub = cart.reduce((s, i) => s + (parseFloat(i.price || 0) * parseInt(i.qty || 0)), 0);
+        let inputDisc = parseFloat(document.getElementById("discountVal").value);
+        
+        // Fix C: Prevent Negative value input bypass crash
+        let disc = isNaN(inputDisc) || inputDisc < 0 ? 0 : inputDisc;
         let total = Math.max(0, sub - disc);
-        document.getElementById("subTotal").innerText = "₹ " + sub;
-        document.getElementById("grandTotalDisplay").innerText = "₹ " + total;
-        document.getElementById("finalDisplay").innerText = "₹ " + total;
+
+        document.getElementById("subTotal").innerText = "₹ " + sub.toLocaleString('en-IN');
+        document.getElementById("grandTotalDisplay").innerText = "₹ " + total.toLocaleString('en-IN');
+        document.getElementById("finalDisplay").innerText = "₹ " + total.toLocaleString('en-IN');
         return total;
+    }
+
+    // Fix B: Live Fetch clients direct from Cloud Firestore sync list
+    function loadClientsDropdown() {
+        const custSelect = document.getElementById("customerSelect");
+        if(!custSelect) return;
+
+        db.collection("clients").onSnapshot(snap => {
+            custSelect.innerHTML = '<option value="Walking Customer">Walking Customer</option>';
+            snap.forEach(doc => {
+                const c = doc.data();
+                if(c.name) {
+                    custSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+                }
+            });
+        });
     }
 
     function renderCart() {
@@ -227,14 +257,19 @@
         }
 
         footer.style.display="flex"; summary.style.display="block"; settings.style.display="block";
-        const custSelect = document.getElementById("customerSelect");
-        custSelect.innerHTML = '<option value="Walking Customer">Walking Customer</option>';
-        clients.forEach(c => custSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+        
+        // Safe calling async updated clients data list map
+        loadClientsDropdown();
 
         cart.forEach((item, i) => {
+            const itemPrice = parseFloat(item.price) || 0;
+            const itemQty = parseInt(item.qty) || 0;
             container.innerHTML += `
                 <div class="cart-item">
-                    <div><h4 style="font-weight:700;">${item.name}</h4><p style="font-size:12px; opacity:0.6;">₹${item.price} x ${item.qty}</p></div>
+                    <div>
+                        <h4 style="font-weight:700;">${item.name || 'Bakery Product'}</h4>
+                        <p style="font-size:12px; opacity:0.6;">₹${itemPrice.toLocaleString('en-IN')} x ${itemQty}</p>
+                    </div>
                     <i class="fa-solid fa-trash-can" style="color:#ef4444; cursor:pointer;" onclick="remove(${i})"></i>
                 </div>`;
         });

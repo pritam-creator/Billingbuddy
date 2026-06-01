@@ -82,13 +82,13 @@
         body.dark .item-card { background: #1e293b; border-color: #334155; }
         .item-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
 
-        .img-container { width: 100%; height: 160px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .img-container { width: 100%; height: 160px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
         body.dark .img-container { background: #0f172a; }
         .img-container img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
         .item-card:hover .img-container img { transform: scale(1.1); }
         
         .card-info { padding: 18px; }
-        .card-info h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; }
+        .card-info h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .price-tag { color: var(--accent); font-size: 18px; font-weight: 900; display: block; margin-bottom: 15px; }
 
         .btn-add-bill { 
@@ -151,7 +151,7 @@
             
             <div class="search-input">
                 <i class="fa-solid fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search for items..." oninput="fetchItems()">
+                <input type="text" id="searchInput" placeholder="Search for items..." oninput="localRenderFilter()">
             </div>
         </div>
 
@@ -183,10 +183,12 @@
     const db = firebase.firestore();
 
     let currentCategory = "All";
+    let cachedInventoryData = []; // Fix 1: Single global active snapshot listener cache
+    let activeUnsubscribeStream = null;
 
     window.onload = () => {
         if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark");
-        fetchItems();
+        initInventoryStream();
         updateCartCount();
         startTime();
     };
@@ -197,49 +199,84 @@
         setTimeout(startTime, 1000);
     }
 
+    // Fix 1: Persistent Firestore connection cache strategy
+    function initInventoryStream() {
+        if (activeUnsubscribeStream) activeUnsubscribeStream();
+        
+        activeUnsubscribeStream = db.collection("inventory").orderBy("name")
+            .onSnapshot(snap => {
+                cachedInventoryData = [];
+                snap.forEach(doc => {
+                    let data = doc.data();
+                    data.id = doc.id;
+                    cachedInventoryData.push(data);
+                });
+                localRenderFilter();
+            }, err => {
+                console.error("Data stream connection failed:", err);
+            });
+    }
+
     function filterCategory(cat, el) {
         currentCategory = cat;
         document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
-        fetchItems();
+        localRenderFilter();
     }
 
-    function fetchItems() {
-        const query = document.getElementById("searchInput").value.toLowerCase();
-        db.collection("inventory").orderBy("name").onSnapshot(snap => {
-            const list = document.getElementById("list");
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const item = doc.data();
-                const matchesSearch = item.name.toLowerCase().includes(query);
-                const matchesCat = currentCategory === "All" || item.category === currentCategory;
+    // Fix 1: Ultra-fast offline instant client-side calculation array engine
+    function localRenderFilter() {
+        const query = document.getElementById("searchInput").value.toLowerCase().trim();
+        const listContainer = document.getElementById("list");
+        listContainer.innerHTML = "";
 
-                if(matchesSearch && matchesCat) {
-                    const card = document.createElement("div");
-                    card.className = "item-card";
-                    card.innerHTML = `
-                        <div class="img-container" onclick="goPage('product-insights.html?id=${doc.id}')">
-                            ${item.photo ? `<img src="${item.photo}">` : `<i class="fa-solid fa-cookie-bite" style="opacity:0.1; font-size:60px;"></i>`}
-                        </div>
-                        <div class="card-info">
-                            <h3>${item.name}</h3>
-                            <span class="price-tag">₹${item.price}</span>
-                            <button class="btn-add-bill" onclick="addToCart('${doc.id}', '${item.name}', ${item.price})">
-                                <i class="fa-solid fa-plus"></i> ADD TO BILL
-                            </button>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                }
-            });
+        cachedInventoryData.forEach(item => {
+            const matchesSearch = (item.name || "").toLowerCase().includes(query);
+            const matchesCat = currentCategory === "All" || item.category === currentCategory;
+
+            if(matchesSearch && matchesCat) {
+                // Fix 3: Dynamic fallback validation criteria
+                const evaluatedPrice = parseFloat(item.price) || 0;
+                
+                const card = document.createElement("div");
+                card.className = "item-card";
+                card.innerHTML = `
+                    <div class="img-container" onclick="goPage('product-insights.html?id=${item.id}')">
+                        ${item.photo ? `<img src="${item.photo}" alt="${item.name}">` : `<i class="fa-solid fa-cookie-bite" style="opacity:0.1; font-size:60px;"></i>`}
+                    </div>
+                    <div class="card-info">
+                        <h3>${item.name || 'Unnamed Product'}</h3>
+                        <span class="price-tag">₹${evaluatedPrice.toFixed(2)}</span>
+                        <button class="btn-add-bill" onclick="addToCart('${item.name}', ${evaluatedPrice})">
+                            <i class="fa-solid fa-plus"></i> ADD TO BILL
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            }
         });
     }
 
-    function addToCart(id, name, price) {
-        let cart = JSON.parse(localStorage.getItem("cart")) || [];
-        const existing = cart.find(i => i.id === id);
-        if(existing) existing.qty++; else cart.push({id, name, price, qty: 1});
-        localStorage.setItem("cart", JSON.stringify(cart));
+    // Fix 2: Perfectly paired multi-page array layout match tracking schema
+    function addToCart(name, price) {
+        if(!name || price <= 0) return alert("Invalid item mapping criteria detected.");
+        
+        let cart = JSON.parse(localStorage.getItem("pos_cart_cache")) || [];
+        const existing = cart.find(i => i.name === name);
+        
+        if(existing) {
+            existing.qty = (parseFloat(existing.qty) || 0) + 1;
+            existing.total = existing.qty * parseFloat(existing.price);
+        } else {
+            cart.push({
+                name: name,
+                qty: 1,
+                price: parseFloat(price),
+                total: parseFloat(price)
+            });
+        }
+        
+        localStorage.setItem("pos_cart_cache", JSON.stringify(cart));
         
         // Animation feedback
         const btn = document.getElementById("cartBtn");
@@ -251,12 +288,15 @@
     }
 
     function updateCartCount() {
-        const cart = JSON.parse(localStorage.getItem("cart")) || [];
-        const count = cart.reduce((s, i) => s + i.qty, 0);
+        const cart = JSON.parse(localStorage.getItem("pos_cart_cache")) || [];
+        const count = cart.reduce((s, i) => s + (parseInt(i.qty) || 0), 0);
         document.getElementById("cartCount").innerText = count;
     }
 
-    function goPage(p) { window.location.href = p; }
+    function goPage(p) { 
+        if (activeUnsubscribeStream) activeUnsubscribeStream(); // Detach tracking leaks before unload
+        window.location.href = p; 
+    }
 </script>
 </body>
 </html>
