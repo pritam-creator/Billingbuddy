@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Inventory - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --warn: #d97706; --warn-bg: #fef9c3;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* Content */
+        .content { flex: 1; padding: 28px 36px 100px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        /* Header */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
+        .icon-btn:hover { border-color: var(--accent); }
+        .btn-export { padding: 10px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); color: var(--text); font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.2s; }
+        .btn-export:hover { border-color: var(--accent); }
+        .btn-add { padding: 10px 18px; border: none; border-radius: 12px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 7px; transition: opacity 0.2s; }
+        .btn-add:hover { opacity: 0.85; }
+
+        /* Section label */
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 14px; color: var(--sub); font-weight: 700; display: block; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; }
+        .stat-card p { font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--sub); letter-spacing: 0.6px; margin-bottom: 6px; }
+        .stat-card h3 { font-size: 20px; font-weight: 700; color: var(--text); }
+
+        /* Tabs */
+        .tab-bar { display: flex; gap: 6px; background: var(--border); padding: 5px; border-radius: 13px; width: fit-content; margin-bottom: 20px; }
+        .tab { padding: 8px 20px; border-radius: 10px; cursor: pointer; font-size: 12.5px; font-weight: 700; transition: all 0.2s; color: var(--sub); }
+        .tab.active { background: var(--card-bg); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+        /* Inventory grid */
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+        .inv-card { background: var(--card-bg); border-radius: 18px; padding: 20px; border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s; }
+        .inv-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+        .inv-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .inv-card-header h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .inv-card-actions { display: flex; gap: 10px; }
+        .inv-card-actions i { font-size: 13px; color: var(--sub); cursor: pointer; transition: color 0.2s; }
+        .inv-card-actions i:hover { color: var(--accent); }
+        .inv-card-actions .del-icon:hover { color: var(--danger); }
+
+        .stock-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+        .stock-num { font-size: 34px; font-weight: 800; }
+        .stock-unit { font-size: 13px; color: var(--sub); font-weight: 600; }
+        .stock-ok   { color: var(--success); }
+        .stock-low  { color: var(--danger); }
+
+        .inv-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); margin-bottom: 10px; }
+        .inv-meta span { font-weight: 600; color: var(--text); }
+
+        .progress-track { background: var(--border); height: 6px; border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+        .progress-fill  { height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+        .fill-ok  { background: var(--success); }
+        .fill-low { background: var(--danger); }
+
+        .stock-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-use { background: var(--danger-bg); color: var(--danger); border: none; border-radius: 10px; padding: 10px; font-size: 12.5px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.2s; }
+        .btn-restock { background: var(--success-bg); color: var(--success); border: none; border-radius: 10px; padding: 10px; font-size: 12.5px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.2s; }
+        .btn-use:hover, .btn-restock:hover { opacity: 0.8; }
+
+        .empty { text-align: center; padding: 60px 20px; color: var(--sub); font-size: 14px; grid-column: 1/-1; }
+        .empty i { font-size: 36px; margin-bottom: 12px; opacity: 0.25; display: block; }
+
+        /* FAB */
+        .fab { position: fixed; bottom: 28px; right: 28px; background: var(--text); color: #fff; width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.18); cursor: pointer; z-index: 999; transition: transform 0.2s; }
+        .fab:hover { transform: scale(1.08); }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
+        .modal-overlay.active { display: flex; }
+        .modal-sheet { background: var(--card-bg); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; margin: 0 auto; border: 1px solid var(--border); animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-sheet h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 18px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
+        .form-group input, .form-group select { padding: 11px 14px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--accent); background: var(--accent-light); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-submit { width: 100%; padding: 13px; border: none; border-radius: 12px; background: var(--text); color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 6px; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-submit:hover { opacity: 0.85; }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-cancel-m { width: 100%; padding: 11px; border: none; border-radius: 12px; background: transparent; color: var(--sub); font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 4px; }
+
+        /* Confirm modal (centered) */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .confirm-overlay.active { display: flex; }
+        .confirm-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .confirm-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .confirm-card p { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .conf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .conf-ok  { background: var(--danger); color: #fff; }
+        .conf-no  { background: var(--border); color: var(--text); }
+
+        /* Overlay */
+        .bg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .bg-overlay.active { opacity: 1; pointer-events: all; }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 100px; }
+            #menuBtn { display: block; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .inv-grid { grid-template-columns: 1fr; }
+            .btn-export span { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')">   <i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">       <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">      <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li class="active">                        <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">       <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">Inventory</div>
+                    <div class="page-sub">Stock levels &amp; raw materials</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="darkToggle">🌙</button>
+                <button class="btn-export" onclick="downloadCSV()">
+                    <i class="fa-solid fa-file-arrow-down"></i> <span>Export CSV</span>
+                </button>
+                <button class="btn-add" onclick="openAddModal()">
+                    <i class="fa-solid fa-plus"></i> Add Item
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <span class="section-label">Stock Overview</span>
+        <div class="stats-grid">
+            <div class="stat-card"><p>Total Items</p><h3 id="statTotal">0</h3></div>
+            <div class="stat-card"><p>Low Stock</p><h3 id="statLow" style="color:var(--danger)">0</h3></div>
+            <div class="stat-card"><p>Healthy</p><h3 id="statHealthy" style="color:var(--success)">0</h3></div>
+            <div class="stat-card"><p>Asset Value</p><h3 id="statValue">₹0</h3></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <div class="tab active" id="tabFinished" onclick="switchTab('Finished')">Finished Products</div>
+            <div class="tab"        id="tabRaw"      onclick="switchTab('Raw')">Raw Materials</div>
+        </div>
+
+        <!-- Grid -->
+        <div class="inv-grid" id="invGrid"></div>
+    </main>
+
+    <div class="fab" onclick="openAddModal()"><i class="fa-solid fa-plus"></i></div>
+</div>
+
+<!-- Add / Edit Item Modal -->
+<div class="modal-overlay" id="itemModal">
+    <div class="modal-sheet">
+        <h3 id="modalTitle"><i class="fa-solid fa-plus" style="color:var(--accent);"></i> Add Item</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" id="fName" placeholder="e.g. Wheat Flour">
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <select id="fType">
+                    <option value="Finished">Finished Product</option>
+                    <option value="Raw">Raw Material</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Cost Price (₹)</label>
+                <input type="number" id="fPrice" placeholder="0" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label>Unit</label>
+                <input type="text" id="fUnit" placeholder="e.g. Kg / Pcs">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Stock Qty</label>
+                <input type="number" id="fStock" placeholder="0" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label>Min Alert Level</label>
+                <input type="number" id="fMin" placeholder="10" inputmode="numeric">
+            </div>
+        </div>
+        <button class="btn-submit" id="itemSaveBtn" onclick="saveItem()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Save Item
+        </button>
+        <button class="btn-cancel-m" onclick="closeItemModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Stock Update Modal -->
+<div class="modal-overlay" id="stockModal">
+    <div class="modal-sheet">
+        <h3 id="stockModalTitle">Restock Item</h3>
+        <p id="stockModalSub" style="font-size:13px; color:var(--sub); margin-bottom:16px;"></p>
+        <div class="form-group">
+            <label id="stockModalLabel">Quantity to Add</label>
+            <input type="number" id="stockQtyInput" placeholder="0" inputmode="numeric" style="font-size:22px; font-weight:700; text-align:center;">
+        </div>
+        <button class="btn-submit" id="stockConfirmBtn">
+            <i class="fa-solid fa-check"></i> Confirm
+        </button>
+        <button class="btn-cancel-m" onclick="closeStockModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="confirm-overlay" id="deleteModal">
+    <div class="confirm-card">
+        <div style="width:52px;height:52px;background:var(--danger-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+            <i class="fa-solid fa-trash" style="color:var(--danger);font-size:18px;"></i>
+        </div>
+        <h3>Item Delete Karein?</h3>
+        <p id="deleteItemName" style="margin-top:4px;"></p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no"  onclick="closeDeleteModal()">Cancel</button>
+            <button class="conf-btn conf-ok"  id="deleteConfirmBtn">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="confirm-overlay" id="logoutModal">
+    <div class="confirm-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeLogout()">Nahi</button>
+            <button class="conf-btn conf-ok" onclick="confirmLogout()">Haan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d); darkToggle.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Sidebar mobile
+    const sidebar   = document.getElementById("sidebar");
+    const bgOverlay = document.getElementById("bgOverlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); bgOverlay.classList.add("active"); };
+    bgOverlay.onclick = () => { sidebar.classList.remove("active"); bgOverlay.classList.remove("active"); };
+
+    // Sidebar name from settings
+    const s = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
+    if (s.name) document.getElementById("sidebarName").innerText = s.name;
+
+    // State
+    let allItems   = [];
+    let currentTab = "Finished";
+    let editingId  = null;
+
+    // FIX: use "items" collection (consistent with items.html & dashboard)
+    db.collection("items").onSnapshot(snap => {
+        allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        render();
+    });
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById("tabFinished").classList.toggle("active", tab === "Finished");
+        document.getElementById("tabRaw").classList.toggle("active", tab === "Raw");
+        render();
+    }
+
+    function render() {
+        // FIX: filter by type field; items without type default to "Finished"
+        const filtered = allItems.filter(i => (i.type || "Finished") === currentTab);
+        const grid     = document.getElementById("invGrid");
+
+        // Stats across ALL items
+        let low = 0, healthy = 0, value = 0;
+        allItems.forEach(i => {
+            const min = parseFloat(i.minLevel || 10);
+            const stk = parseFloat(i.stock || 0);
+            if (stk < min) low++; else healthy++;
+            value += stk * parseFloat(i.price || 0);
+        });
+        document.getElementById("statTotal").innerText   = allItems.length;
+        document.getElementById("statLow").innerText     = low;
+        document.getElementById("statHealthy").innerText = healthy;
+        document.getElementById("statValue").innerText   = "₹" + value.toLocaleString();
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="empty"><i class="fa-solid fa-boxes-stacked"></i>Koi item nahi mila. "Add Item" se add karein.</div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(item => {
+            const stock  = parseFloat(item.stock || 0);
+            const min    = parseFloat(item.minLevel || 10);
+            const price  = parseFloat(item.price || 0);
+            const isLow  = stock < min;
+            const pct    = Math.min((stock / Math.max(min * 3, 1)) * 100, 100);
+            const unit   = item.unit || "Pcs";
+            const val    = (stock * price).toLocaleString();
+
+            return `
+            <div class="inv-card">
+                <div class="inv-card-header">
+                    <div>
+                        <h4>${item.name}</h4>
+                        <span style="font-size:11px; color:var(--sub); font-weight:600;">${item.category || item.type || "General"}</span>
+                    </div>
+                    <div class="inv-card-actions">
+                        <i class="fa-solid fa-pen-to-square" onclick="openEditModal('${item.id}')" title="Edit"></i>
+                        <i class="fa-solid fa-trash del-icon" onclick="openDeleteModal('${item.id}', '${item.name.replace(/'/g, "\\'")}')"></i>
+                    </div>
+                </div>
+
+                <div class="stock-row">
+                    <span class="stock-num ${isLow ? 'stock-low' : 'stock-ok'}">${stock}</span>
+                    <span class="stock-unit">${unit}</span>
+                    ${isLow ? '<span style="font-size:11px; font-weight:700; background:var(--danger-bg); color:var(--danger); padding:2px 8px; border-radius:6px; margin-left:4px;">⚠ Low</span>' : ''}
+                </div>
+
+                <div class="inv-meta">
+                    <span>Cost: <span>₹${price}</span></span>
+                    <span>Min: <span>${min} ${unit}</span></span>
+                    <span>Value: <span>₹${val}</span></span>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-fill ${isLow ? 'fill-low' : 'fill-ok'}" style="width:${pct}%"></div>
+                </div>
+
+                <div class="stock-btn-row">
+                    <button class="btn-use"     onclick="openStockModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${stock}, 'use')">
+                        <i class="fa-solid fa-minus"></i> Use
+                    </button>
+                    <button class="btn-restock" onclick="openStockModal('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${stock}, 'add')">
+                        <i class="fa-solid fa-plus"></i> Restock
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+    }
+
+    // ── Add / Edit Item Modal ──
+    function openAddModal() {
+        editingId = null;
+        document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-plus" style="color:var(--accent);"></i> Add Item';
+        ["fName","fPrice","fUnit","fStock"].forEach(id => document.getElementById(id).value = "");
+        document.getElementById("fMin").value  = "10";
+        document.getElementById("fType").value = currentTab;
+        document.getElementById("itemModal").classList.add("active");
+    }
+
+    function openEditModal(id) {
+        editingId = id;
+        const item = allItems.find(i => i.id === id);
+        document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-pen" style="color:var(--accent);"></i> Edit Item';
+        document.getElementById("fName").value  = item.name;
+        document.getElementById("fPrice").value = item.price || 0;
+        document.getElementById("fUnit").value  = item.unit || "";
+        document.getElementById("fStock").value = item.stock || 0;
+        document.getElementById("fMin").value   = item.minLevel || 10;
+        document.getElementById("fType").value  = item.type || "Finished";
+        document.getElementById("itemModal").classList.add("active");
+    }
+
+    function closeItemModal() { document.getElementById("itemModal").classList.remove("active"); }
+
+    async function saveItem() {
+        const name  = document.getElementById("fName").value.trim();
+        const price = parseFloat(document.getElementById("fPrice").value) || 0;
+        const unit  = document.getElementById("fUnit").value.trim() || "Pcs";
+        const stock = parseFloat(document.getElementById("fStock").value) || 0;
+        const min   = parseFloat(document.getElementById("fMin").value) || 10;
+        const type  = document.getElementById("fType").value;
+
+        if (!name) return alert("Item ka naam daalna zaroori hai.");
+
+        const btn = document.getElementById("itemSaveBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+        const data = { name, price, unit, stock, minLevel: min, type,
+                       lastUpdated: firebase.firestore.FieldValue.serverTimestamp() };
+        try {
+            if (editingId) await db.collection("items").doc(editingId).update(data);
+            else await db.collection("items").add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            closeItemModal();
+        } catch (e) { alert("Error: " + e.message); }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save Item';
+    }
+
+    // ── Stock Update Modal ──
+    // FIX: store pending action separately — no onclick reassignment
+    let pendingStock = null;
+
+    function openStockModal(id, name, current, mode) {
+        pendingStock = { id, current, mode };
+        const isAdd  = mode === "add";
+        document.getElementById("stockModalTitle").innerText = isAdd ? "Restock Item" : "Stock Use Karein";
+        document.getElementById("stockModalSub").innerText   = name;
+        document.getElementById("stockModalLabel").innerText = isAdd ? "Quantity to Add" : "Quantity Used";
+        document.getElementById("stockQtyInput").value = "";
+        const btn = document.getElementById("stockConfirmBtn");
+        btn.style.background = isAdd ? "var(--success)" : "var(--danger)";
+        document.getElementById("stockModal").classList.add("active");
+    }
+
+    function closeStockModal() {
+        document.getElementById("stockModal").classList.remove("active");
+        pendingStock = null;
+    }
+
+    document.getElementById("stockConfirmBtn").onclick = async function () {
+        if (!pendingStock) return;
+        const qty = parseFloat(document.getElementById("stockQtyInput").value);
+        if (isNaN(qty) || qty <= 0) return alert("Valid quantity daalo.");
+        const { id, current, mode } = pendingStock;
+        const newStock = mode === "add" ? current + qty : Math.max(0, current - qty);
+        try {
+            await db.collection("items").doc(id).update({ stock: newStock });
+            closeStockModal();
+        } catch (e) { alert("Error: " + e.message); }
+    };
+
+    // ── Delete Modal (proper modal, no browser confirm) ──
+    let pendingDeleteId = null;
+
+    function openDeleteModal(id, name) {
+        pendingDeleteId = id;
+        document.getElementById("deleteItemName").innerText = `"${name}" permanently delete ho jayega.`;
+        document.getElementById("deleteModal").classList.add("active");
+    }
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.remove("active");
+        pendingDeleteId = null;
+    }
+    document.getElementById("deleteConfirmBtn").onclick = async function () {
+        if (!pendingDeleteId) return;
+        await db.collection("items").doc(pendingDeleteId).delete();
+        closeDeleteModal();
+    };
+
+    // ── CSV Export ──
+    function downloadCSV() {
+        let csv = "Name,Type,Stock,Unit,CostPrice,MinLevel,TotalValue\n";
+        allItems.forEach(i => {
+            csv += `"${i.name}",${i.type||"Finished"},${i.stock||0},${i.unit||"Pcs"},${i.price||0},${i.minLevel||10},${(i.stock||0)*(i.price||0)}\n`;
+        });
+        const a = document.createElement("a");
+        a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+        a.download = "Inventory_" + new Date().toLocaleDateString("en-GB").replace(/\//g,"-") + ".csv";
+        a.click();
+    }
+
+    // ── Logout ──
+    function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
+    function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(p)       { window.location.href = p; }
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>

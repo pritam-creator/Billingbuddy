@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Orders - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --warn: #d97706; --warn-bg: #fef9c3;
+            --blue: #2563eb; --blue-bg: #eff6ff;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* Content */
+        .content { flex: 1; padding: 28px 36px 100px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        /* Header */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        /* Stats */
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; color: var(--sub); font-weight: 700; display: block; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; }
+        .stat-card p { font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--sub); letter-spacing: 0.6px; margin-bottom: 6px; }
+        .stat-card h3 { font-size: 20px; font-weight: 700; color: var(--text); }
+
+        /* Filter tabs */
+        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 16px; scrollbar-width: none; }
+        .tab { padding: 8px 18px; border-radius: 100px; background: var(--card-bg); border: 1.5px solid var(--border); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.18s; color: var(--sub); }
+        .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+        body.dark .tab.active { background: var(--accent); border-color: var(--accent); }
+
+        /* Orders grid */
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+        .order-card { background: var(--card-bg); border-radius: 18px; padding: 20px; border: 1px solid var(--border); transition: transform 0.2s, box-shadow 0.2s; }
+        .order-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+
+        .order-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .order-id   { font-size: 14px; font-weight: 700; color: var(--text); }
+        .order-time { font-size: 11px; color: var(--sub); margin-top: 2px; font-weight: 500; }
+        .order-total { font-size: 26px; font-weight: 800; color: var(--accent); margin-bottom: 14px; letter-spacing: -0.5px; }
+
+        /* Status pill */
+        .status-pill { padding: 4px 11px; border-radius: 8px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+        .pill-pending   { background: var(--warn-bg);    color: var(--warn); }
+        .pill-preparing { background: var(--blue-bg);    color: var(--blue); }
+        .pill-delivered { background: var(--success-bg); color: var(--success); }
+
+        /* Progress steps */
+        .steps { display: flex; align-items: center; gap: 0; margin-bottom: 16px; }
+        .step { flex: 1; height: 4px; border-radius: 4px; background: var(--border); transition: background 0.4s; }
+        .step.done-warn { background: var(--warn); }
+        .step.done-blue { background: var(--blue); }
+        .step.done-green { background: var(--success); }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background 0.4s; }
+        .step-dot.done-warn  { background: var(--warn); }
+        .step-dot.done-blue  { background: var(--blue); }
+        .step-dot.done-green { background: var(--success); }
+
+        /* Action buttons */
+        .action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .act-btn { padding: 10px 8px; border-radius: 10px; border: none; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 5px; transition: opacity 0.2s; }
+        .act-btn:active { transform: scale(0.95); }
+        .act-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn-view     { background: var(--bg); color: var(--sub); border: 1px solid var(--border); }
+        .btn-next     { background: var(--text); color: #fff; }
+        body.dark .btn-next { background: var(--accent); }
+        .btn-wa       { background: #25d366; color: #fff; }
+
+        /* Cancel link */
+        .cancel-link { font-size: 11px; text-align: center; margin-top: 14px; color: var(--sub); cursor: pointer; font-weight: 600; transition: color 0.2s; }
+        .cancel-link:hover { color: var(--danger); }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 60px 20px; color: var(--sub); font-size: 14px; grid-column: 1/-1; }
+        .empty i { font-size: 36px; margin-bottom: 12px; opacity: 0.25; display: block; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
+        .modal-overlay.active { display: flex; }
+        .modal-sheet { background: var(--card-bg); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; margin: 0 auto; border: 1px solid var(--border); animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1); max-height: 85vh; overflow-y: auto; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-sheet h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+
+        /* Invoice view */
+        .inv-header { text-align: center; margin-bottom: 18px; }
+        .inv-header h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); }
+        .inv-header p  { font-size: 12px; color: var(--sub); margin-top: 4px; }
+        .inv-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 13.5px; }
+        .inv-row:last-of-type { border-bottom: none; }
+        .inv-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--text); margin-top: 14px; padding-top: 14px; border-top: 2px solid var(--border); }
+        .btn-close-inv { width: 100%; padding: 13px; margin-top: 18px; border: none; border-radius: 12px; background: var(--border); color: var(--text); font-size: 13.5px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+
+        /* Confirm modal */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .confirm-overlay.active { display: flex; }
+        .confirm-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .confirm-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .confirm-card p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .conf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .conf-ok  { background: var(--danger); color: #fff; }
+        .conf-no  { background: var(--border); color: var(--text); }
+
+        /* Sidebar overlay */
+        .bg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .bg-overlay.active { opacity: 1; pointer-events: all; }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 100px; }
+            #menuBtn { display: block; }
+            .orders-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')">   <i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">       <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">      <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')">    <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li class="active">                        <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">Orders</div>
+                    <div class="page-sub" id="orderCountLabel">Loading...</div>
+                </div>
+            </div>
+            <button class="icon-btn" id="darkToggle">🌙</button>
+        </header>
+
+        <!-- Stats -->
+        <span class="section-label">Overview</span>
+        <div class="stats-grid">
+            <div class="stat-card"><p>Total Orders</p><h3 id="statTotal">0</h3></div>
+            <div class="stat-card"><p>Pending</p>     <h3 id="statPending"   style="color:var(--warn)">0</h3></div>
+            <div class="stat-card"><p>Preparing</p>   <h3 id="statPreparing" style="color:var(--blue)">0</h3></div>
+            <div class="stat-card"><p>Revenue</p>     <h3 id="statRevenue">₹0</h3></div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="tab-scroll">
+            <div class="tab active" id="tabAll"       onclick="setFilter('All',       this)">All</div>
+            <div class="tab"        id="tabPending"   onclick="setFilter('Pending',   this)">Pending</div>
+            <div class="tab"        id="tabPreparing" onclick="setFilter('Preparing', this)">Preparing</div>
+            <div class="tab"        id="tabDelivered" onclick="setFilter('Delivered', this)">Delivered</div>
+        </div>
+
+        <!-- Orders Grid -->
+        <div class="orders-grid" id="ordersGrid"></div>
+    </main>
+</div>
+
+<!-- Invoice View Modal -->
+<div class="modal-overlay" id="invoiceModal">
+    <div class="modal-sheet">
+        <div class="inv-header">
+            <h2>Surjya Bakery</h2>
+            <p id="invMeta"></p>
+        </div>
+        <div id="invItems"></div>
+        <div class="inv-total">
+            <span>Total</span>
+            <span id="invTotal" style="color:var(--accent);"></span>
+        </div>
+        <button class="btn-close-inv" onclick="closeInvoiceModal()">Close</button>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="confirm-overlay" id="deleteModal">
+    <div class="confirm-card">
+        <div style="width:52px;height:52px;background:var(--danger-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+            <i class="fa-solid fa-trash" style="color:var(--danger);font-size:18px;"></i>
+        </div>
+        <h3>Order Cancel Karein?</h3>
+        <p>Yeh action permanent hai.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeDeleteModal()">Nahi</button>
+            <button class="conf-btn conf-ok" id="deleteConfirmBtn">Haan, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="confirm-overlay" id="logoutModal">
+    <div class="confirm-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeLogout()">Nahi</button>
+            <button class="conf-btn conf-ok" onclick="confirmLogout()">Haan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d); darkToggle.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Sidebar
+    const sidebar   = document.getElementById("sidebar");
+    const bgOverlay = document.getElementById("bgOverlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); bgOverlay.classList.add("active"); };
+    bgOverlay.onclick = () => { sidebar.classList.remove("active"); bgOverlay.classList.remove("active"); };
+
+    const s = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
+    if (s.name) document.getElementById("sidebarName").innerText = s.name;
+
+    // State
+    let allOrders   = [];
+    let currentFilter = "All";
+
+    // FIX: single onSnapshot — filter in memory, no re-fetch on tab switch
+    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+        allOrders = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+        updateStats();
+        renderOrders();
+    });
+
+    function updateStats() {
+        let pending = 0, preparing = 0, revenue = 0;
+        allOrders.forEach(o => {
+            const st = o.status || "Pending";
+            if (st === "Pending")   pending++;
+            if (st === "Preparing") preparing++;
+            revenue += parseFloat(o.total || 0);
+        });
+        document.getElementById("statTotal").innerText    = allOrders.length;
+        document.getElementById("statPending").innerText  = pending;
+        document.getElementById("statPreparing").innerText= preparing;
+        document.getElementById("statRevenue").innerText  = "₹" + revenue.toLocaleString();
+    }
+
+    function setFilter(filter, el) {
+        currentFilter = filter;
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        el.classList.add("active");
+        renderOrders();
+    }
+
+    function renderOrders() {
+        const filtered = currentFilter === "All"
+            ? allOrders
+            : allOrders.filter(o => (o.status || "Pending") === currentFilter);
+
+        document.getElementById("orderCountLabel").innerText =
+            `${filtered.length} order${filtered.length !== 1 ? 's' : ''}`;
+
+        const grid = document.getElementById("ordersGrid");
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="empty"><i class="fa-solid fa-basket-shopping"></i>Koi order nahi mila.</div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(o => {
+            const id     = o._id;
+            const status = o.status || "Pending";
+            // FIX: consistent order ID display using doc ID last 6 chars
+            const displayId = "#" + id.slice(-6).toUpperCase();
+            const date   = o.date || "—";
+            const total  = parseFloat(o.total || 0).toLocaleString();
+
+            const pillClass = status === "Delivered" ? "pill-delivered"
+                            : status === "Preparing" ? "pill-preparing"
+                            : "pill-pending";
+
+            // Progress bar steps
+            const s1 = status === "Pending" || status === "Preparing" || status === "Delivered";
+            const s2 = status === "Preparing" || status === "Delivered";
+            const s3 = status === "Delivered";
+
+            const stepHtml = `
+                <div class="steps">
+                    <div class="step-dot ${s1 ? 'done-warn' : ''}"></div>
+                    <div class="step ${s2 ? 'done-blue' : ''}"></div>
+                    <div class="step-dot ${s2 ? 'done-blue' : ''}"></div>
+                    <div class="step ${s3 ? 'done-green' : ''}"></div>
+                    <div class="step-dot ${s3 ? 'done-green' : ''}"></div>
+                </div>`;
+
+            // FIX: disable NEXT button when already Delivered
+            const isDelivered = status === "Delivered";
+            const nextLabel   = status === "Pending" ? "Preparing" : status === "Preparing" ? "Delivered" : "Done";
+
+            return `
+            <div class="order-card">
+                <div class="order-top">
+                    <div>
+                        <div class="order-id">${displayId}</div>
+                        <div class="order-time">${date}</div>
+                    </div>
+                    <span class="status-pill ${pillClass}">${status}</span>
+                </div>
+                <div class="order-total">₹${total}</div>
+                ${stepHtml}
+                <div class="action-row">
+                    <button class="act-btn btn-view" onclick="viewInvoice('${id}')">
+                        <i class="fa-solid fa-eye"></i> View
+                    </button>
+                    <button class="act-btn btn-next" onclick="nextStep('${id}', '${status}')" ${isDelivered ? 'disabled' : ''}>
+                        ${isDelivered ? '<i class="fa-solid fa-check"></i> Done' : nextLabel + ' <i class="fa-solid fa-chevron-right"></i>'}
+                    </button>
+                    <button class="act-btn btn-wa" onclick="sendWhatsApp('${id}')">
+                        <i class="fa-brands fa-whatsapp"></i> WA
+                    </button>
+                </div>
+                <div class="cancel-link" onclick="openDeleteModal('${id}')">Cancel Order</div>
+            </div>`;
+        }).join("");
+    }
+
+    // ── Next Step ──
+    const STEPS = ["Pending", "Preparing", "Delivered"];
+    async function nextStep(id, current) {
+        const idx = STEPS.indexOf(current);
+        if (idx >= STEPS.length - 1) return;
+        await db.collection("orders").doc(id).update({ status: STEPS[idx + 1] });
+        if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    // ── Invoice View Modal ──
+    function viewInvoice(id) {
+        const o = allOrders.find(x => x._id === id);
+        if (!o) return;
+        document.getElementById("invMeta").innerText  = "#" + id.slice(-6).toUpperCase() + "  •  " + (o.date || "");
+        document.getElementById("invTotal").innerText = "₹" + parseFloat(o.total || 0).toLocaleString();
+        const items = (o.items || []);
+        document.getElementById("invItems").innerHTML = items.length
+            ? items.map(i => `
+                <div class="inv-row">
+                    <span>${i.name} <span style="color:var(--sub); font-size:12px;">×${i.qty}</span></span>
+                    <span style="font-weight:700;">₹${(parseFloat(i.price || 0) * parseFloat(i.qty || 1)).toLocaleString()}</span>
+                </div>`).join("")
+            : `<p style="text-align:center; color:var(--sub); font-size:13px; padding:16px 0;">No items listed</p>`;
+        document.getElementById("invoiceModal").classList.add("active");
+    }
+    function closeInvoiceModal() { document.getElementById("invoiceModal").classList.remove("active"); }
+
+    // ── WhatsApp ──
+    function sendWhatsApp(id) {
+        const o = allOrders.find(x => x._id === id);
+        if (!o) return;
+        const msg = `*Surjya Bakery* 🥐\nOrder ${id.slice(-6).toUpperCase()} update:\nStatus: *${o.status || "Pending"}*\nTotal: ₹${o.total}\nThank you! 🙏`;
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg));
+    }
+
+    // ── Delete Modal (proper modal, no browser confirm) ──
+    let pendingDeleteId = null;
+    function openDeleteModal(id) {
+        pendingDeleteId = id;
+        document.getElementById("deleteModal").classList.add("active");
+    }
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.remove("active");
+        pendingDeleteId = null;
+    }
+    document.getElementById("deleteConfirmBtn").onclick = async function () {
+        if (!pendingDeleteId) return;
+        await db.collection("orders").doc(pendingDeleteId).delete();
+        closeDeleteModal();
+    };
+
+    // ── Logout ──
+    function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
+    function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(p)       { window.location.href = p; }
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>

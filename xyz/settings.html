@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Settings - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar {
+            width: var(--sidebar-w); background: var(--sidebar-bg);
+            border-right: 1px solid var(--border); padding: 28px 16px;
+            display: flex; flex-direction: column;
+            position: fixed; height: 100%;
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; left: 0;
+        }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li {
+            display: flex; align-items: center; gap: 11px;
+            padding: 11px 14px; border-radius: 12px; cursor: pointer;
+            transition: all 0.18s; margin-bottom: 2px;
+            font-size: 13.5px; color: var(--sub); font-weight: 500;
+        }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button {
+            width: 100%; padding: 11px; border-radius: 12px; border: none;
+            background: var(--danger-bg); color: var(--danger);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .content { flex: 1; padding: 28px 36px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+
+        .icon-btn {
+            width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border);
+            background: var(--card-bg); cursor: pointer; font-size: 15px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text); transition: all 0.2s;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        .section-label {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+            margin: 0 0 14px; color: var(--sub); font-weight: 700; display: block;
+        }
+
+        .settings-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 18px; padding: 24px; margin-bottom: 20px;
+        }
+        .settings-card h3 {
+            font-size: 14px; font-weight: 700; color: var(--text);
+            margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+        }
+        .settings-card h3 i { color: var(--accent); font-size: 15px; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+
+        label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
+
+        input[type="text"], input[type="number"], input[type="tel"] {
+            width: 100%; padding: 12px 14px; border-radius: 12px;
+            border: 1.5px solid var(--border); background: var(--bg);
+            color: var(--text); font-size: 14px; font-weight: 500;
+            font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s;
+        }
+        input:focus { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+        input::placeholder { color: var(--sub); font-weight: 400; }
+
+        .btn-save {
+            padding: 13px 28px; border: none; border-radius: 13px;
+            background: var(--text); color: #fff;
+            font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: opacity 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-save:hover { opacity: 0.85; }
+        .btn-save:active { transform: scale(0.98); }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .status-msg {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 16px; border-radius: 11px;
+            font-size: 13px; font-weight: 600;
+            background: var(--success-bg); color: var(--success);
+            border: 1px solid #bbf7d0;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .status-msg.visible { opacity: 1; }
+        .status-msg.error { background: var(--danger-bg); color: var(--danger); border-color: #fecaca; }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-outline {
+            padding: 13px 16px; background: var(--bg); border: 1.5px solid var(--border);
+            border-radius: 13px; color: var(--text); font-size: 13px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-outline:hover { border-color: var(--accent); background: var(--accent-light); }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .modal-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+        .modal-card p  { font-size: 13px; color: var(--sub); margin-bottom: 22px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn  { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .btn-confirm { background: var(--danger); color: #fff; }
+        .btn-cancel  { background: var(--border); color: var(--text); }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px; }
+            #menuBtn { display: block; }
+            .form-grid { grid-template-columns: 1fr; }
+            .btn-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')">  <i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">      <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">       <i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">     <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')">   <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">      <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">     <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')">   <i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">     <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li class="active" onclick="goPage('settings.html')"><i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">Settings</div>
+                    <div class="page-sub">Store configuration &amp; preferences</div>
+                </div>
+            </div>
+            <button class="icon-btn" id="darkToggle" title="Toggle dark mode">🌙</button>
+        </header>
+
+        <span class="section-label">Store Identity</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-store"></i> Business Info</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Bakery / Business Name</label>
+                    <input type="text" id="storeName" placeholder="e.g. Surjya Bakery">
+                </div>
+                <div class="form-group">
+                    <label>Owner / Admin Name</label>
+                    <input type="text" id="ownerName" placeholder="e.g. Pritam">
+                </div>
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="tel" id="storePhone" placeholder="+91 0000000000">
+                </div>
+                <div class="form-group">
+                    <label>Currency Symbol</label>
+                    <input type="text" id="currency" placeholder="₹">
+                </div>
+                <div class="form-group full">
+                    <label>Store Address</label>
+                    <input type="text" id="storeAddress" placeholder="Street, City, PIN">
+                </div>
+            </div>
+        </div>
+
+        <span class="section-label">Dashboard Preferences</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-sliders"></i> Targets &amp; Display</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Daily Sales Target (₹)</label>
+                    <input type="number" id="salesTarget" placeholder="e.g. 5000" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:28px;">
+            <button class="btn-save" id="saveBtn" onclick="saveSettings()">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save Changes
+            </button>
+            <div class="status-msg" id="statusMsg">✓ Saved to Cloud</div>
+        </div>
+
+        <span class="section-label">Data Maintenance</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-database"></i> Backup &amp; Restore</h3>
+            <div class="btn-grid">
+                <button class="btn-outline" onclick="exportData()">
+                    <i class="fa-solid fa-download"></i> Export Backup
+                </button>
+                <button class="btn-outline" onclick="document.getElementById('importFile').click()">
+                    <i class="fa-solid fa-upload"></i> Restore Backup
+                </button>
+            </div>
+            <input type="file" id="importFile" style="display:none" onchange="importData(event)" accept=".json">
+            <p style="font-size:12px; color:var(--sub); margin-top:14px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>
+                Restore action purane Cloud data ko overwrite kar sakta hai. Savdhani se use karein.
+            </p>
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel"  onclick="closeLogout()">Nahi</button>
+            <button class="modal-btn btn-confirm" onclick="confirmLogout()">Haan, Logout</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const isDark = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", isDark);
+        darkToggle.innerText = isDark ? "☀️" : "🌙";
+    };
+
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
+    overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
+
+    window.onload = async function () {
+        try {
+            const doc = await db.collection("settings").doc("store_config").get();
+            if (doc.exists) {
+                const d = doc.data();
+                document.getElementById("storeName").value    = d.name        || "";
+                document.getElementById("storePhone").value   = d.phone       || "";
+                document.getElementById("storeAddress").value = d.address     || "";
+                document.getElementById("currency").value     = d.currency    || "₹";
+                document.getElementById("ownerName").value    = d.ownerName   || "";
+                document.getElementById("salesTarget").value  = d.salesTarget || "";
+                if (d.name) document.getElementById("sidebarName").innerText = d.name;
+                localStorage.setItem("bakery_settings", JSON.stringify(d));
+            }
+        } catch (e) { console.warn("Load error:", e); }
+    };
+
+    async function saveSettings() {
+        const btn   = document.getElementById("saveBtn");
+        const msgEl = document.getElementById("statusMsg");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+        const settings = {
+            name:        document.getElementById("storeName").value.trim(),
+            phone:       document.getElementById("storePhone").value.trim(),
+            address:     document.getElementById("storeAddress").value.trim(),
+            currency:    document.getElementById("currency").value.trim() || "₹",
+            ownerName:   document.getElementById("ownerName").value.trim(),
+            salesTarget: parseFloat(document.getElementById("salesTarget").value) || 5000,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+            await db.collection("settings").doc("store_config").set(settings);
+            localStorage.setItem("bakery_settings", JSON.stringify(settings));
+            if (settings.name) document.getElementById("sidebarName").innerText = settings.name;
+            msgEl.classList.remove("error");
+            msgEl.textContent = "✓ Saved to Cloud";
+            msgEl.classList.add("visible");
+        } catch (e) {
+            msgEl.classList.add("error");
+            msgEl.textContent = "✗ Error: " + e.message;
+            msgEl.classList.add("visible");
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save Changes';
+        setTimeout(() => msgEl.classList.remove("visible"), 3000);
+    }
+
+    async function exportData() {
+        const cols = ["items", "orders", "cashflow", "ledger", "customers", "employees"];
+        let allData = { backupDate: new Date().toISOString() };
+        for (let col of cols) {
+            const snap = await db.collection(col).get();
+            allData[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+        const a = document.createElement("a");
+        a.setAttribute("href", "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2)));
+        a.setAttribute("download", "SurjyaBakery_Backup_" + new Date().toLocaleDateString("en-GB").replace(/\//g, "-") + ".json");
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (confirm("Dhyan de! Ye action purane data ko overwrite kar sakta hai. Continue?")) {
+                    for (let col in data) {
+                        if (Array.isArray(data[col])) {
+                            for (let item of data[col]) {
+                                const { id, ...rest } = item;
+                                await db.collection(col).doc(id || undefined).set(rest);
+                            }
+                        }
+                    }
+                    alert("Restore successful!"); location.reload();
+                }
+            } catch (err) { alert("Invalid backup file!"); }
+        };
+        reader.readAsText(file);
+    }
+
+    function openLogout()    { document.getElementById("logoutModal").style.display = "flex"; }
+    function closeLogout()   { document.getElementById("logoutModal").style.display = "none"; }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(page)    { window.location.href = page; }
+    window.onerror = (msg, src, line) => console.error("Error:", msg, "at", src, line);
+</script>
+</body>
+</html>

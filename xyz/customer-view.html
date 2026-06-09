@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Customer Portal - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --card-bg: #ffffff; --border: #ede8df;
+            --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; padding-bottom: 48px; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        /* ── Header ── */
+        .header {
+            background: var(--card-bg); border-bottom: 1px solid var(--border);
+            padding: 24px 20px 20px; text-align: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-inner { max-width: 480px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { width: 44px; height: 44px; border-radius: 13px; object-fit: cover; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); }
+        .brand-sub  { font-size: 10.5px; color: var(--sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 1px; }
+        .dark-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+        /* ── Container ── */
+        .container { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+
+        /* ── Search ── */
+        .search-wrap { position: relative; margin-bottom: 16px; }
+        .search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sub); font-size: 14px; }
+        .search-wrap input { width: 100%; padding: 12px 14px 12px 40px; border-radius: 13px; border: 1.5px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
+        .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+
+        /* ── Tabs ── */
+        .tabs { display: flex; gap: 6px; background: var(--border); padding: 5px; border-radius: 14px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; border-radius: 10px; border: none; background: transparent; color: var(--sub); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+        .tab.active { background: var(--card-bg); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+        /* ── Item card ── */
+        .item-card { background: var(--card-bg); padding: 16px 18px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
+        .item-card:hover { transform: translateY(-1px); }
+        .item-name { font-size: 15px; font-weight: 700; color: var(--text); }
+        .item-meta { font-size: 11.5px; color: var(--sub); margin-top: 2px; font-weight: 500; }
+        .price-tag { font-size: 18px; font-weight: 800; color: var(--accent); }
+
+        /* ── Section label ── */
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; color: var(--sub); font-weight: 700; display: block; }
+
+        /* ── Login form ── */
+        .login-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 28px 24px; text-align: center; }
+        .login-card h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+        .login-card p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+        .phone-input { width: 100%; padding: 13px 16px; border-radius: 13px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 16px; font-weight: 700; text-align: center; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; margin-bottom: 12px; letter-spacing: 1px; }
+        .phone-input:focus { border-color: var(--accent); background: var(--accent-light); }
+        .btn-verify { width: 100%; padding: 14px; border: none; border-radius: 13px; background: var(--text); color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-verify:hover { opacity: 0.85; }
+        .btn-verify:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Ledger result ── */
+        .balance-card { border-radius: 20px; padding: 24px; margin-bottom: 16px; text-align: center; }
+        .balance-card.due     { background: var(--danger-bg); border: 1.5px solid #fecaca; }
+        .balance-card.clear   { background: var(--success-bg); border: 1.5px solid #bbf7d0; }
+        .balance-card.neutral { background: var(--card-bg); border: 1.5px solid var(--border); }
+        .balance-name   { font-size: 14px; font-weight: 600; color: var(--sub); margin-bottom: 6px; }
+        .balance-amount { font-size: 44px; font-weight: 800; letter-spacing: -1px; }
+        .balance-amount.due   { color: var(--danger); }
+        .balance-amount.clear { color: var(--success); }
+        .balance-label  { font-size: 12px; font-weight: 700; margin-top: 4px; }
+        .balance-label.due    { color: var(--danger); }
+        .balance-label.clear  { color: var(--success); }
+
+        /* Transaction history */
+        .txn-card { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 10px; }
+        .txn-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--border); }
+        .txn-row:last-child { border-bottom: none; }
+        .txn-desc { font-size: 13.5px; font-weight: 600; color: var(--text); }
+        .txn-date { font-size: 11px; color: var(--sub); margin-top: 2px; }
+        .txn-amt  { font-size: 14px; font-weight: 800; }
+        .amt-debit  { color: var(--danger); }
+        .amt-credit { color: var(--success); }
+
+        .logout-link { text-align: center; margin-top: 20px; font-size: 12.5px; color: var(--sub); cursor: pointer; font-weight: 600; letter-spacing: 0.3px; transition: color 0.2s; }
+        .logout-link:hover { color: var(--danger); }
+
+        /* ── Skeleton loader ── */
+        .skeleton { height: 72px; background: var(--border); border-radius: 16px; margin-bottom: 10px; animation: pulse 1.4s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 0.9; } }
+
+        /* ── Empty state ── */
+        .empty { text-align: center; padding: 48px 20px; color: var(--sub); font-size: 14px; }
+        .empty i { font-size: 36px; margin-bottom: 12px; opacity: 0.2; display: block; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-inner">
+        <div class="header-brand">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="brand-logo" alt="Logo">
+            <div>
+                <div class="brand-name" id="storeName">Surjya Bakery</div>
+                <div class="brand-sub">Customer Portal</div>
+            </div>
+        </div>
+        <button class="dark-btn" id="darkBtn">🌙</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" id="tabMenu"   onclick="switchTab('menu')">
+            <i class="fa-solid fa-cookie"></i> Today's Menu
+        </button>
+        <button class="tab"        id="tabLedger" onclick="switchTab('ledger')">
+            <i class="fa-solid fa-receipt"></i> My Account
+        </button>
+    </div>
+
+    <!-- ── MENU TAB ── -->
+    <div id="menuSection">
+        <div class="search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="menuSearch" placeholder="Search items..." oninput="filterMenu()">
+        </div>
+        <span class="section-label" id="menuCountLabel">Loading menu...</span>
+        <div id="menuList">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+        </div>
+    </div>
+
+    <!-- ── LEDGER TAB ── -->
+    <div id="ledgerSection" class="hidden">
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <div class="login-card">
+                <h3>Check Your Account</h3>
+                <p>Apna mobile number enter karein apna balance dekhne ke liye</p>
+                <input type="tel" id="phoneInput" class="phone-input" placeholder="Mobile Number" inputmode="numeric" maxlength="10">
+                <button class="btn-verify" id="verifyBtn" onclick="verifyCustomer()">
+                    <i class="fa-solid fa-magnifying-glass"></i> Check Balance
+                </button>
+                <div id="loginError" style="color:var(--danger); font-size:13px; font-weight:600; margin-top:12px;"></div>
+            </div>
+        </div>
+
+        <!-- Ledger Result -->
+        <div id="ledgerResult" class="hidden">
+            <div id="balanceCard"></div>
+            <span class="section-label" id="txnLabel" style="margin-top:8px;">Recent Transactions</span>
+            <div id="txnList"></div>
+            <div class="logout-link" onclick="logoutLedger()">
+                <i class="fa-solid fa-arrow-left-long"></i> Back / Change Number
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkBtn = document.getElementById("darkBtn");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkBtn.innerText = "☀️"; }
+    darkBtn.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d); darkBtn.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Load store name
+    db.collection("settings").doc("store_config").get().then(doc => {
+        if (doc.exists && doc.data().name)
+            document.getElementById("storeName").innerText = doc.data().name;
+    }).catch(() => {});
+
+    // ── Menu Tab ──
+    let allMenuItems = [];
+
+    // FIX: use "items" collection (not "inventory")
+    db.collection("items").orderBy("name").onSnapshot(snap => {
+        allMenuItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMenu(allMenuItems);
+    });
+
+    function renderMenu(items) {
+        const list  = document.getElementById("menuList");
+        const label = document.getElementById("menuCountLabel");
+        label.innerText = `${items.length} item${items.length !== 1 ? "s" : ""} available`;
+
+        if (!items.length) {
+            list.innerHTML = `<div class="empty"><i class="fa-solid fa-cookie"></i>Abhi koi item available nahi hai.</div>`;
+            return;
+        }
+
+        list.innerHTML = items.map(item => `
+            <div class="item-card">
+                <div>
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-meta">${item.category || "General"} · ${item.unit || "Per Pcs"}</div>
+                </div>
+                <span class="price-tag">₹${parseFloat(item.price || 0).toLocaleString()}</span>
+            </div>`).join("");
+    }
+
+    function filterMenu() {
+        const q       = document.getElementById("menuSearch").value.toLowerCase();
+        const filtered = allMenuItems.filter(i => i.name.toLowerCase().includes(q));
+        renderMenu(filtered);
+    }
+
+    // ── Tab Switch ──
+    function switchTab(tab) {
+        document.getElementById("tabMenu").classList.toggle("active", tab === "menu");
+        document.getElementById("tabLedger").classList.toggle("active", tab === "ledger");
+        document.getElementById("menuSection").classList.toggle("hidden", tab !== "menu");
+        document.getElementById("ledgerSection").classList.toggle("hidden", tab !== "ledger");
+    }
+
+    // ── Ledger Verify ──
+    async function verifyCustomer() {
+        const phone  = document.getElementById("phoneInput").value.trim();
+        const errEl  = document.getElementById("loginError");
+        const btn    = document.getElementById("verifyBtn");
+
+        // FIX: basic validation
+        if (!phone || phone.length < 6) {
+            errEl.innerText = "Kripya valid mobile number enter karein."; return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching...';
+        errEl.innerText = "";
+
+        try {
+            // FIX: use "customers" collection (not "clients")
+            const snap = await db.collection("customers").where("phone", "==", phone).get();
+
+            if (snap.empty) {
+                errEl.innerText = "Yeh number hamare records mein nahi mila.";
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Check Balance';
+                return;
+            }
+
+            const customer = snap.docs[0].data();
+            const custId   = snap.docs[0].id;
+
+            // FIX: fetch actual ledger transactions for this customer
+            const ledgerSnap = await db.collection("ledger")
+                .where("customerId", "==", custId)
+                .orderBy("timestamp", "desc")
+                .limit(10)
+                .get();
+
+            // Calculate actual balance from transactions
+            let balance = parseFloat(customer.openingDue || 0);
+            const txns  = ledgerSnap.docs.map(d => d.data());
+            txns.forEach(t => {
+                if (t.type === "debit")  balance += parseFloat(t.amount || 0);
+                if (t.type === "credit") balance -= parseFloat(t.amount || 0);
+            });
+
+            showLedgerResult(customer, balance, txns);
+
+        } catch(e) {
+            errEl.innerText = "Error: " + e.message;
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Check Balance';
+    }
+
+    function showLedgerResult(customer, balance, txns) {
+        document.getElementById("loginForm").classList.add("hidden");
+        document.getElementById("ledgerResult").classList.remove("hidden");
+
+        // Balance card
+        const isDue   = balance > 0;
+        const isClear = balance <= 0;
+        const balCard = document.getElementById("balanceCard");
+        balCard.innerHTML = `
+            <div class="balance-card ${isDue ? 'due' : 'clear'}">
+                <div class="balance-name">${customer.name || "Customer"}</div>
+                <div class="balance-amount ${isDue ? 'due' : 'clear'}">₹${Math.abs(balance).toLocaleString()}</div>
+                <div class="balance-label ${isDue ? 'due' : 'clear'}">
+                    ${isDue ? '⚠ Pending Balance' : '✓ Account Clear'}
+                </div>
+            </div>`;
+
+        // Transaction list
+        const txnList = document.getElementById("txnList");
+        if (!txns.length) {
+            txnList.innerHTML = `<div class="empty" style="padding:24px;"><i class="fa-solid fa-receipt"></i>Koi transaction record nahi mila.</div>`;
+            return;
+        }
+
+        txnList.innerHTML = `<div class="txn-card">${txns.map(t => {
+            const isDebit = t.type === "debit";
+            const date    = t.date || (t.timestamp?.toDate?.()?.toLocaleDateString("en-GB") || "—");
+            return `
+            <div class="txn-row">
+                <div>
+                    <div class="txn-desc">${t.description || (isDebit ? "Purchase" : "Payment Received")}</div>
+                    <div class="txn-date">${date}</div>
+                </div>
+                <div class="txn-amt ${isDebit ? 'amt-debit' : 'amt-credit'}">
+                    ${isDebit ? '+' : '−'}₹${parseFloat(t.amount || 0).toLocaleString()}
+                </div>
+            </div>`;
+        }).join("")}</div>`;
+    }
+
+    function logoutLedger() {
+        document.getElementById("ledgerResult").classList.add("hidden");
+        document.getElementById("loginForm").classList.remove("hidden");
+        document.getElementById("phoneInput").value = "";
+        document.getElementById("loginError").innerText = "";
+    }
+
+    // Enter key on phone input
+    document.getElementById("phoneInput").addEventListener("keydown", e => {
+        if (e.key === "Enter") verifyCustomer();
+    });
+</script>
+</body>
+</html>

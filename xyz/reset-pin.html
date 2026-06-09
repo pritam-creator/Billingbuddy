@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Reset PIN - Surjya Bakery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #faf7f2; --card: #ffffff; --text: #1a1208;
+            --sub: #9c8e7a; --border: #ede8df;
+            --accent: #c8860a; --error: #dc2626; --success: #16a34a;
+            --input-bg: #f7f3ed;
+        }
+        body {
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            background-color: var(--bg);
+            background-image: radial-gradient(ellipse at 20% 20%, rgba(200,134,10,0.07) 0%, transparent 60%),
+                              radial-gradient(ellipse at 80% 80%, rgba(200,134,10,0.05) 0%, transparent 60%);
+            font-family: 'DM Sans', sans-serif; padding: 20px;
+        }
+        .card {
+            background: var(--card); padding: 44px 40px 36px; border-radius: 28px;
+            width: 100%; max-width: 360px; border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 12px 40px rgba(0,0,0,0.08);
+            text-align: center;
+            animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+
+        .logo-wrap { width: 72px; height: 72px; border-radius: 18px; margin: 0 auto 16px; overflow: hidden; }
+        .logo-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 18px; }
+        .shop-name { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 4px; }
+        .shop-sub { font-size: 11px; color: var(--sub); margin-bottom: 28px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        .reset-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+        .reset-sub { font-size: 12px; color: var(--sub); margin-bottom: 24px; line-height: 1.5; }
+
+        .form-group { text-align: left; margin-bottom: 12px; }
+        .form-label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
+        .form-input {
+            width: 100%; height: 50px; border-radius: 12px; border: 1.5px solid var(--border);
+            background: var(--input-bg); padding: 0 16px; font-size: 15px;
+            font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: all 0.2s; font-weight: 500;
+        }
+        .form-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(200,134,10,0.12); }
+        .form-input.error { border-color: var(--error); }
+
+        .divider { height: 1px; background: var(--border); margin: 20px 0 16px; }
+
+        .btn-primary {
+            width: 100%; padding: 15px; border: none; border-radius: 14px;
+            background: var(--text); color: #fff; font-size: 14px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary:hover:not(:disabled) { background: #2d2010; }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .message { margin-top: 14px; font-size: 13px; min-height: 20px; font-weight: 500; }
+
+        .back-link {
+            margin-top: 20px; display: inline-flex; align-items: center; gap: 5px;
+            color: var(--sub); font-size: 12px; font-weight: 500; cursor: pointer;
+            text-decoration: none; transition: color 0.2s; letter-spacing: 0.3px;
+        }
+        .back-link:hover { color: var(--accent); }
+
+        /* Success state */
+        .success-state { display: none; }
+        .success-icon { font-size: 48px; margin-bottom: 12px; }
+        .success-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--success); margin-bottom: 8px; }
+        .success-sub { font-size: 13px; color: var(--sub); margin-bottom: 24px; }
+    </style>
+</head>
+<body>
+<div class="card">
+
+    <!-- Normal form -->
+    <div id="formState">
+        <div class="logo-wrap">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" alt="Surjya Bakery Logo">
+        </div>
+        <div class="shop-name">Surjya Bakery</div>
+        <div class="shop-sub">PIN Reset</div>
+
+        <div class="reset-title">Change PIN</div>
+        <div class="reset-sub">Pehle apna current PIN enter karo,<br>phir naya PIN set karo.</div>
+
+        <div class="form-group">
+            <label class="form-label">Current PIN</label>
+            <input class="form-input" id="oldPin" type="password" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-group">
+            <label class="form-label">New PIN</label>
+            <input class="form-input" id="newPin" type="password" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Confirm New PIN</label>
+            <input class="form-input" id="confirmPin" type="password" maxlength="4" inputmode="numeric" autocomplete="off" placeholder="••••">
+        </div>
+
+        <button class="btn-primary" id="submitBtn" onclick="resetPin()">Update PIN</button>
+        <div class="message" id="message"></div>
+
+        <a class="back-link" onclick="goBack()">← Back to Login</a>
+    </div>
+
+    <!-- Success state -->
+    <div class="success-state" id="successState">
+        <div class="success-icon">✅</div>
+        <div class="success-title">PIN Updated!</div>
+        <div class="success-sub">Aapka naya PIN set ho gaya.<br>Ab login karein.</div>
+        <button class="btn-primary" onclick="goBack()">Login Page Pe Jao</button>
+    </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const msgEl   = document.getElementById("message");
+    const oldPin  = document.getElementById("oldPin");
+    const newPin  = document.getElementById("newPin");
+    const confirm = document.getElementById("confirmPin");
+
+    function showMsg(text, color) { msgEl.textContent = text; msgEl.style.color = color; }
+
+    // Enter key support
+    [oldPin, newPin, confirm].forEach(el => {
+        el.addEventListener("keydown", e => { if (e.key === "Enter") resetPin(); });
+        el.addEventListener("input",   e => { e.target.value = e.target.value.replace(/\D/g, ""); });
+    });
+
+    async function resetPin() {
+        const o = oldPin.value.trim();
+        const n = newPin.value.trim();
+        const c = confirm.value.trim();
+
+        [oldPin, newPin, confirm].forEach(el => el.classList.remove("error"));
+
+        if (o.length !== 4) { oldPin.classList.add("error"); return showMsg("Current PIN 4 digits ka hona chahiye.", "#dc2626"); }
+        if (n.length !== 4) { newPin.classList.add("error"); return showMsg("Naya PIN 4 digits ka hona chahiye.", "#dc2626"); }
+        if (n !== c)        { confirm.classList.add("error"); return showMsg("Dono naye PIN match nahi kar rahe.", "#dc2626"); }
+        if (o === n)        { newPin.classList.add("error"); return showMsg("Naya PIN purane se alag hona chahiye.", "#dc2626"); }
+
+        const btn = document.getElementById("submitBtn");
+        btn.disabled = true;
+        btn.textContent = "Verifying...";
+        showMsg("", "");
+
+        try {
+            const docSnap = await db.collection("settings").doc("admin").get();
+            if (!docSnap.exists || o !== String(docSnap.data().pin)) {
+                oldPin.classList.add("error");
+                btn.disabled = false;
+                btn.textContent = "Update PIN";
+                return showMsg("Current PIN galat hai.", "#dc2626");
+            }
+
+            btn.textContent = "Saving...";
+            await db.collection("settings").doc("admin").update({ pin: n });
+
+            document.getElementById("formState").style.display   = "none";
+            document.getElementById("successState").style.display = "block";
+
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = "Update PIN";
+            showMsg("Connection error. Try again.", "#dc2626");
+        }
+    }
+
+    function goBack() { window.location.replace("index.html"); }
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>

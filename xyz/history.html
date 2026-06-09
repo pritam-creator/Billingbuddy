@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Invoice History - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --warn: #d97706; --warn-bg: #fef9c3;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .s-logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* Content */
+        .content { flex: 1; padding: 28px 36px 100px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        /* Header */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        /* Search */
+        .search-wrap { position: relative; flex: 1; max-width: 340px; }
+        .search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--sub); font-size: 14px; }
+        .search-wrap input { width: 100%; padding: 11px 14px 11px 40px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 13.5px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
+        .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+
+        /* Section label */
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; color: var(--sub); font-weight: 700; display: block; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; }
+        .stat-card p { font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--sub); letter-spacing: 0.6px; margin-bottom: 6px; }
+        .stat-card h3 { font-size: 20px; font-weight: 700; color: var(--text); }
+
+        /* Filter tabs */
+        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; }
+        .tab { padding: 8px 18px; border-radius: 100px; background: var(--card-bg); border: 1.5px solid var(--border); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.18s; color: var(--sub); font-family: 'DM Sans', sans-serif; }
+        .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+        body.dark .tab.active { background: var(--accent); border-color: var(--accent); }
+
+        /* Invoice cards (mobile-first) */
+        .inv-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 18px 20px; margin-bottom: 10px; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .inv-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+        .inv-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .inv-id   { font-size: 13px; font-weight: 800; color: var(--text); }
+        .inv-date { font-size: 11px; color: var(--sub); margin-top: 2px; font-weight: 500; }
+        .inv-customer { font-size: 14px; font-weight: 700; color: var(--text); }
+        .inv-phone    { font-size: 11.5px; color: var(--sub); margin-top: 1px; }
+        .inv-amount   { font-size: 18px; font-weight: 800; color: var(--accent); }
+        .badge { padding: 3px 10px; border-radius: 7px; font-size: 10.5px; font-weight: 700; display: inline-block; }
+        .badge-paid { background: var(--success-bg); color: var(--success); }
+        .badge-due  { background: var(--warn-bg);    color: var(--warn); }
+        .inv-items-row { font-size: 12px; color: var(--sub); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+
+        .empty { text-align: center; padding: 60px 20px; color: var(--sub); font-size: 14px; }
+        .empty i { font-size: 36px; margin-bottom: 12px; opacity: 0.2; display: block; }
+
+        /* Invoice Detail Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
+        .modal-overlay.active { display: flex; }
+        .modal-sheet { background: var(--card-bg); border-radius: 24px 24px 0 0; width: 100%; max-width: 520px; margin: 0 auto; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1); overflow: hidden; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-header { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .modal-header h3 { font-size: 16px; font-weight: 700; color: var(--text); }
+        .close-btn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--sub); }
+
+        .modal-scroll { flex: 1; overflow-y: auto; padding: 20px 22px; scrollbar-width: none; }
+
+        .inv-header-block { text-align: center; margin-bottom: 20px; }
+        .inv-header-block h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); }
+        .inv-header-block p  { font-size: 12px; color: var(--sub); margin-top: 4px; }
+
+        .inv-meta-row { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; }
+        .inv-meta-row .lbl { color: var(--sub); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 3px; }
+        .inv-meta-row .val { font-weight: 700; color: var(--text); }
+
+        .item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 13.5px; }
+        .item-row:last-child { border-bottom: none; }
+
+        .totals-block { margin-top: 14px; padding-top: 14px; border-top: 2px solid var(--border); }
+        .total-line { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 7px; }
+        .total-line.grand { font-size: 18px; font-weight: 800; color: var(--accent); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+        .modal-footer { padding: 14px 22px 28px; border-top: 1px solid var(--border); flex-shrink: 0; }
+        .btn-close-modal { width: 100%; padding: 13px; border: none; border-radius: 12px; background: var(--border); color: var(--text); font-size: 13.5px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+
+        /* Confirm modal */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .confirm-overlay.active { display: flex; }
+        .confirm-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .confirm-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .confirm-card p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .conf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .conf-ok  { background: var(--danger); color: #fff; }
+        .conf-no  { background: var(--border); color: var(--text); }
+
+        /* Sidebar overlay */
+        .bg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .bg-overlay.active { opacity: 1; pointer-events: all; }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 100px; }
+            #menuBtn { display: block; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .search-wrap { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="s-logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')">   <i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">       <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">      <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')">    <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">       <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
+            <li class="active">                        <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">Invoice History</div>
+                    <div class="page-sub" id="invCountLabel">Loading...</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div class="search-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Search invoice, customer..." oninput="renderList()">
+                </div>
+                <button class="icon-btn" id="darkToggle">🌙</button>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <span class="section-label">Overview</span>
+        <div class="stats-grid">
+            <div class="stat-card"><p>Total Invoices</p><h3 id="statTotal">0</h3></div>
+            <div class="stat-card"><p>Total Revenue</p> <h3 id="statRevenue" style="color:var(--accent)">₹0</h3></div>
+            <div class="stat-card"><p>Pending Due</p>   <h3 id="statDue"     style="color:var(--warn)">₹0</h3></div>
+            <div class="stat-card"><p>Fully Paid</p>    <h3 id="statPaid"    style="color:var(--success)">0</h3></div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="tab-scroll">
+            <div class="tab active" onclick="setFilter('All',      this)">All</div>
+            <div class="tab"        onclick="setFilter('Paid',     this)">Paid</div>
+            <div class="tab"        onclick="setFilter('Due',      this)">Has Due</div>
+            <div class="tab"        onclick="setFilter('Today',    this)">Today</div>
+        </div>
+
+        <!-- Invoice List -->
+        <div id="invoiceList"></div>
+    </main>
+</div>
+
+<!-- Invoice Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-sheet">
+        <div class="modal-header">
+            <h3>Invoice Details</h3>
+            <button class="close-btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-scroll" id="detailContent"></div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" onclick="closeDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="confirm-overlay" id="logoutModal">
+    <div class="confirm-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeLogout()">Nahi</button>
+            <button class="conf-btn conf-ok" onclick="confirmLogout()">Haan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d); darkToggle.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Sidebar mobile
+    const sidebar   = document.getElementById("sidebar");
+    const bgOverlay = document.getElementById("bgOverlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); bgOverlay.classList.add("active"); };
+    bgOverlay.onclick = () => { sidebar.classList.remove("active"); bgOverlay.classList.remove("active"); };
+
+    const s = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
+    if (s.name) document.getElementById("sidebarName").innerText = s.name;
+
+    const todayDate = new Date().toLocaleDateString("en-GB");
+    let allInvoices   = [];
+    let currentFilter = "All";
+
+    // FIX: use "orders" collection (not "sales"), onSnapshot for live updates
+    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+        allInvoices = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+        updateStats();
+        renderList();
+    });
+
+    function updateStats() {
+        let revenue = 0, due = 0, paid = 0;
+        allInvoices.forEach(inv => {
+            revenue += parseFloat(inv.total || 0);
+            due     += parseFloat(inv.due  || 0);
+            if (!parseFloat(inv.due || 0)) paid++;
+        });
+        document.getElementById("statTotal").innerText   = allInvoices.length;
+        document.getElementById("statRevenue").innerText = "₹" + Math.round(revenue).toLocaleString();
+        document.getElementById("statDue").innerText     = "₹" + Math.round(due).toLocaleString();
+        document.getElementById("statPaid").innerText    = paid;
+    }
+
+    function setFilter(f, el) {
+        currentFilter = f;
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        el.classList.add("active");
+        renderList();
+    }
+
+    function renderList() {
+        const q = document.getElementById("searchInput").value.toLowerCase();
+
+        let filtered = allInvoices.filter(inv => {
+            const matchSearch =
+                (inv.invNo    || inv._id).toLowerCase().includes(q) ||
+                (inv.customer || "").toLowerCase().includes(q) ||
+                (inv.phone    || "").includes(q);
+
+            const due = parseFloat(inv.due || 0);
+            const matchFilter =
+                currentFilter === "All"   ? true :
+                currentFilter === "Paid"  ? due <= 0 :
+                currentFilter === "Due"   ? due > 0  :
+                currentFilter === "Today" ? (inv.date === todayDate) : true;
+
+            return matchSearch && matchFilter;
+        });
+
+        document.getElementById("invCountLabel").innerText = `${filtered.length} invoice${filtered.length !== 1 ? "s" : ""}`;
+
+        const list = document.getElementById("invoiceList");
+        if (!filtered.length) {
+            list.innerHTML = `<div class="empty"><i class="fa-solid fa-file-circle-xmark"></i>${q ? "Koi match nahi mila." : "Koi invoice nahi hai. Invoice page se billing karein."}</div>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(inv => {
+            const id       = inv._id;
+            const invNo    = inv.invNo || "#" + id.slice(-6).toUpperCase();
+            const customer = inv.customer || "Walk-in Customer";
+            const phone    = inv.phone || "";
+            const date     = inv.date  || "—";
+            const total    = parseFloat(inv.total || 0);
+            const due      = parseFloat(inv.due   || 0);
+            const items    = (inv.items || []).slice(0, 3).map(i => i.name).join(", ");
+
+            return `
+            <div class="inv-card" onclick="viewInvoice('${id}')">
+                <div class="inv-top">
+                    <div>
+                        <div class="inv-id">${invNo}</div>
+                        <div class="inv-date">${date}</div>
+                    </div>
+                    <span class="badge ${due > 0 ? 'badge-due' : 'badge-paid'}">${due > 0 ? 'Due ₹'+Math.round(due) : '✓ Paid'}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>
+                        <div class="inv-customer">${customer}</div>
+                        ${phone ? `<div class="inv-phone">${phone}</div>` : ""}
+                    </div>
+                    <div class="inv-amount">₹${total.toLocaleString()}</div>
+                </div>
+                ${items ? `<div class="inv-items-row"><i class="fa-solid fa-bag-shopping" style="font-size:10px; margin-right:4px;"></i>${items}${(inv.items||[]).length > 3 ? ` +${(inv.items||[]).length - 3} more` : ""}</div>` : ""}
+            </div>`;
+        }).join("");
+    }
+
+    // FIX: actual invoice view — no placeholder alert
+    function viewInvoice(id) {
+        const inv = allInvoices.find(x => x._id === id);
+        if (!inv) return;
+
+        const invNo    = inv.invNo || "#" + id.slice(-6).toUpperCase();
+        const customer = inv.customer || "Walk-in Customer";
+        const items    = inv.items || [];
+        const total    = parseFloat(inv.total    || 0);
+        const subtotal = parseFloat(inv.subtotal || total);
+        const discount = parseFloat(inv.discount || 0);
+        const oldDue   = parseFloat(inv.oldDue   || 0);
+        const paid     = parseFloat(inv.paid     || 0);
+        const due      = parseFloat(inv.due      || 0);
+
+        const storeSettings = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
+
+        document.getElementById("detailContent").innerHTML = `
+            <div class="inv-header-block">
+                <h2>${storeSettings.name || "Surjya Bakery"}</h2>
+                <p>${storeSettings.address || ""}</p>
+            </div>
+
+            <div class="inv-meta-row">
+                <div><div class="lbl">Invoice No</div><div class="val">${invNo}</div></div>
+                <div style="text-align:right;"><div class="lbl">Date</div><div class="val">${inv.date || "—"}</div></div>
+            </div>
+
+            <div class="inv-meta-row">
+                <div><div class="lbl">Customer</div><div class="val">${customer}</div></div>
+                ${inv.phone ? `<div style="text-align:right;"><div class="lbl">Phone</div><div class="val">${inv.phone}</div></div>` : ""}
+            </div>
+
+            <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+                ${items.length
+                    ? items.map(i => `
+                        <div class="item-row">
+                            <span>${i.name} <span style="color:var(--sub); font-size:12px;">×${i.qty}</span></span>
+                            <span style="font-weight:700;">₹${(parseFloat(i.price||0)*parseFloat(i.qty||1)).toLocaleString()}</span>
+                        </div>`).join("")
+                    : `<p style="color:var(--sub); font-size:13px; text-align:center; padding:12px 0;">No items recorded</p>`
+                }
+            </div>
+
+            <div class="totals-block">
+                <div class="total-line"><span style="color:var(--sub);">Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+                ${discount > 0 ? `<div class="total-line"><span style="color:var(--danger);">Discount</span><span style="color:var(--danger);">−₹${discount.toFixed(2)}</span></div>` : ""}
+                ${oldDue   > 0 ? `<div class="total-line"><span style="color:var(--warn);">Old Due</span><span style="color:var(--warn);">+₹${oldDue.toFixed(2)}</span></div>` : ""}
+                <div class="total-line grand"><span>Total</span><span>₹${total.toFixed(2)}</span></div>
+                <div class="total-line" style="margin-top:6px;"><span style="color:var(--sub);">Paid</span><span style="color:var(--success); font-weight:700;">₹${paid.toFixed(2)}</span></div>
+                ${due > 0 ? `<div class="total-line"><span style="color:var(--warn);">Balance Due</span><span style="color:var(--warn); font-weight:800;">₹${due.toFixed(2)}</span></div>` : `<div class="total-line"><span style="color:var(--success);">Status</span><span style="color:var(--success); font-weight:700;">✓ Fully Paid</span></div>`}
+            </div>
+
+            <div style="text-align:center; font-size:12px; color:var(--sub); margin-top:20px; padding-top:14px; border-top:1px dashed var(--border);">
+                Thank you for your visit! 🥐
+            </div>`;
+
+        document.getElementById("detailModal").classList.add("active");
+    }
+
+    function closeDetail() { document.getElementById("detailModal").classList.remove("active"); }
+
+    function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
+    function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(p)       { window.location.href = p; }
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>

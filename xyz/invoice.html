@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>New Bill - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        /* Content */
+        .content { flex: 1; padding: 28px 36px 120px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        /* Header */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        /* Section label */
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; color: var(--sub); font-weight: 700; display: block; }
+
+        /* Card */
+        .card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; }
+
+        /* Customer inputs */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
+        input[type="text"], input[type="tel"], input[type="number"] {
+            padding: 11px 14px; border-radius: 11px; border: 1.5px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 14px;
+            font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; width: 100%;
+        }
+        input:focus { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+        input::placeholder { color: var(--sub); font-weight: 400; }
+
+        /* Search with suggestions */
+        .search-wrap { position: relative; }
+        .suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--card-bg); border: 1.5px solid var(--border); border-radius: 13px; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.1); overflow: hidden; display: none; }
+        .suggest-item { padding: 12px 16px; cursor: pointer; font-size: 14px; display: flex; justify-content: space-between; transition: background 0.15s; }
+        .suggest-item:hover { background: var(--accent-light); }
+        .suggest-item span { color: var(--sub); font-size: 12px; }
+
+        /* Add item row */
+        .add-row { display: grid; grid-template-columns: 1fr 100px 100px; gap: 10px; margin-top: 12px; align-items: end; }
+        .btn-add-item { padding: 11px 18px; border: none; border-radius: 11px; background: var(--text); color: #fff; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
+        .btn-add-item:hover { opacity: 0.85; }
+
+        /* Cart table */
+        .cart-table { width: 100%; border-collapse: collapse; }
+        .cart-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; font-weight: 700; color: var(--sub); padding: 10px 12px; border-bottom: 1px solid var(--border); letter-spacing: 0.6px; }
+        .cart-table td { padding: 12px; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .cart-table tr:last-child td { border-bottom: none; }
+        .del-btn { background: none; border: none; cursor: pointer; color: var(--sub); font-size: 13px; transition: color 0.2s; padding: 4px 8px; border-radius: 6px; }
+        .del-btn:hover { color: var(--danger); background: var(--danger-bg); }
+
+        /* Payment section */
+        .pay-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .pay-field label { font-size: 10.5px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; display: block; margin-bottom: 5px; }
+        .pay-old   input { background: #fffbeb; border-color: #fde68a; }
+        .pay-disc  input { background: #fff1f2; border-color: #fecdd3; }
+        .pay-paid  input { background: #f0fdf4; border-color: #bbf7d0; }
+
+        /* Total card */
+        .total-card { background: var(--text); border-radius: 18px; padding: 22px 24px; margin-bottom: 14px; }
+        body.dark .total-card { background: #252836; border: 1px solid var(--border); }
+        .total-label { color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; }
+        .total-amount { color: #fff; font-size: 36px; font-weight: 800; letter-spacing: -1px; margin: 4px 0 2px; }
+        .due-label { font-size: 13px; font-weight: 700; }
+        .due-positive { color: #fb923c; }
+        .due-zero     { color: #4ade80; }
+        .due-negative { color: #4ade80; }
+
+        /* Print button */
+        .btn-print { width: 100%; padding: 16px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: opacity 0.2s; letter-spacing: 0.3px; }
+        .btn-print:hover { opacity: 0.88; }
+        .btn-print:active { transform: scale(0.98); }
+        .btn-print:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Logout modal */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .confirm-overlay.active { display: flex; }
+        .confirm-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .confirm-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .confirm-card p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .conf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .conf-ok  { background: var(--danger); color: #fff; }
+        .conf-no  { background: var(--border); color: var(--text); }
+
+        /* Sidebar overlay */
+        .bg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .bg-overlay.active { opacity: 1; pointer-events: all; }
+
+        /* ── PRINT STYLES ── */
+        #printSection { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #printSection, #printSection * { visibility: visible; }
+            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: #fff; }
+        }
+        .inv-header { background: #1a1208; color: #fff; padding: 36px 40px; display: flex; justify-content: space-between; align-items: center; -webkit-print-color-adjust: exact; }
+        .inv-accent { background: #c8860a; width: 8px; border-radius: 4px; align-self: stretch; margin-right: 20px; -webkit-print-color-adjust: exact; }
+        .inv-body { padding: 32px 40px; }
+        .inv-items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .inv-items-table th { background: #1a1208; color: #fff; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; -webkit-print-color-adjust: exact; }
+        .inv-items-table td { padding: 10px 14px; border-bottom: 1px solid #ede8df; font-size: 13px; }
+        .inv-total-block { text-align: right; border-top: 2px solid #ede8df; padding-top: 16px; }
+        .inv-grand { font-size: 28px; font-weight: 900; color: #c8860a; -webkit-print-color-adjust: exact; }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 120px; }
+            #menuBtn { display: block; }
+            .input-grid { grid-template-columns: 1fr; }
+            .add-row { grid-template-columns: 1fr 80px; }
+            .pay-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>POS Terminal</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')">   <i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">       <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
+            <li class="active">                        <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')">    <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">       <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">New Bill</div>
+                    <div class="page-sub" id="invNoLabel">Generating invoice #...</div>
+                </div>
+            </div>
+            <button class="icon-btn" id="darkToggle">🌙</button>
+        </header>
+
+        <!-- Customer Details -->
+        <span class="section-label">Customer Details</span>
+        <div class="card">
+            <div class="input-grid">
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    <input type="text" id="custName" placeholder="Walk-in Customer">
+                </div>
+                <div class="form-group">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="custPhone" placeholder="+91 00000 00000">
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Items -->
+        <span class="section-label">Add Items</span>
+        <div class="card">
+            <div class="form-group search-wrap">
+                <label>Search Product</label>
+                <input type="text" id="iName" placeholder="Type to search items..." autocomplete="off" oninput="searchItems()">
+                <div class="suggestions" id="suggestions"></div>
+            </div>
+            <div class="add-row">
+                <div class="form-group">
+                    <label>Qty</label>
+                    <input type="number" id="iQty" value="1" min="1" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="iPrice" placeholder="0" inputmode="numeric">
+                </div>
+                <button class="btn-add-item" onclick="addItem()">
+                    <i class="fa-solid fa-plus"></i> Add
+                </button>
+            </div>
+        </div>
+
+        <!-- Cart -->
+        <span class="section-label">Bill Items</span>
+        <div class="card" style="padding:0; overflow:hidden;" id="cartCard">
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th style="text-align:center;">Qty</th>
+                        <th style="text-align:right;">Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="cartBody">
+                    <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--sub); font-size:13px;">
+                        <i class="fa-solid fa-receipt" style="display:block; font-size:28px; opacity:0.2; margin-bottom:8px;"></i>
+                        Koi item nahi add hua
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Payment -->
+        <span class="section-label">Payment Details</span>
+        <div class="card">
+            <div class="pay-grid">
+                <div class="pay-field pay-old">
+                    <label>Old Due / Balance (+)</label>
+                    <input type="number" id="payOldDue" placeholder="₹ 0" oninput="calcTotals()" inputmode="numeric">
+                </div>
+                <div class="pay-field pay-disc">
+                    <label>Discount / Return (−)</label>
+                    <input type="number" id="payReturn" placeholder="₹ 0" oninput="calcTotals()" inputmode="numeric">
+                </div>
+                <div class="pay-field pay-paid">
+                    <label>Amount Paid</label>
+                    <input type="number" id="payPaid" placeholder="₹ 0" oninput="calcTotals()" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+
+        <!-- Total -->
+        <div class="total-card">
+            <div class="total-label">Total Payable</div>
+            <div class="total-amount" id="grandTotal">₹ 0.00</div>
+            <div class="due-label due-zero" id="dueLabel">Add items to start billing</div>
+        </div>
+
+        <!-- Print Button -->
+        <button class="btn-print" id="printBtn" onclick="saveAndPrint()">
+            <i class="fa-solid fa-print"></i> Print Invoice
+        </button>
+    </main>
+</div>
+
+<!-- Logout Modal -->
+<div class="confirm-overlay" id="logoutModal">
+    <div class="confirm-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeLogout()">Nahi</button>
+            <button class="conf-btn conf-ok" onclick="confirmLogout()">Haan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Print Section -->
+<div id="printSection"></div>
+
+<script>
+    // FIX: Auth guard
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d); darkToggle.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Sidebar mobile
+    const sidebar   = document.getElementById("sidebar");
+    const bgOverlay = document.getElementById("bgOverlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); bgOverlay.classList.add("active"); };
+    bgOverlay.onclick = () => { sidebar.classList.remove("active"); bgOverlay.classList.remove("active"); };
+
+    // State
+    let cart        = [];
+    let allItems    = [];
+    let currentInvNo = "";
+    let storeData   = { name: "Surjya Bakery", address: "Manipur, India" };
+
+    // ── Init ──
+    window.onload = async () => {
+        // Load settings
+        try {
+            const doc = await db.collection("settings").doc("store_config").get();
+            if (doc.exists) {
+                storeData = doc.data();
+                document.getElementById("sidebarName").innerText = storeData.name || "Surjya Bakery";
+            }
+        } catch(e) {}
+
+        // Load items for search
+        db.collection("items").onSnapshot(snap => {
+            allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        });
+
+        // Load cart from localStorage (from items.html "Add to Bill")
+        const saved = JSON.parse(localStorage.getItem("cart") || "[]");
+        if (saved.length) {
+            cart = saved.map(i => ({ name: i.name, qty: i.qty, price: i.price, total: i.qty * i.price }));
+            localStorage.removeItem("cart");
+            renderCart();
+        }
+
+        await generateInvNo();
+    };
+
+    async function generateInvNo() {
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        try {
+            // FIX: use "orders" collection (not "sales")
+            const snap = await db.collection("orders").where("dateRaw", "==", today).get();
+            currentInvNo = "SB-" + today + "-" + String(snap.size + 1).padStart(3, "0");
+        } catch(e) {
+            currentInvNo = "SB-" + today + "-001";
+        }
+        document.getElementById("invNoLabel").innerText = "Invoice #" + currentInvNo;
+    }
+
+    // ── Item Search / Autocomplete ──
+    function searchItems() {
+        const q    = document.getElementById("iName").value.toLowerCase().trim();
+        const box  = document.getElementById("suggestions");
+
+        if (!q) { box.style.display = "none"; return; }
+
+        const matches = allItems.filter(i => i.name.toLowerCase().includes(q)).slice(0, 6);
+        if (!matches.length) { box.style.display = "none"; return; }
+
+        box.innerHTML = matches.map(i =>
+            `<div class="suggest-item" onclick="selectItem('${i.name.replace(/'/g,"\\'")}', ${i.price || 0})">
+                ${i.name} <span>₹${parseFloat(i.price || 0).toLocaleString()}</span>
+            </div>`
+        ).join("");
+        box.style.display = "block";
+    }
+
+    function selectItem(name, price) {
+        document.getElementById("iName").value  = name;
+        document.getElementById("iPrice").value = price;
+        document.getElementById("suggestions").style.display = "none";
+        document.getElementById("iQty").focus();
+    }
+
+    // Close suggestions on outside click
+    document.addEventListener("click", e => {
+        if (!e.target.closest(".search-wrap")) document.getElementById("suggestions").style.display = "none";
+    });
+
+    // ── Add Item to Cart ──
+    function addItem() {
+        const name  = document.getElementById("iName").value.trim();
+        const qty   = parseFloat(document.getElementById("iQty").value) || 1;
+        const price = parseFloat(document.getElementById("iPrice").value);
+
+        if (!name)  return alert("Item naam daalo.");
+        if (!price) return alert("Price daalo.");
+
+        // Merge if same item already in cart
+        const existing = cart.find(i => i.name.toLowerCase() === name.toLowerCase());
+        if (existing) { existing.qty += qty; existing.total = existing.qty * existing.price; }
+        else cart.push({ name, qty, price, total: qty * price });
+
+        renderCart();
+        document.getElementById("iName").value  = "";
+        document.getElementById("iPrice").value = "";
+        document.getElementById("iQty").value   = "1";
+        document.getElementById("iName").focus();
+    }
+
+    // Enter key to add item
+    document.getElementById("iPrice").addEventListener("keydown", e => { if (e.key === "Enter") addItem(); });
+
+    // ── Render Cart ──
+    function renderCart() {
+        const body = document.getElementById("cartBody");
+        if (!cart.length) {
+            body.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--sub); font-size:13px;">
+                <i class="fa-solid fa-receipt" style="display:block; font-size:28px; opacity:0.2; margin-bottom:8px;"></i>
+                Koi item nahi add hua</td></tr>`;
+            calcTotals(); return;
+        }
+        body.innerHTML = cart.map((item, i) => `
+            <tr>
+                <td style="font-weight:600;">${item.name}</td>
+                <td style="text-align:center; color:var(--sub);">${item.qty} × ₹${item.price}</td>
+                <td style="text-align:right; font-weight:700;">₹${item.total.toLocaleString()}</td>
+                <td><button class="del-btn" onclick="removeItem(${i})"><i class="fa-solid fa-xmark"></i></button></td>
+            </tr>`).join("");
+        calcTotals();
+    }
+
+    function removeItem(i) { cart.splice(i, 1); renderCart(); }
+
+    // ── Calculate Totals ──
+    function calcTotals() {
+        const subtotal  = cart.reduce((s, i) => s + i.total, 0);
+        const oldDue    = parseFloat(document.getElementById("payOldDue").value) || 0;
+        const discount  = parseFloat(document.getElementById("payReturn").value) || 0;
+        const paid      = parseFloat(document.getElementById("payPaid").value) || 0;
+        const finalTotal = (subtotal - discount) + oldDue;
+        const due        = finalTotal - paid;
+
+        document.getElementById("grandTotal").innerText = "₹ " + finalTotal.toFixed(2);
+
+        const lbl = document.getElementById("dueLabel");
+        lbl.className = "due-label";
+        if (!cart.length) { lbl.innerText = "Add items to start billing"; lbl.classList.add("due-zero"); }
+        else if (due > 0)  { lbl.innerText = `Balance Due: ₹${due.toFixed(2)}`; lbl.classList.add("due-positive"); }
+        else if (due < 0)  { lbl.innerText = `Change to Return: ₹${Math.abs(due).toFixed(2)}`; lbl.classList.add("due-negative"); }
+        else               { lbl.innerText = "✓ Full Amount Paid"; lbl.classList.add("due-zero"); }
+    }
+
+    // ── Build Print HTML ──
+    function buildPrintHTML(invNo, subtotal, oldDue, discount, paid, finalTotal, due) {
+        const customer = document.getElementById("custName").value || "Walk-in Customer";
+        const phone    = document.getElementById("custPhone").value || "";
+        const today    = new Date().toLocaleDateString("en-GB");
+        const rows     = cart.map(i =>
+            `<tr>
+                <td>${i.name}</td>
+                <td style="text-align:center;">${i.qty}</td>
+                <td style="text-align:right;">₹${i.price.toFixed(2)}</td>
+                <td style="text-align:right; font-weight:700;">₹${i.total.toFixed(2)}</td>
+            </tr>`).join("");
+
+        return `
+        <div class="inv-header">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div class="inv-accent"></div>
+                <div>
+                    <h1 style="font-size:26px; font-family:'DM Sans',sans-serif; font-weight:800;">INVOICE</h1>
+                    <p style="font-size:13px; opacity:0.7;"># ${invNo}</p>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <h2 style="font-size:18px; font-family:'DM Sans',sans-serif;">${storeData.name || "Surjya Bakery"}</h2>
+                <p style="font-size:12px; opacity:0.7; margin-top:4px;">${storeData.address || ""}</p>
+                ${storeData.phone ? `<p style="font-size:12px; opacity:0.7;">${storeData.phone}</p>` : ""}
+            </div>
+        </div>
+        <div class="inv-body">
+            <div style="display:flex; justify-content:space-between; margin-bottom:24px;">
+                <div>
+                    <p style="font-size:10px; text-transform:uppercase; font-weight:700; color:#9c8e7a; letter-spacing:0.8px;">Bill To</p>
+                    <h3 style="font-size:16px; margin-top:4px;">${customer}</h3>
+                    ${phone ? `<p style="font-size:13px; color:#9c8e7a;">${phone}</p>` : ""}
+                </div>
+                <div style="text-align:right;">
+                    <p style="font-size:10px; text-transform:uppercase; font-weight:700; color:#9c8e7a; letter-spacing:0.8px;">Date</p>
+                    <p style="font-size:15px; font-weight:700; margin-top:4px;">${today}</p>
+                </div>
+            </div>
+            <table class="inv-items-table">
+                <thead><tr><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Total</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div class="inv-total-block">
+                <table style="margin-left:auto; font-size:13px; border-collapse:collapse;">
+                    <tr><td style="padding:4px 16px; color:#9c8e7a;">Items Total</td><td style="font-weight:700; text-align:right;">₹${subtotal.toFixed(2)}</td></tr>
+                    ${discount > 0 ? `<tr><td style="padding:4px 16px; color:#dc2626;">Discount</td><td style="text-align:right; color:#dc2626;">−₹${discount.toFixed(2)}</td></tr>` : ""}
+                    ${oldDue > 0   ? `<tr><td style="padding:4px 16px; color:#d97706;">Old Due</td><td style="text-align:right; color:#d97706;">+₹${oldDue.toFixed(2)}</td></tr>` : ""}
+                </table>
+                <div class="inv-grand">₹${finalTotal.toFixed(2)}</div>
+                <div style="margin-top:12px; font-size:13px; color:#9c8e7a;">
+                    Paid: <b style="color:#1a1208;">₹${paid.toFixed(2)}</b> &nbsp;|&nbsp;
+                    ${due > 0 ? `<b style="color:#dc2626;">Balance Due: ₹${due.toFixed(2)}</b>` : `<b style="color:#16a34a;">✓ Paid in Full</b>`}
+                </div>
+            </div>
+            <div style="margin-top:32px; text-align:center; font-size:12px; color:#9c8e7a; border-top:1px dashed #ede8df; padding-top:16px;">
+                Thank you for your visit! 🥐 ${storeData.name || "Surjya Bakery"}
+            </div>
+        </div>`;
+    }
+
+    // ── Save & Print ──
+    async function saveAndPrint() {
+        if (!cart.length) return alert("Cart khaali hai — pehle items add karein.");
+
+        const btn = document.getElementById("printBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+        const subtotal   = cart.reduce((s, i) => s + i.total, 0);
+        const oldDue     = parseFloat(document.getElementById("payOldDue").value) || 0;
+        const discount   = parseFloat(document.getElementById("payReturn").value) || 0;
+        const paid       = parseFloat(document.getElementById("payPaid").value) || 0;
+        const finalTotal = (subtotal - discount) + oldDue;
+        const due        = finalTotal - paid;
+        const today      = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+        try {
+            // FIX: save to "orders" collection (not "sales")
+            await db.collection("orders").add({
+                invNo:     currentInvNo,
+                customer:  document.getElementById("custName").value || "Walk-in",
+                phone:     document.getElementById("custPhone").value || "",
+                items:     cart,
+                subtotal,
+                oldDue,
+                discount,
+                total:     finalTotal,
+                paid,
+                due,
+                status:    "Delivered",
+                dateRaw:   today,
+                date:      new Date().toLocaleDateString("en-GB"),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Build print HTML then print
+            document.getElementById("printSection").innerHTML =
+                buildPrintHTML(currentInvNo, subtotal, oldDue, discount, paid, finalTotal, due);
+
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
+
+            // FIX: use onafterprint to reset — not setTimeout + reload
+            window.onafterprint = () => {
+                cart = [];
+                document.getElementById("custName").value  = "";
+                document.getElementById("custPhone").value = "";
+                document.getElementById("payOldDue").value = "";
+                document.getElementById("payReturn").value = "";
+                document.getElementById("payPaid").value   = "";
+                renderCart();
+                generateInvNo();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-print"></i> Print Invoice';
+            };
+
+            setTimeout(() => window.print(), 400);
+
+        } catch(e) {
+            alert("Error saving: " + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-print"></i> Print Invoice';
+        }
+    }
+
+    // ── Logout ──
+    function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
+    function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(p)       { window.location.href = p; }
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>

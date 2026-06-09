@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Dashboard - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg: #f8f5f0;
+            --sidebar-bg: #ffffff;
+            --card-bg: #ffffff;
+            --border: #ede8df;
+            --text: #1a1208;
+            --sub: #9c8e7a;
+            --accent: #c8860a;
+            --accent-light: #fff8ed;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --success-bg: #dcfce7;
+            --danger-bg: #fee2e2;
+            --sidebar-w: 260px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+
+        /* ── Dark Mode ── */
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 28px 16px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100%;
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            left: 0;
+        }
+
+        .profile {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 32px; padding: 0 8px;
+        }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p { font-size: 11px; color: var(--sub); margin-top: 1px; }
+
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li {
+            display: flex; align-items: center; gap: 11px;
+            padding: 11px 14px; border-radius: 12px; cursor: pointer;
+            transition: all 0.18s; margin-bottom: 2px;
+            font-size: 13.5px; color: var(--sub); font-weight: 500;
+        }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+
+        .sidebar-footer {
+            padding: 14px 8px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 12px;
+        }
+        .sidebar-footer button {
+            width: 100%; padding: 11px; border-radius: 12px; border: none;
+            background: var(--danger-bg); color: var(--danger);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        /* ── Content ── */
+        .content { flex: 1; padding: 28px 36px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        /* ── Top Header ── */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .welcome-msg { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .greeting { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+
+        .header-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border);
+            background: var(--card-bg); cursor: pointer; font-size: 15px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text); transition: all 0.2s;
+        }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        /* ── Section Label ── */
+        .section-label {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+            margin: 24px 0 14px; color: var(--sub); font-weight: 700; display: block;
+        }
+
+        /* ── Quick Actions ── */
+        .quick-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+        .action-chip {
+            background: var(--text); color: #fff; padding: 9px 18px;
+            border-radius: 12px; font-size: 13px; font-weight: 600;
+            cursor: pointer; border: none; transition: opacity 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .action-chip:hover { opacity: 0.82; }
+        .action-chip.green { background: #16a34a; }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--card-bg);
+            padding: 18px 20px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; gap: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+        .card i { font-size: 20px; }
+        .card-info p { color: var(--sub); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+        .card-info h3 { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 3px; }
+
+        .grid-top  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+
+        /* Progress Bar */
+        .progress-container { width: 100%; background: var(--border); height: 5px; border-radius: 10px; margin-top: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--accent); border-radius: 10px; width: 0%; transition: width 1s ease; }
+
+        /* ── Activity ── */
+        .activity-card {
+            background: var(--card-bg); border-radius: 18px;
+            padding: 6px 18px; border: 1px solid var(--border);
+        }
+        .activity-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 13px 0; border-bottom: 1px solid var(--border);
+        }
+        .activity-row:last-child { border-bottom: none; }
+        .activity-row b { font-size: 13.5px; color: var(--text); }
+        .activity-row .sub-text { font-size: 11px; color: var(--sub); margin-top: 2px; }
+
+        /* Badges */
+        .badge {
+            padding: 3px 9px; border-radius: 7px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+        }
+        .badge-success { background: var(--success-bg); color: var(--success); }
+        .badge-danger  { background: var(--danger-bg); color: var(--danger); }
+        .badge-warn    { background: #fef9c3; color: #92400e; }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center; padding: 24px 0;
+            font-size: 13px; color: var(--sub);
+        }
+
+        /* ── Alerts ── */
+        .alert-card { background: var(--card-bg); border-radius: 18px; padding: 6px 18px; border: 1px solid #fecaca; display: none; }
+
+        /* ── FAB ── */
+        .fab {
+            position: fixed; bottom: 28px; right: 28px;
+            width: 52px; height: 52px; background: var(--text);
+            color: #fff; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+            cursor: pointer; z-index: 999; transition: transform 0.2s;
+        }
+        .fab:hover { transform: scale(1.08); }
+
+        /* ── Overlay ── */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        /* ── Modal ── */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .modal-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+        .modal-card p { font-size: 13px; color: var(--sub); margin-bottom: 22px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .btn-confirm { background: var(--danger); color: #fff; }
+        .btn-cancel  { background: var(--border); color: var(--text); }
+
+        /* ── Responsive ── */
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px; }
+            #menuBtn { display: block; }
+            .grid-top { grid-template-columns: 1fr; }
+        }
+
+        /* ── Colors ── */
+        .txt-collect { color: #16a34a; }
+        .txt-pay     { color: #dc2626; }
+        .txt-profit  { color: #16a34a; }
+        .txt-loss    { color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li class="active"  onclick="goPage('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">   <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">    <i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">  <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')"><i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">   <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">  <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')"><i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">  <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')"> <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- ── Main Content ── -->
+    <main class="content">
+
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="welcome-msg" id="welcomeMsg">Dashboard</div>
+                    <div class="greeting" id="greeting"></div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="darkToggle" title="Toggle dark mode">🌙</button>
+                <button class="icon-btn" onclick="sharePortal()" title="Share customer portal" style="font-size:13px;"><i class="fa-brands fa-whatsapp" style="color:#16a34a;"></i></button>
+            </div>
+        </header>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-chip" onclick="goPage('invoice.html')"><i class="fa-solid fa-plus"></i> New Bill</button>
+            <button class="action-chip" onclick="goPage('items.html')">Add Item</button>
+            <button class="action-chip green" onclick="sharePortal()">Share Portal</button>
+        </div>
+
+        <!-- Finance -->
+        <span class="section-label">Finance Summary</span>
+        <div class="grid-top">
+            <div class="card" onclick="goPage('ledger.html')" style="cursor:pointer;">
+                <i class="fa-solid fa-circle-arrow-down txt-collect"></i>
+                <div class="card-info"><p>To Collect</p><h3 id="dash-collect">₹ 0</h3></div>
+            </div>
+            <div class="card" onclick="goPage('ledger.html')" style="cursor:pointer;">
+                <i class="fa-solid fa-circle-arrow-up txt-pay"></i>
+                <div class="card-info"><p>To Pay</p><h3 id="dash-pay">₹ 0</h3></div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <span class="section-label">Business Stats</span>
+        <div class="grid-stats">
+            <div class="card">
+                <div class="card-info" style="width:100%;">
+                    <p>Today's Sales <span id="targetLabel" style="font-weight:500;">(Target: ₹5,000)</span></p>
+                    <h3 id="dash-sales">₹ 0</h3>
+                    <div class="progress-container"><div class="progress-bar" id="salesProgress"></div></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-info">
+                    <p id="profit-label">Net Profit</p>
+                    <h3 id="dash-profit" class="txt-profit">₹ 0</h3>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-info"><p>Total Customers</p><h3 id="dash-clients">0</h3></div>
+            </div>
+            <div class="card">
+                <div class="card-info"><p>Active Items</p><h3 id="dash-items">0</h3></div>
+            </div>
+        </div>
+
+        <!-- Activity + Top Products -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:8px;">
+            <div>
+                <span class="section-label">Popular Items</span>
+                <div class="activity-card" id="topProducts">
+                    <div class="empty-state">Analyzing data...</div>
+                </div>
+            </div>
+            <div>
+                <span class="section-label">Recent Orders</span>
+                <div class="activity-card" id="recentActivity">
+                    <div class="empty-state">Loading orders...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Alerts -->
+        <span class="section-label" id="stockAlertLabel" style="color:var(--danger); display:none;">⚠️ Low Stock Alerts</span>
+        <div class="alert-card" id="stockAlerts"></div>
+
+    </main>
+
+    <div class="fab" onclick="goPage('invoice.html')"><i class="fa-solid fa-plus"></i></div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeLogout()">Nahi</button>
+            <button class="modal-btn btn-confirm" onclick="confirmLogout()">Haan, Logout</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Auth Guard ──
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    // ── Firebase ──
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ── Dark Mode ──
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark");
+        darkToggle.innerText = "☀️";
+    }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const isDark = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", isDark);
+        darkToggle.innerText = isDark ? "☀️" : "🌙";
+    };
+
+    // ── Sidebar (mobile) ──
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
+    overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
+
+    // ── Greeting ──
+    function updateGreeting() {
+        const now  = new Date();
+        const hour = now.getHours();
+        const wish = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+
+        // Use owner name from settings if available, otherwise generic
+        const settings = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
+        const ownerName = settings.ownerName ? ", " + settings.ownerName : "";
+        document.getElementById("welcomeMsg").innerText = wish + ownerName + "!";
+        document.getElementById("greeting").innerText =
+            now.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) +
+            "  •  " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    // ── Load settings (name + sales target) ──
+    async function loadSettings() {
+        try {
+            const doc = await db.collection("settings").doc("store_config").get();
+            if (doc.exists) {
+                const data = doc.data();
+                localStorage.setItem("bakery_settings", JSON.stringify(data));
+
+                // Sidebar bakery name
+                if (data.name) document.getElementById("sidebarName").innerText = data.name;
+
+                // Sales target
+                const target = parseFloat(data.salesTarget) || 5000;
+                window._salesTarget = target;
+                document.getElementById("targetLabel").innerText = `(Target: ₹${target.toLocaleString()})`;
+            }
+        } catch (e) {
+            console.warn("Settings load failed:", e);
+        }
+        updateGreeting();
+    }
+
+    // ── Sales total variable shared between listeners ──
+    window._salesTarget  = 5000;
+    window._currentSales = 0;
+    window._expensesUnsub = null;
+
+    // ── Main Dashboard Listeners ──
+    function startDashboard() {
+
+        // FIX 1: 'customers' collection (not 'clients')
+        db.collection("customers").onSnapshot(snap => {
+            document.getElementById("dash-clients").innerText = snap.size;
+        });
+
+        // Items
+        db.collection("items").onSnapshot(snap => {
+            document.getElementById("dash-items").innerText = snap.size;
+            renderStockAlerts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
+        // Ledger
+        db.collection("ledger").onSnapshot(snap => {
+            let collect = 0, pay = 0;
+            snap.forEach(doc => {
+                const bal = parseFloat(doc.data().balance || 0);
+                if (bal > 0) collect += bal; else pay += Math.abs(bal);
+            });
+            document.getElementById("dash-collect").innerText = "₹ " + collect.toLocaleString();
+            document.getElementById("dash-pay").innerText     = "₹ " + pay.toLocaleString();
+        });
+
+        // FIX 2: orders listener — no nested onSnapshot
+        db.collection("orders").onSnapshot(snap => {
+            // FIX 3: use doc.id for order ID
+            const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+            const totalSales = orders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+            window._currentSales = totalSales;
+
+            document.getElementById("dash-sales").innerText = "₹ " + totalSales.toLocaleString();
+            const target = window._salesTarget || 5000;
+            document.getElementById("salesProgress").style.width = Math.min((totalSales / target) * 100, 100) + "%";
+
+            renderRecentActivity(orders);
+            renderTopProducts(orders);
+        });
+
+        // FIX 4: Expenses — single independent listener (not nested inside orders)
+        db.collection("expenses").onSnapshot(snap => {
+            const totalExp = snap.docs.reduce((sum, d) => sum + parseFloat(d.data().amount || 0), 0);
+            const profit   = window._currentSales - totalExp;
+            const profitEl = document.getElementById("dash-profit");
+            const labelEl  = document.getElementById("profit-label");
+
+            profitEl.innerText = "₹ " + Math.abs(profit).toLocaleString();
+            if (profit >= 0) {
+                profitEl.className = "txt-profit";
+                labelEl.innerText  = "Net Profit";
+            } else {
+                profitEl.className = "txt-loss";
+                labelEl.innerText  = "Net Loss";
+            }
+        }, () => {
+            // expenses collection doesn't exist yet — show ₹0
+            document.getElementById("dash-profit").innerText = "₹ 0";
+            document.getElementById("profit-label").innerText = "Net Profit (no expenses)";
+        });
+    }
+
+    // ── Render: Top Products ──
+    function renderTopProducts(orders) {
+        const counts = {};
+        orders.forEach(order => {
+            if (order.items) order.items.forEach(item => {
+                counts[item.name] = (counts[item.name] || 0) + (parseFloat(item.qty) || 1);
+            });
+        });
+
+        const sorted = Object.entries(counts).sort(([, a], [, b]) => b - a).slice(0, 5);
+        const container = document.getElementById("topProducts");
+
+        if (sorted.length === 0) {
+            container.innerHTML = `<div class="empty-state">No sales yet</div>`;
+            return;
+        }
+
+        container.innerHTML = sorted.map(([name, qty], i) => `
+            <div class="activity-row">
+                <div>
+                    <b>${i + 1}. ${name}</b>
+                </div>
+                <span class="badge badge-success">${qty} sold</span>
+            </div>`).join("");
+    }
+
+    // ── Render: Recent Activity ──
+    function renderRecentActivity(orders) {
+        const container = document.getElementById("recentActivity");
+        const lastFive  = [...orders].slice(-5).reverse();
+
+        if (lastFive.length === 0) {
+            container.innerHTML = `<div class="empty-state">No recent orders</div>`;
+            return;
+        }
+
+        container.innerHTML = lastFive.map(o => `
+            <div class="activity-row">
+                <div>
+                    <b>#${o._docId ? o._docId.slice(-5).toUpperCase() : "INV"}</b>
+                    <div class="sub-text">${o.date || "Today"}</div>
+                </div>
+                <div style="text-align:right;">
+                    <b>₹${parseFloat(o.total || 0).toLocaleString()}</b><br>
+                    <span class="badge badge-success">PAID</span>
+                </div>
+            </div>`).join("");
+    }
+
+    // ── Render: Stock Alerts ──
+    function renderStockAlerts(items) {
+        const lowStock  = items.filter(i => parseFloat(i.stock || 0) < 10);
+        const container = document.getElementById("stockAlerts");
+        const label     = document.getElementById("stockAlertLabel");
+
+        if (lowStock.length > 0) {
+            label.style.display     = "block";
+            container.style.display = "block";
+            container.innerHTML     = lowStock.map(item => `
+                <div class="activity-row">
+                    <b>${item.name}</b>
+                    <span class="badge badge-danger">Stock: ${item.stock ?? 0}</span>
+                </div>`).join("");
+        } else {
+            label.style.display     = "none";
+            container.style.display = "none";
+        }
+    }
+
+    // ── Share Portal ──
+    function sharePortal() {
+        const url  = `${window.location.origin}/customer_view.html`;
+        const text = `*Surjya Bakery — Customer Portal*\n🔗 ${url}`;
+        if (navigator.share) navigator.share({ title: "Surjya Bakery", text, url });
+        else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }
+
+    // ── Logout ──
+    function openLogout()    { document.getElementById("logoutModal").style.display = "flex"; }
+    function closeLogout()   { document.getElementById("logoutModal").style.display = "none"; }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+
+    function goPage(page) { window.location.href = page; }
+
+    // ── Init ──
+    window.onload = async () => {
+        await loadSettings();
+        startDashboard();
+        setInterval(updateGreeting, 60000);
+    };
+
+    window.onerror = (msg, src, line) => console.error("Error:", msg, "at", src, line);
+</script>
+</body>
+</html>

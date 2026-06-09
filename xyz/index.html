@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Login - Surjya Bakery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #faf7f2;
+      --card: #ffffff;
+      --text: #1a1208;
+      --sub: #9c8e7a;
+      --border: #ede8df;
+      --accent: #c8860a;
+      --accent-dark: #a06c07;
+      --error: #dc2626;
+      --success: #16a34a;
+      --input-bg: #f7f3ed;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(200,134,10,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(200,134,10,0.05) 0%, transparent 60%);
+      font-family: 'DM Sans', sans-serif;
+      padding: 20px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      padding: 48px 40px 40px;
+      border-radius: 28px;
+      width: 100%;
+      max-width: 360px;
+      border: 1px solid var(--border);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.04),
+        0 12px 40px rgba(0,0,0,0.08);
+      text-align: center;
+      animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      margin: 0 auto 18px;
+      overflow: hidden;
+    }
+
+    .logo-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 20px;
+    }
+
+    .shop-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .shop-sub {
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 36px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── PIN Boxes ── */
+    .pin-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--sub);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 14px;
+    }
+
+    .pin-container {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .pin-input {
+      width: 54px; height: 62px;
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      background: var(--input-bg);
+      color: var(--text);
+      transition: all 0.2s ease;
+      caret-color: var(--accent);
+    }
+
+    .pin-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(200,134,10,0.12);
+    }
+
+    .pin-input.filled {
+      border-color: var(--accent);
+      background: #fff8ed;
+    }
+
+    .pin-input:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Shake animation for wrong PIN */
+    .pin-container.shake {
+      animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translateX(-2px); }
+      20%, 80% { transform: translateX(4px); }
+      30%, 50%, 70% { transform: translateX(-6px); }
+      40%, 60% { transform: translateX(6px); }
+    }
+
+    /* ── Button ── */
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: var(--text);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: #2d2010; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Message ── */
+    .message {
+      margin-top: 16px;
+      font-size: 13px;
+      min-height: 20px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    /* ── Attempt dots ── */
+    .attempts-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      min-height: 10px;
+    }
+
+    .attempt-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .attempt-dot.used { background: var(--error); }
+
+    /* ── Lockout ── */
+    .lockout-box {
+      margin-top: 16px;
+      background: #fff1f1;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--error);
+      font-weight: 500;
+      display: none;
+    }
+
+    .lockout-box.visible { display: block; }
+
+    /* ── Change PIN link ── */
+    .change-pin-link {
+      margin-top: 22px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+    .change-pin-link:hover { color: var(--accent); }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0 24px;
+    }
+
+    /* ── Reset PIN section ── */
+    .reset-section { display: none; }
+    .reset-section.visible { display: block; }
+    .login-section { display: block; }
+    .login-section.hidden { display: none; }
+
+    .reset-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .reset-sub {
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 24px;
+    }
+
+    .reset-input {
+      width: 100%;
+      height: 50px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--input-bg);
+      padding: 0 16px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      margin-bottom: 10px;
+      outline: none;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .reset-input:focus {
+      border-color: var(--accent);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(200,134,10,0.12);
+    }
+
+    /* ── Transition overlay ── */
+    .transition-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    .transition-overlay.active { opacity: 1; pointer-events: all; }
+
+    .overlay-logo {
+      font-size: 40px;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Card -->
+<div class="card">
+
+  <!-- LOGIN SECTION -->
+  <div class="login-section" id="loginSection">
+    <div class="logo-wrap">
+      <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" alt="Surjya Bakery Logo">
+    </div>
+    <div class="shop-name">Surjya Bakery</div>
+    <div class="shop-sub">Point of Sale</div>
+
+    <div class="pin-label">Enter your PIN</div>
+    <div class="pin-container" id="pinContainer">
+      <input maxlength="1" class="pin-input" type="password" inputmode="numeric" autocomplete="off">
+      <input maxlength="1" class="pin-input" type="password" inputmode="numeric" autocomplete="off">
+      <input maxlength="1" class="pin-input" type="password" inputmode="numeric" autocomplete="off">
+      <input maxlength="1" class="pin-input" type="password" inputmode="numeric" autocomplete="off">
+    </div>
+
+    <button class="btn-primary" id="loginBtn">Unlock Dashboard</button>
+
+    <div class="message" id="message"></div>
+
+    <!-- Attempt dots -->
+    <div class="attempts-wrap" id="attemptsWrap">
+      <div class="attempt-dot" id="dot1"></div>
+      <div class="attempt-dot" id="dot2"></div>
+      <div class="attempt-dot" id="dot3"></div>
+    </div>
+
+    <!-- Lockout box -->
+    <div class="lockout-box" id="lockoutBox">
+      🔒 Too many wrong attempts. Try again in <span id="countdown">30</span>s
+    </div>
+
+    <span class="change-pin-link" onclick="showReset()">🔑 Change PIN</span>
+  </div>
+
+  <!-- RESET SECTION -->
+  <div class="reset-section" id="resetSection">
+    <div class="reset-title">Change PIN</div>
+    <div class="reset-sub">Enter current PIN and set a new one</div>
+
+    <input type="password" id="oldPin" class="reset-input" maxlength="4" placeholder="Current PIN (4 digits)" inputmode="numeric" autocomplete="off">
+    <input type="password" id="newPin" class="reset-input" maxlength="4" placeholder="New PIN (4 digits)" inputmode="numeric" autocomplete="off">
+    <input type="password" id="confirmPin" class="reset-input" maxlength="4" placeholder="Confirm New PIN" inputmode="numeric" autocomplete="off">
+
+    <button class="btn-primary" id="resetBtn">Update PIN</button>
+
+    <div class="message" id="resetMessage"></div>
+
+    <span class="change-pin-link" onclick="showLogin()">← Back to Login</span>
+  </div>
+
+</div>
+
+<!-- Transition Overlay -->
+<div class="transition-overlay" id="transitionOverlay">
+  <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" style="width:60px; border-radius:14px; opacity:0.6; animation: pulse 1s ease-in-out infinite;">
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+  // ── Firebase Init ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+    authDomain: "billingbuddy-551f9.firebaseapp.com",
+    projectId: "billingbuddy-551f9",
+    appId: "1:287026017084:web:aae879570ad706e5a2a439"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // ── Elements ──
+  const inputs       = document.querySelectorAll(".pin-input");
+  const loginBtn     = document.getElementById("loginBtn");
+  const msgEl        = document.getElementById("message");
+  const pinContainer = document.getElementById("pinContainer");
+  const lockoutBox   = document.getElementById("lockoutBox");
+  const dots         = [document.getElementById("dot1"), document.getElementById("dot2"), document.getElementById("dot3")];
+
+  // ── State ──
+  let failedAttempts = 0;
+  const MAX_ATTEMPTS = 3;
+  const LOCKOUT_SECS = 30;
+  let lockoutTimer   = null;
+
+  // ── PIN inputs ──
+  inputs.forEach((input, index) => {
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, '');
+      input.classList.toggle("filled", input.value !== "");
+
+      if (input.value && index < 3) inputs[index + 1].focus();
+
+      const fullPin = [...inputs].map(i => i.value).join("");
+      if (fullPin.length === 4) login();
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !input.value && index > 0) {
+        inputs[index - 1].value = "";
+        inputs[index - 1].classList.remove("filled");
+        inputs[index - 1].focus();
+      }
+    });
+  });
+
+  loginBtn.onclick = login;
+
+  // ── Login ──
+  async function login() {
+    if (failedAttempts >= MAX_ATTEMPTS) return;
+
+    const pin = [...inputs].map(i => i.value).join("");
+    if (pin.length !== 4) return;
+
+    setInputsDisabled(true);
+    showMessage("Authenticating...", "#9c8e7a");
+
+    try {
+      const docSnap = await db.collection("settings").doc("admin").get();
+
+      if (docSnap.exists && pin === String(docSnap.data().pin)) {
+        // ✅ Success
+        showMessage("✓ Welcome back!", "#16a34a");
+        localStorage.setItem("loggedIn", "true");
+        setTimeout(() => {
+          document.getElementById("transitionOverlay").classList.add("active");
+        }, 400);
+        setTimeout(() => window.location.replace("dashboard.html"), 1400);
+
+      } else {
+        // ❌ Wrong PIN
+        failedAttempts++;
+        updateDots();
+        pinContainer.classList.add("shake");
+        setTimeout(() => pinContainer.classList.remove("shake"), 500);
+
+        const remaining = MAX_ATTEMPTS - failedAttempts;
+        if (failedAttempts >= MAX_ATTEMPTS) {
+          startLockout();
+        } else {
+          showMessage(`Wrong PIN. ${remaining} attempt${remaining > 1 ? 's' : ''} left.`, "#dc2626");
+          clearPinInputs();
+          setInputsDisabled(false);
+          inputs[0].focus();
+        }
+      }
+    } catch (e) {
+      showMessage("Connection error. Try again.", "#dc2626");
+      clearPinInputs();
+      setInputsDisabled(false);
+      inputs[0].focus();
+    }
+  }
+
+  function updateDots() {
+    dots.forEach((dot, i) => {
+      if (i < failedAttempts) dot.classList.add("used");
+    });
+  }
+
+  function startLockout() {
+    setInputsDisabled(true);
+    loginBtn.disabled = true;
+    lockoutBox.classList.add("visible");
+    showMessage("", "");
+
+    let secs = LOCKOUT_SECS;
+    document.getElementById("countdown").textContent = secs;
+
+    lockoutTimer = setInterval(() => {
+      secs--;
+      document.getElementById("countdown").textContent = secs;
+      if (secs <= 0) {
+        clearInterval(lockoutTimer);
+        failedAttempts = 0;
+        dots.forEach(d => d.classList.remove("used"));
+        lockoutBox.classList.remove("visible");
+        setInputsDisabled(false);
+        loginBtn.disabled = false;
+        clearPinInputs();
+        inputs[0].focus();
+        showMessage("You can try again now.", "#16a34a");
+      }
+    }, 1000);
+  }
+
+  function clearPinInputs() {
+    inputs.forEach(i => { i.value = ""; i.classList.remove("filled"); });
+  }
+
+  function setInputsDisabled(val) {
+    inputs.forEach(i => i.disabled = val);
+    loginBtn.disabled = val;
+  }
+
+  function showMessage(text, color) {
+    msgEl.textContent = text;
+    msgEl.style.color = color;
+  }
+
+  // ── Section toggle ──
+  window.showReset = () => {
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("resetSection").classList.add("visible");
+    document.getElementById("resetMessage").textContent = "";
+    document.getElementById("resetMessage").style.color = "";
+  };
+
+  window.showLogin = () => {
+    document.getElementById("resetSection").classList.remove("visible");
+    document.getElementById("loginSection").classList.remove("hidden");
+  };
+
+  // ── Change PIN ──
+  document.getElementById("resetBtn").onclick = async () => {
+    const oldVal     = document.getElementById("oldPin").value.trim();
+    const newVal     = document.getElementById("newPin").value.trim();
+    const confirmVal = document.getElementById("confirmPin").value.trim();
+    const rMsg       = document.getElementById("resetMessage");
+
+    const setRMsg = (txt, color) => { rMsg.textContent = txt; rMsg.style.color = color; };
+
+    if (oldVal.length !== 4 || newVal.length !== 4 || confirmVal.length !== 4) {
+      return setRMsg("All fields must be 4 digits.", "#dc2626");
+    }
+    if (newVal !== confirmVal) {
+      return setRMsg("New PINs don't match.", "#dc2626");
+    }
+    if (oldVal === newVal) {
+      return setRMsg("New PIN must be different.", "#dc2626");
+    }
+
+    setRMsg("Verifying...", "#9c8e7a");
+    document.getElementById("resetBtn").disabled = true;
+
+    try {
+      const adminRef = db.collection("settings").doc("admin");
+      const docSnap  = await adminRef.get();
+
+      if (oldVal !== String(docSnap.data().pin)) {
+        document.getElementById("resetBtn").disabled = false;
+        return setRMsg("Current PIN is incorrect.", "#dc2626");
+      }
+
+      await adminRef.update({ pin: newVal });
+      setRMsg("✓ PIN updated successfully!", "#16a34a");
+
+      setTimeout(() => {
+        document.getElementById("oldPin").value = "";
+        document.getElementById("newPin").value = "";
+        document.getElementById("confirmPin").value = "";
+        showLogin();
+        document.getElementById("resetBtn").disabled = false;
+      }, 1800);
+
+    } catch (e) {
+      document.getElementById("resetBtn").disabled = false;
+      setRMsg("Error updating PIN. Try again.", "#dc2626");
+    }
+  };
+
+  // ── Auto-focus on load ──
+  window.addEventListener("load", () => inputs[0].focus());
+
+  // ── Global error handler ──
+  window.onerror = (msg, src, line) => console.error("Error:", msg, "at", src, line);
+</script>
+</body>
+</html>

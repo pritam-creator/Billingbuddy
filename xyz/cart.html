@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Cart - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .content { flex: 1; padding: 28px 36px 120px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        /* Layout: two column on desktop */
+        .cart-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+
+        /* Item picker */
+        .section-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; margin-bottom: 16px; }
+        .section-title { font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        .search-input { width: 100%; height: 44px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); padding: 0 14px 0 38px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: all 0.2s; }
+        .search-input:focus { border-color: var(--accent); background: var(--card-bg); }
+        .search-wrap { position: relative; margin-bottom: 14px; }
+        .search-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--sub); font-size: 14px; }
+
+        .category-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .cat-tab { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--card-bg); font-size: 12px; font-weight: 600; color: var(--sub); cursor: pointer; transition: all 0.18s; }
+        .cat-tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 4px; }
+        .item-tile {
+            background: var(--bg); border: 1.5px solid var(--border); border-radius: 14px;
+            padding: 14px 12px; cursor: pointer; transition: all 0.18s; text-align: center;
+        }
+        .item-tile:hover { border-color: var(--accent); background: var(--accent-light); transform: translateY(-1px); }
+        .item-tile .icon { font-size: 26px; margin-bottom: 6px; }
+        .item-tile .name { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; line-height: 1.3; }
+        .item-tile .price { font-size: 13px; font-weight: 700; color: var(--accent); }
+        .item-tile .stock-tag { font-size: 10px; color: var(--sub); margin-top: 2px; }
+        .item-tile.out-of-stock { opacity: 0.45; cursor: not-allowed; }
+
+        /* Customer section */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .form-input { height: 44px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: all 0.2s; width: 100%; }
+        .form-input:focus { border-color: var(--accent); background: var(--card-bg); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+
+        /* Cart panel */
+        .cart-panel { position: sticky; top: 0; }
+        .cart-empty { text-align: center; padding: 32px 16px; color: var(--sub); }
+        .cart-empty i { font-size: 36px; margin-bottom: 10px; display: block; }
+
+        .cart-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+        .cart-item-price { font-size: 12px; color: var(--sub); }
+        .qty-ctrl { display: flex; align-items: center; gap: 6px; }
+        .qty-btn { width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid var(--border); background: var(--card-bg); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text); font-weight: 700; transition: all 0.15s; }
+        .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .qty-num { font-size: 14px; font-weight: 700; min-width: 20px; text-align: center; }
+        .remove-btn { color: var(--danger); cursor: pointer; font-size: 14px; padding: 4px; transition: opacity 0.2s; }
+        .remove-btn:hover { opacity: 0.7; }
+
+        /* Summary */
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; }
+        .summary-row.total { font-size: 16px; font-weight: 700; border-top: 1.5px solid var(--border); margin-top: 4px; padding-top: 12px; }
+        .summary-row.total span:last-child { color: var(--accent); }
+
+        .discount-row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+        .discount-input { flex: 1; height: 38px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); padding: 0 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; }
+        .discount-input:focus { border-color: var(--accent); }
+
+        .checkout-btn { width: 100%; padding: 15px; border: none; border-radius: 14px; background: var(--text); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
+        .checkout-btn:hover:not(:disabled) { opacity: 0.87; }
+        .checkout-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .checkout-btn.green { background: var(--success); }
+
+        .clear-btn { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 12px; background: transparent; color: var(--sub); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 8px; transition: all 0.2s; }
+        .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #fff; padding: 11px 22px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 9999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 320px; border: 1px solid var(--border); }
+        .modal-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+        .modal-card p { font-size: 13px; color: var(--sub); margin-bottom: 18px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .btn-confirm { background: var(--success); color: #fff; }
+        .btn-cancel  { background: var(--border); color: var(--text); }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        /* Badge */
+        .cart-count { background: var(--danger); color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+
+        @media(max-width: 900px) {
+            .cart-layout { grid-template-columns: 1fr; }
+            .cart-panel { position: static; }
+        }
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 120px; }
+            #menuBtn { display: block; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4>Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">   <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">    <i class="fa-solid fa-cookie"></i> Items</li>
+            <li class="active" onclick="goPage('invoice.html')"><i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer-view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')"><i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">   <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">  <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')"><i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">  <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')"> <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">Quick Cart</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button class="icon-btn" id="darkToggle">🌙</button>
+                <button class="icon-btn" onclick="goPage('invoice.html')" title="Full Invoice">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="cart-layout">
+
+            <!-- LEFT: Item picker -->
+            <div>
+                <!-- Customer -->
+                <div class="section-card" style="margin-bottom:16px;">
+                    <div class="section-title"><i class="fa-solid fa-user" style="color:var(--accent);"></i> Customer</div>
+                    <div class="form-row">
+                        <input class="form-input" id="custName" placeholder="Customer name (optional)">
+                        <input class="form-input" id="custPhone" placeholder="Phone (optional)" inputmode="numeric">
+                    </div>
+                </div>
+
+                <!-- Items -->
+                <div class="section-card">
+                    <div class="section-title"><i class="fa-solid fa-cookie" style="color:var(--accent);"></i> Items <span id="itemCountBadge" style="color:var(--sub);font-weight:500;text-transform:none;letter-spacing:0;"></span></div>
+
+                    <div class="search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input class="search-input" id="searchInput" placeholder="Search items...">
+                    </div>
+
+                    <div class="category-tabs" id="categoryTabs">
+                        <div class="cat-tab active" data-cat="all">All</div>
+                    </div>
+
+                    <div class="items-grid" id="itemsGrid">
+                        <div style="color:var(--sub);font-size:13px;padding:20px;text-align:center;grid-column:1/-1;">Loading items...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Cart panel -->
+            <div class="cart-panel">
+                <div class="section-card">
+                    <div class="section-title">
+                        <i class="fa-solid fa-basket-shopping" style="color:var(--accent);"></i>
+                        Cart
+                        <span id="cartBadge" style="display:none;" class="cart-count">0</span>
+                    </div>
+
+                    <div id="cartItems">
+                        <div class="cart-empty">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                            Item tap karo cart mein add karne ke liye
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div id="cartSummary" style="display:none;">
+                        <div class="summary-row"><span>Subtotal</span><span id="sumSubtotal">₹0</span></div>
+                        <div class="discount-row">
+                            <input class="discount-input" id="discountInput" type="number" min="0" placeholder="Discount (₹)" oninput="renderCart()">
+                        </div>
+                        <div class="summary-row total"><span>Total</span><span id="sumTotal">₹0</span></div>
+                        <div class="summary-row">
+                            <span style="font-weight:600;">Paid</span>
+                            <input class="discount-input" id="paidInput" type="number" min="0" placeholder="Amount paid" style="width:120px;text-align:right;" oninput="renderCart()">
+                        </div>
+                        <div class="summary-row" id="balanceRow" style="color:var(--success);font-weight:700;"></div>
+                    </div>
+
+                    <button class="checkout-btn" id="checkoutBtn" onclick="checkout()" disabled>
+                        <i class="fa-solid fa-check"></i> Save & Bill
+                    </button>
+                    <button class="clear-btn" onclick="clearCart()">Clear Cart</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeLogout()">Nahi</button>
+            <button class="modal-btn btn-confirm" onclick="confirmLogout()" style="background:var(--danger);">Haan, Logout</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d);
+        darkToggle.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Sidebar
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
+    overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
+
+    let allItems = [];
+    let cart     = {};   // { itemId: { ...itemData, qty } }
+    let activeCategory = "all";
+
+    const CATEGORY_ICONS = {
+        bread: "🍞", cake: "🎂", pastry: "🥐", cookie: "🍪",
+        biscuit: "🍪", muffin: "🧁", donut: "🍩", pie: "🥧",
+        sweet: "🍬", drink: "☕", general: "🛍️"
+    };
+    function getIcon(cat) {
+        const k = (cat || "").toLowerCase();
+        for (const [key, val] of Object.entries(CATEGORY_ICONS)) if (k.includes(key)) return val;
+        return "🍞";
+    }
+
+    // Search
+    document.getElementById("searchInput").addEventListener("input", renderItemGrid);
+
+    // Load items
+    db.collection("items").orderBy("name").onSnapshot(snap => {
+        allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        buildCategoryTabs();
+        renderItemGrid();
+        document.getElementById("itemCountBadge").textContent = `(${allItems.length})`;
+    });
+
+    function buildCategoryTabs() {
+        const cats = [...new Set(allItems.map(i => i.category || "General"))].sort();
+        const container = document.getElementById("categoryTabs");
+        container.innerHTML = `<div class="cat-tab active" data-cat="all">All</div>` +
+            cats.map(c => `<div class="cat-tab" data-cat="${c}">${c}</div>`).join("");
+        container.querySelectorAll(".cat-tab").forEach(tab => {
+            tab.onclick = () => {
+                container.querySelectorAll(".cat-tab").forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                activeCategory = tab.dataset.cat;
+                renderItemGrid();
+            };
+        });
+    }
+
+    function renderItemGrid() {
+        const q = document.getElementById("searchInput").value.toLowerCase();
+        let filtered = allItems.filter(item => {
+            const matchCat  = activeCategory === "all" || (item.category || "General") === activeCategory;
+            const matchName = item.name.toLowerCase().includes(q);
+            return matchCat && matchName;
+        });
+
+        const grid = document.getElementById("itemsGrid");
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--sub);font-size:13px;">Koi item nahi mila</div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(item => {
+            const stock   = parseFloat(item.stock || 0);
+            const inCart  = cart[item.id] ? cart[item.id].qty : 0;
+            const oos     = stock === 0;
+            return `
+            <div class="item-tile ${oos ? 'out-of-stock' : ''}" onclick="${oos ? '' : `addToCart('${item.id}')`}">
+                <div class="icon">${getIcon(item.category)}</div>
+                <div class="name">${item.name}</div>
+                <div class="price">₹${parseFloat(item.price || 0).toLocaleString()}</div>
+                <div class="stock-tag">${oos ? '❌ Out of stock' : `Stock: ${stock}`}${inCart > 0 ? ` · 🛒${inCart}` : ''}</div>
+            </div>`;
+        }).join("");
+    }
+
+    function addToCart(itemId) {
+        const item = allItems.find(i => i.id === itemId);
+        if (!item) return;
+        if (cart[itemId]) {
+            cart[itemId].qty++;
+        } else {
+            cart[itemId] = { ...item, qty: 1 };
+        }
+        renderCart();
+        renderItemGrid();
+        showToast(`✓ ${item.name} added`);
+    }
+
+    function changeQty(itemId, delta) {
+        if (!cart[itemId]) return;
+        cart[itemId].qty += delta;
+        if (cart[itemId].qty <= 0) delete cart[itemId];
+        renderCart();
+        renderItemGrid();
+    }
+
+    function removeFromCart(itemId) {
+        delete cart[itemId];
+        renderCart();
+        renderItemGrid();
+    }
+
+    function clearCart() {
+        cart = {};
+        document.getElementById("discountInput").value = "";
+        document.getElementById("paidInput").value = "";
+        renderCart();
+        renderItemGrid();
+    }
+
+    function renderCart() {
+        const items    = Object.values(cart);
+        const badge    = document.getElementById("cartBadge");
+        const cartEl   = document.getElementById("cartItems");
+        const summaryEl = document.getElementById("cartSummary");
+        const checkBtn = document.getElementById("checkoutBtn");
+
+        if (items.length === 0) {
+            badge.style.display = "none";
+            cartEl.innerHTML = `<div class="cart-empty"><i class="fa-solid fa-basket-shopping"></i>Item tap karo cart mein add karne ke liye</div>`;
+            summaryEl.style.display = "none";
+            checkBtn.disabled = true;
+            return;
+        }
+
+        badge.style.display = "inline-flex";
+        badge.textContent   = items.reduce((s, i) => s + i.qty, 0);
+
+        cartEl.innerHTML = items.map(item => `
+            <div class="cart-item">
+                <div style="flex:1;">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">₹${parseFloat(item.price || 0)} × ${item.qty} = ₹${(parseFloat(item.price || 0) * item.qty).toLocaleString()}</div>
+                </div>
+                <div class="qty-ctrl">
+                    <button class="qty-btn" onclick="changeQty('${item.id}', -1)">−</button>
+                    <span class="qty-num">${item.qty}</span>
+                    <button class="qty-btn" onclick="changeQty('${item.id}', 1)">+</button>
+                </div>
+                <span class="remove-btn" onclick="removeFromCart('${item.id}')"><i class="fa-solid fa-xmark"></i></span>
+            </div>`).join("");
+
+        const subtotal  = items.reduce((s, i) => s + parseFloat(i.price || 0) * i.qty, 0);
+        const discount  = parseFloat(document.getElementById("discountInput").value) || 0;
+        const total     = Math.max(0, subtotal - discount);
+        const paid      = parseFloat(document.getElementById("paidInput").value) || 0;
+        const balance   = paid - total;
+
+        document.getElementById("sumSubtotal").textContent = "₹" + subtotal.toLocaleString();
+        document.getElementById("sumTotal").textContent    = "₹" + total.toLocaleString();
+
+        const balRow = document.getElementById("balanceRow");
+        if (paid > 0) {
+            if (balance >= 0) { balRow.textContent = `Change: ₹${balance.toFixed(2)}`; balRow.style.color = "var(--success)"; }
+            else              { balRow.textContent = `Due: ₹${Math.abs(balance).toFixed(2)}`; balRow.style.color = "var(--danger)"; }
+        } else { balRow.textContent = ""; }
+
+        summaryEl.style.display = "block";
+        checkBtn.disabled = false;
+    }
+
+    async function checkout() {
+        const items = Object.values(cart);
+        if (items.length === 0) return;
+
+        const checkBtn  = document.getElementById("checkoutBtn");
+        checkBtn.disabled = true;
+        checkBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+        const subtotal = items.reduce((s, i) => s + parseFloat(i.price || 0) * i.qty, 0);
+        const discount = parseFloat(document.getElementById("discountInput").value) || 0;
+        const total    = Math.max(0, subtotal - discount);
+        const paid     = parseFloat(document.getElementById("paidInput").value) || total;
+        const due      = paid - total;
+        const today    = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+        // Get next invoice number
+        let invNo = "INV001";
+        try {
+            const snap = await db.collection("orders").orderBy("timestamp", "desc").limit(1).get();
+            if (!snap.empty) {
+                const last  = snap.docs[0].data().invNo || "INV000";
+                const num   = parseInt(last.replace(/\D/g, "")) || 0;
+                invNo = "INV" + String(num + 1).padStart(3, "0");
+            }
+        } catch (e) {}
+
+        const cartItems = items.map(i => ({ name: i.name, price: parseFloat(i.price || 0), qty: i.qty }));
+
+        try {
+            await db.collection("orders").add({
+                invNo,
+                customer:  document.getElementById("custName").value.trim()  || "Walk-in",
+                phone:     document.getElementById("custPhone").value.trim() || "",
+                items:     cartItems,
+                subtotal,
+                discount,
+                total,
+                paid,
+                due,
+                status:    "Delivered",
+                dateRaw:   today,
+                date:      new Date().toLocaleDateString("en-GB"),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            showToast(`✓ Bill saved! ${invNo}`);
+            clearCart();
+            document.getElementById("custName").value  = "";
+            document.getElementById("custPhone").value = "";
+            checkBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save & Bill';
+            checkBtn.disabled = false;
+
+        } catch (e) {
+            showToast("Error saving. Try again.");
+            checkBtn.innerHTML = '<i class="fa-solid fa-check"></i> Save & Bill';
+            checkBtn.disabled = false;
+        }
+    }
+
+    function openLogout()    { document.getElementById("logoutModal").style.display = "flex"; }
+    function closeLogout()   { document.getElementById("logoutModal").style.display = "none"; }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(p)       { window.location.href = p; }
+
+    let toastTimer;
+    function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+    }
+
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>
