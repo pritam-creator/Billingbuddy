@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Item Details - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--text); color: #fff; }
+        body.dark .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .content { flex: 1; padding: 28px 36px 100px; margin-left: var(--sidebar-w); overflow-y: auto; }
+
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
+        .icon-btn:hover { border-color: var(--accent); }
+
+        /* Back button */
+        .back-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 10px; background: var(--card-bg); border: 1px solid var(--border); color: var(--sub); font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 20px; transition: all 0.2s; text-decoration: none; }
+        .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Item hero card */
+        .item-hero {
+            background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border);
+            padding: 28px; display: flex; gap: 24px; align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .item-icon-big {
+            width: 80px; height: 80px; border-radius: 18px;
+            background: var(--accent-light); display: flex; align-items: center;
+            justify-content: center; font-size: 34px; flex-shrink: 0;
+        }
+        .item-hero-info { flex: 1; }
+        .item-hero-name { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--text); margin-bottom: 4px; }
+        .item-category-badge { display: inline-block; padding: 3px 10px; border-radius: 8px; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .item-price-big { font-size: 28px; font-weight: 700; color: var(--accent); }
+        .item-price-label { font-size: 12px; color: var(--sub); margin-top: 2px; }
+
+        .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+        .btn { padding: 9px 18px; border-radius: 11px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s; }
+        .btn-primary { background: var(--text); color: #fff; }
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-success { background: var(--success-bg); color: var(--success); }
+        .btn-danger  { background: var(--danger-bg); color: var(--danger); }
+        .btn-outline { background: var(--card-bg); color: var(--sub); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Stats row */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+        .stat-label { font-size: 11px; color: var(--sub); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 22px; font-weight: 700; color: var(--text); }
+        .stat-sub { font-size: 11px; color: var(--sub); margin-top: 3px; }
+
+        /* Stock badge colors */
+        .stock-good  { color: var(--success); }
+        .stock-low   { color: #f59e0b; }
+        .stock-empty { color: var(--danger); }
+
+        /* Section */
+        .section-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; margin-bottom: 16px; }
+        .section-title { font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        /* Edit form */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { height: 44px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: all 0.2s; }
+        .form-input:focus { border-color: var(--accent); background: var(--card-bg); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
+
+        /* Sales history list */
+        .sale-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .sale-row:last-child { border-bottom: none; }
+        .sale-row b { font-size: 13.5px; color: var(--text); }
+        .sale-sub { font-size: 11px; color: var(--sub); margin-top: 2px; }
+        .badge { padding: 3px 9px; border-radius: 7px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .badge-success { background: var(--success-bg); color: var(--success); }
+        .badge-warn    { background: #fef9c3; color: #92400e; }
+
+        .empty-state { text-align: center; padding: 24px; color: var(--sub); font-size: 13px; }
+
+        /* Stock adjust */
+        .stock-adjust { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .stock-btn { width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--card-bg); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; font-weight: 700; }
+        .stock-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .stock-display { font-size: 22px; font-weight: 700; min-width: 50px; text-align: center; color: var(--text); }
+        .stock-save-btn { padding: 8px 16px; border-radius: 10px; background: var(--success-bg); color: var(--success); border: none; font-weight: 700; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: #fff; padding: 11px 22px; border-radius: 12px; font-size: 13px; font-weight: 600; z-index: 9999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Delete modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .modal-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 300px; text-align: center; border: 1px solid var(--border); }
+        .modal-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+        .modal-card p { font-size: 13px; color: var(--sub); margin-bottom: 22px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .btn-confirm-danger { background: var(--danger); color: #fff; }
+        .btn-cancel  { background: var(--border); color: var(--text); }
+
+        /* Overlay */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; backdrop-filter: blur(4px); }
+        .overlay.active { opacity: 1; pointer-events: all; }
+
+        /* Loading skeleton */
+        .skeleton { background: linear-gradient(90deg, var(--border) 25%, var(--bg) 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 8px; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 100px; }
+            #menuBtn { display: block; }
+            .item-hero { flex-direction: column; }
+            .form-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="logo" alt="Logo">
+            <div class="profile-info">
+                <h4>Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')"><i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">   <i class="fa-solid fa-book"></i> Ledger</li>
+            <li class="active" onclick="goPage('items.html')"><i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">  <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('customer-view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')"><i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">   <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">  <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')"><i class="fa-solid fa-user-group"></i> Employees</li>
+            <li onclick="goPage('history.html')">  <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')"> <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div class="page-title">Item Details</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button class="icon-btn" id="darkToggle">🌙</button>
+            </div>
+        </header>
+
+        <a class="back-btn" onclick="goPage('items.html')">
+            <i class="fa-solid fa-arrow-left"></i> Back to Items
+        </a>
+
+        <!-- Loading state -->
+        <div id="loadingState">
+            <div style="background:var(--card-bg);border-radius:20px;border:1px solid var(--border);padding:28px;margin-bottom:20px;">
+                <div class="skeleton" style="width:80px;height:80px;border-radius:18px;margin-bottom:16px;"></div>
+                <div class="skeleton" style="width:200px;height:28px;margin-bottom:8px;"></div>
+                <div class="skeleton" style="width:100px;height:18px;"></div>
+            </div>
+        </div>
+
+        <!-- Main content (hidden until loaded) -->
+        <div id="mainContent" style="display:none;">
+
+            <!-- Hero card -->
+            <div class="item-hero">
+                <div class="item-icon-big" id="itemIcon">🍞</div>
+                <div class="item-hero-info">
+                    <div class="item-hero-name" id="heroName">—</div>
+                    <div class="item-category-badge" id="heroCat">General</div>
+                    <div class="item-price-big" id="heroPrice">₹0</div>
+                    <div class="item-price-label">Selling Price</div>
+                    <div class="hero-actions">
+                        <button class="btn btn-outline" onclick="toggleEdit()"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="btn btn-danger" onclick="openDelete()"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Current Stock</div>
+                    <div class="stat-value" id="statStock">—</div>
+                    <div class="stat-sub" id="statStockSub">units</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Sold</div>
+                    <div class="stat-value" id="statSold">0</div>
+                    <div class="stat-sub">units across all orders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Revenue</div>
+                    <div class="stat-value" id="statRevenue">₹0</div>
+                    <div class="stat-sub">total from this item</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Orders</div>
+                    <div class="stat-value" id="statOrders">0</div>
+                    <div class="stat-sub">times ordered</div>
+                </div>
+            </div>
+
+            <!-- Stock Adjust -->
+            <div class="section-card">
+                <div class="section-title"><i class="fa-solid fa-cubes-stacked" style="color:var(--accent);"></i> Adjust Stock</div>
+                <div class="stock-adjust">
+                    <button class="stock-btn" onclick="adjustStock(-1)">−</button>
+                    <div class="stock-display" id="stockDisplay">0</div>
+                    <button class="stock-btn" onclick="adjustStock(1)">+</button>
+                    <button class="stock-save-btn" onclick="saveStock()"><i class="fa-solid fa-check"></i> Update</button>
+                </div>
+            </div>
+
+            <!-- Edit form (hidden by default) -->
+            <div class="section-card" id="editSection" style="display:none;">
+                <div class="section-title"><i class="fa-solid fa-pen" style="color:var(--accent);"></i> Edit Item</div>
+                <div class="form-row" style="margin-bottom:12px;">
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input class="form-input" id="editName" placeholder="e.g. Butter Bread">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input class="form-input" id="editCategory" placeholder="e.g. Bread">
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group">
+                        <label>Price (₹)</label>
+                        <input class="form-input" id="editPrice" type="number" min="0" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock</label>
+                        <input class="form-input" id="editStock" type="number" min="0" placeholder="0">
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-primary" onclick="saveEdit()"><i class="fa-solid fa-cloud-arrow-up"></i> Save Changes</button>
+                    <button class="btn btn-outline" onclick="toggleEdit()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Sales History -->
+            <div class="section-card">
+                <div class="section-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--accent);"></i> Sales History</div>
+                <div id="salesHistory"><div class="empty-state">Loading...</div></div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal" style="display:flex;display:none;">
+    <div class="modal-card">
+        <h3>Item Delete Karein?</h3>
+        <p>Yeh action undo nahi hoga. Item hamesha ke liye hata diya jayega.</p>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeDelete()">Nahi</button>
+            <button class="modal-btn btn-confirm-danger" onclick="confirmDelete()">Haan, Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+    <div class="modal-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeLogout()">Nahi</button>
+            <button class="modal-btn btn-confirm-danger" onclick="confirmLogout()">Haan, Logout</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+        authDomain: "billingbuddy-551f9.firebaseapp.com",
+        projectId: "billingbuddy-551f9",
+        appId: "1:287026017084:web:aae879570ad706e5a2a439"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Dark mode
+    const darkToggle = document.getElementById("darkToggle");
+    if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+    darkToggle.onclick = () => {
+        document.body.classList.toggle("dark");
+        const d = document.body.classList.contains("dark");
+        localStorage.setItem("darkMode", d);
+        darkToggle.innerText = d ? "☀️" : "🌙";
+    };
+
+    // Sidebar
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
+    overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
+
+    // Get item ID from URL
+    const params  = new URLSearchParams(window.location.search);
+    const itemId  = params.get("id");
+    let itemData  = null;
+    let tempStock = 0;
+
+    const CATEGORY_ICONS = {
+        bread: "🍞", cake: "🎂", pastry: "🥐", cookie: "🍪",
+        biscuit: "🍪", muffin: "🧁", donut: "🍩", pie: "🥧",
+        sweet: "🍬", drink: "☕", general: "🛍️"
+    };
+
+    function getIcon(category) {
+        const key = (category || "").toLowerCase();
+        for (const [k, v] of Object.entries(CATEGORY_ICONS)) {
+            if (key.includes(k)) return v;
+        }
+        return "🍞";
+    }
+
+    async function loadItem() {
+        if (!itemId) { goPage("items.html"); return; }
+
+        try {
+            const doc = await db.collection("items").doc(itemId).get();
+            if (!doc.exists) { showToast("Item nahi mila!"); goPage("items.html"); return; }
+
+            itemData = { id: doc.id, ...doc.data() };
+            renderItem();
+            await loadSalesHistory();
+        } catch (e) {
+            showToast("Error loading item.");
+            console.error(e);
+        }
+    }
+
+    function renderItem() {
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("mainContent").style.display = "block";
+
+        const { name, price, stock, category } = itemData;
+        const s = parseFloat(stock || 0);
+        tempStock = s;
+
+        document.getElementById("heroName").textContent = name || "Unnamed Item";
+        document.getElementById("heroCat").textContent  = category || "General";
+        document.getElementById("heroPrice").textContent = "₹" + parseFloat(price || 0).toLocaleString();
+        document.getElementById("itemIcon").textContent = getIcon(category);
+        document.getElementById("stockDisplay").textContent = s;
+
+        const stockEl  = document.getElementById("statStock");
+        const stockSub = document.getElementById("statStockSub");
+        stockEl.textContent = s;
+        if (s === 0)      { stockEl.className = "stat-value stock-empty"; stockSub.textContent = "⚠️ Out of stock"; }
+        else if (s < 10)  { stockEl.className = "stat-value stock-low";   stockSub.textContent = "⚠️ Low stock"; }
+        else              { stockEl.className = "stat-value stock-good";   stockSub.textContent = "units available"; }
+
+        // Pre-fill edit form
+        document.getElementById("editName").value     = name || "";
+        document.getElementById("editPrice").value    = parseFloat(price || 0);
+        document.getElementById("editStock").value    = s;
+        document.getElementById("editCategory").value = category || "";
+    }
+
+    async function loadSalesHistory() {
+        try {
+            const snap = await db.collection("orders").get();
+            let totalSold = 0, totalRevenue = 0, orderCount = 0;
+            const historyRows = [];
+
+            snap.forEach(doc => {
+                const order = doc.data();
+                if (!order.items) return;
+                const match = order.items.find(i => i.name === itemData.name);
+                if (match) {
+                    const qty = parseFloat(match.qty || 1);
+                    const rev = qty * parseFloat(match.price || 0);
+                    totalSold    += qty;
+                    totalRevenue += rev;
+                    orderCount++;
+                    historyRows.push({ invNo: order.invNo || doc.id.slice(-5).toUpperCase(), date: order.date || "—", qty, rev, customer: order.customer || "Walk-in" });
+                }
+            });
+
+            document.getElementById("statSold").textContent    = totalSold;
+            document.getElementById("statRevenue").textContent = "₹" + totalRevenue.toLocaleString();
+            document.getElementById("statOrders").textContent  = orderCount;
+
+            const container = document.getElementById("salesHistory");
+            if (historyRows.length === 0) {
+                container.innerHTML = `<div class="empty-state">Is item ki koi sale abhi tak nahi hui</div>`;
+            } else {
+                const recent = historyRows.slice(-10).reverse();
+                container.innerHTML = recent.map(r => `
+                    <div class="sale-row">
+                        <div>
+                            <b>#${r.invNo}</b>
+                            <div class="sale-sub">${r.customer} • ${r.date}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <b>₹${r.rev.toLocaleString()}</b>
+                            <div class="sale-sub">${r.qty} unit${r.qty > 1 ? 's' : ''}</div>
+                        </div>
+                    </div>`).join("");
+            }
+        } catch (e) {
+            document.getElementById("salesHistory").innerHTML = `<div class="empty-state">Sales data load nahi hua.</div>`;
+        }
+    }
+
+    function adjustStock(delta) {
+        tempStock = Math.max(0, tempStock + delta);
+        document.getElementById("stockDisplay").textContent = tempStock;
+    }
+
+    async function saveStock() {
+        if (!itemId) return;
+        try {
+            await db.collection("items").doc(itemId).update({ stock: tempStock });
+            itemData.stock = tempStock;
+            renderItem();
+            showToast("✓ Stock updated!");
+        } catch (e) {
+            showToast("Error updating stock.");
+        }
+    }
+
+    function toggleEdit() {
+        const sec = document.getElementById("editSection");
+        sec.style.display = sec.style.display === "none" ? "block" : "none";
+    }
+
+    async function saveEdit() {
+        const name     = document.getElementById("editName").value.trim();
+        const price    = parseFloat(document.getElementById("editPrice").value) || 0;
+        const stock    = parseFloat(document.getElementById("editStock").value) || 0;
+        const category = document.getElementById("editCategory").value.trim() || "General";
+
+        if (!name) { showToast("Naam zaroori hai!"); return; }
+
+        try {
+            await db.collection("items").doc(itemId).update({ name, price, stock, category });
+            itemData = { ...itemData, name, price, stock, category };
+            tempStock = stock;
+            renderItem();
+            toggleEdit();
+            showToast("✓ Item updated!");
+        } catch (e) {
+            showToast("Update failed.");
+        }
+    }
+
+    function openDelete()  { document.getElementById("deleteModal").style.display = "flex"; }
+    function closeDelete() { document.getElementById("deleteModal").style.display = "none"; }
+
+    async function confirmDelete() {
+        try {
+            await db.collection("items").doc(itemId).delete();
+            showToast("Item delete ho gaya!");
+            setTimeout(() => goPage("items.html"), 1000);
+        } catch (e) {
+            showToast("Delete failed.");
+        }
+    }
+
+    function openLogout()    { document.getElementById("logoutModal").style.display = "flex"; }
+    function closeLogout()   { document.getElementById("logoutModal").style.display = "none"; }
+    function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+    function goPage(p)       { window.location.href = p; }
+
+    let toastTimer;
+    function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+    }
+
+    window.onload = loadItem;
+    window.onerror = (m, s, l) => console.error(m, s, l);
+</script>
+</body>
+</html>
