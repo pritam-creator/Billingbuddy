@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
@@ -670,43 +672,111 @@
 
         try {
             await db.collection("orders").add({
-                invNo:     currentInvNo,
-                customer, phone,
-                items:     cart,
-                subtotal, oldDue, discount,
-                total:     finalTotal,
-                paid, due,
-                status:    "Delivered",
-                dateRaw:   today,
-                date:      new Date().toLocaleDateString("en-GB"),
+                invNo: currentInvNo, customer, phone,
+                items: cart, subtotal, oldDue, discount,
+                total: finalTotal, paid, due,
+                status: "Delivered", dateRaw: today,
+                date: new Date().toLocaleDateString("en-GB"),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Build WhatsApp message
-            const store    = storeData.name || "Surjya Bakery";
-            const itemList = cart.map(i => `  • ${i.name} ×${i.qty} — ₹${i.total.toLocaleString()}`).join("\n");
+            const store = storeData.name || "Surjya Bakery";
 
-            const msg =
-                `🥐 *${store}*\n` +
-                `📋 Invoice: *${currentInvNo}*\n` +
-                `📅 ${new Date().toLocaleDateString("en-GB")}\n` +
-                `👤 ${customer}\n\n` +
-                `*Items:*\n${itemList}\n\n` +
-                (discount > 0 ? `Discount: −₹${discount.toFixed(2)}\n` : "") +
-                (oldDue   > 0 ? `Old Due: +₹${oldDue.toFixed(2)}\n`   : "") +
-                `💰 *Total: ₹${finalTotal.toFixed(2)}*\n` +
-                `✅ Paid: ₹${paid.toFixed(2)}\n` +
-                (due > 0
-                    ? `⚠️ Balance Due: ₹${due.toFixed(2)}`
-                    : `✔️ Fully Paid`) +
-                `\n\nThank you for visiting ${store}! 🙏`;
+            // ── Generate PDF using jsPDF ──
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: "mm", format: "a5" });
 
-            // Open WhatsApp — if phone available, direct message; else share
-            const waUrl = phone
-                ? `https://wa.me/91${phone.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`
-                : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            // Header bar
+            doc.setFillColor(26, 18, 8);
+            doc.rect(0, 0, 148, 22, "F");
+            doc.setFillColor(200, 134, 10);
+            doc.rect(0, 0, 5, 22, "F");
 
-            window.open(waUrl, "_blank");
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(13); doc.setFont("helvetica", "bold");
+            doc.text("INVOICE", 12, 10);
+            doc.setFontSize(8); doc.setFont("helvetica", "normal");
+            doc.text(`# ${currentInvNo}`, 12, 16);
+
+            // Store name top right
+            doc.setFontSize(10); doc.setFont("helvetica", "bold");
+            doc.text(store, 144, 10, { align: "right" });
+            doc.setFontSize(7); doc.setFont("helvetica", "normal");
+            if (storeData.address) doc.text(storeData.address, 144, 15, { align: "right" });
+
+            // Customer + Date
+            doc.setTextColor(26, 18, 8);
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
+            doc.text("Bill To", 10, 30);
+            doc.setFont("helvetica", "normal");
+            doc.text(customer, 10, 36);
+            if (phone) doc.text(phone, 10, 41);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Date", 138, 30, { align: "right" });
+            doc.setFont("helvetica", "normal");
+            doc.text(new Date().toLocaleDateString("en-GB"), 138, 36, { align: "right" });
+
+            // Items table
+            const rows = cart.map(i => [
+                i.name,
+                String(i.qty),
+                `Rs.${parseFloat(i.price).toFixed(2)}`,
+                `Rs.${parseFloat(i.total).toFixed(2)}`
+            ]);
+
+            doc.autoTable({
+                startY: 46,
+                head: [["Item", "Qty", "Rate", "Total"]],
+                body: rows,
+                theme: "striped",
+                headStyles: { fillColor: [26, 18, 8], textColor: 255, fontSize: 8 },
+                bodyStyles: { fontSize: 8 },
+                columnStyles: { 0: { cellWidth: 65 }, 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
+                margin: { left: 10, right: 10 }
+            });
+
+            const finalY = doc.lastAutoTable.finalY + 6;
+
+            // Totals
+            doc.setFontSize(8); doc.setTextColor(156, 142, 122);
+            if (discount > 0) { doc.text("Discount:", 100, finalY);     doc.text(`-Rs.${discount.toFixed(2)}`, 138, finalY,     { align: "right" }); }
+            if (oldDue   > 0) { doc.text("Old Due:",  100, finalY + 5); doc.text(`+Rs.${oldDue.toFixed(2)}`,  138, finalY + 5, { align: "right" }); }
+
+            // Grand total
+            doc.setDrawColor(200, 134, 10);
+            doc.setLineWidth(0.4);
+            doc.line(10, finalY + 8, 138, finalY + 8);
+            doc.setFontSize(12); doc.setFont("helvetica", "bold");
+            doc.setTextColor(200, 134, 10);
+            doc.text(`Rs.${finalTotal.toFixed(2)}`, 138, finalY + 15, { align: "right" });
+
+            doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(26, 18, 8);
+            doc.text(`Paid: Rs.${paid.toFixed(2)}`, 10, finalY + 15);
+            if (due > 0) {
+                doc.setTextColor(220, 38, 38);
+                doc.text(`Balance Due: Rs.${due.toFixed(2)}`, 10, finalY + 21);
+            } else {
+                doc.setTextColor(22, 163, 74);
+                doc.text("✓ Fully Paid", 10, finalY + 21);
+            }
+
+            // Footer
+            doc.setTextColor(156, 142, 122); doc.setFontSize(7);
+            doc.text(`Thank you for visiting ${store}!`, 74, finalY + 30, { align: "center" });
+
+            // ── Download PDF ──
+            const fileName = `Invoice_${currentInvNo}.pdf`;
+            doc.save(fileName);
+
+            // ── Open WhatsApp after short delay (let PDF download start) ──
+            setTimeout(() => {
+                const msg = `🥐 *${store}*\n📋 Invoice: *${currentInvNo}*\n👤 ${customer}\n💰 Total: ₹${finalTotal.toFixed(2)}\n${due > 0 ? `⚠️ Due: ₹${due.toFixed(2)}` : "✅ Fully Paid"}\n\n📎 PDF bill downloaded on your device.\nThank you! 🙏`;
+                const waUrl = phone
+                    ? `https://wa.me/91${phone.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`
+                    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                window.open(waUrl, "_blank");
+            }, 800);
 
             // Reset cart
             cart = [];
@@ -719,7 +789,7 @@
             generateInvNo();
 
         } catch(e) {
-            alert("Error saving: " + e.message);
+            alert("Error: " + e.message);
         }
 
         waBtn.disabled = false;
