@@ -108,10 +108,15 @@
         .due-negative { color: #4ade80; }
 
         /* Print button */
-        .btn-print { width: 100%; padding: 16px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: opacity 0.2s; letter-spacing: 0.3px; }
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-print { padding: 16px; border: none; border-radius: 16px; background: var(--text); color: #fff; font-size: 14px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
         .btn-print:hover { opacity: 0.88; }
         .btn-print:active { transform: scale(0.98); }
         .btn-print:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-wa-share { padding: 16px; border: none; border-radius: 16px; background: #25d366; color: #fff; font-size: 14px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+        .btn-wa-share:hover { opacity: 0.88; }
+        .btn-wa-share:active { transform: scale(0.98); }
+        .btn-wa-share:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Logout modal */
         .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
@@ -154,6 +159,7 @@
             .pay-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="animations.css">
 </head>
 <body>
 <div class="app">
@@ -284,9 +290,14 @@
         </div>
 
         <!-- Print Button -->
-        <button class="btn-print" id="printBtn" onclick="saveAndPrint()">
-            <i class="fa-solid fa-print"></i> Print Invoice
-        </button>
+        <div class="action-btns">
+            <button class="btn-print" id="printBtn" onclick="saveAndPrint()">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
+            <button class="btn-wa-share" id="waBtn" onclick="saveAndWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </button>
+        </div>
     </main>
 </div>
 
@@ -304,6 +315,32 @@
 
 <!-- Print Section -->
 <div id="printSection"></div>
+
+<!-- PWA Print Options Modal -->
+<div class="confirm-overlay" id="printModal">
+    <div class="confirm-card" style="max-width:340px;">
+        <div style="width:52px;height:52px;background:var(--accent-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:1.5px solid var(--border);">
+            <i class="fa-solid fa-print" style="color:var(--accent);font-size:20px;"></i>
+        </div>
+        <h3 style="margin-bottom:6px;">Bill Ready!</h3>
+        <p id="printModalInvNo" style="color:var(--accent);font-weight:700;font-size:13px;margin-bottom:4px;"></p>
+        <p style="margin-bottom:20px;">Kaise share karna chahte ho?</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button onclick="pwaWhatsApp()" style="padding:13px;border:none;border-radius:13px;background:#25d366;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+            </button>
+            <button onclick="pwaCopyText()" style="padding:13px;border:none;border-radius:13px;background:var(--blue-bg, #eff6ff);color:#2563eb;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fa-solid fa-copy"></i> Copy Bill Text
+            </button>
+            <button onclick="pwaTryPrint()" style="padding:13px;border:1.5px solid var(--border);border-radius:13px;background:var(--bg);color:var(--text);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fa-solid fa-print"></i> Try Print Anyway
+            </button>
+            <button onclick="closePrintModal()" style="padding:11px;border:none;border-radius:12px;background:transparent;color:var(--sub);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
     // FIX: Auth guard
@@ -538,8 +575,10 @@
     async function saveAndPrint() {
         if (!cart.length) return alert("Cart khaali hai — pehle items add karein.");
 
-        const btn = document.getElementById("printBtn");
+        const btn   = document.getElementById("printBtn");
+        const waBtn = document.getElementById("waBtn");
         btn.disabled = true;
+        waBtn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
         const subtotal   = cart.reduce((s, i) => s + i.total, 0);
@@ -575,27 +614,184 @@
 
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
 
-            // FIX: use onafterprint to reset — not setTimeout + reload
-            window.onafterprint = () => {
-                cart = [];
-                document.getElementById("custName").value  = "";
-                document.getElementById("custPhone").value = "";
-                document.getElementById("payOldDue").value = "";
-                document.getElementById("payReturn").value = "";
-                document.getElementById("payPaid").value   = "";
-                renderCart();
-                generateInvNo();
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-print"></i> Print Invoice';
-            };
+            // Detect PWA standalone mode
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                              || window.navigator.standalone === true;
 
-            setTimeout(() => window.print(), 400);
+            if (isStandalone) {
+                // PWA mode: window.print() unreliable — show options modal
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-print"></i> Print';
+                waBtn.disabled = false;
+                openPrintModal(currentInvNo, subtotal, oldDue, discount, paid, finalTotal, due);
+            } else {
+                // Browser mode: normal print
+                window.onafterprint = () => {
+                    cart = [];
+                    document.getElementById("custName").value  = "";
+                    document.getElementById("custPhone").value = "";
+                    document.getElementById("payOldDue").value = "";
+                    document.getElementById("payReturn").value = "";
+                    document.getElementById("payPaid").value   = "";
+                    renderCart();
+                    generateInvNo();
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-print"></i> Print';
+                waBtn.disabled = false;
+                };
+                setTimeout(() => window.print(), 400);
+            }
 
         } catch(e) {
             alert("Error saving: " + e.message);
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-print"></i> Print Invoice';
+            btn.innerHTML = '<i class="fa-solid fa-print"></i> Print';
+                waBtn.disabled = false;
         }
+    }
+
+    // ── Save & WhatsApp Share ──
+    async function saveAndWhatsApp() {
+        if (!cart.length) return alert("Cart khaali hai — pehle items add karein.");
+
+        const waBtn = document.getElementById("waBtn");
+        waBtn.disabled = true;
+        waBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+        const subtotal   = cart.reduce((s, i) => s + i.total, 0);
+        const oldDue     = parseFloat(document.getElementById("payOldDue").value) || 0;
+        const discount   = parseFloat(document.getElementById("payReturn").value) || 0;
+        const paid       = parseFloat(document.getElementById("payPaid").value) || 0;
+        const finalTotal = (subtotal - discount) + oldDue;
+        const due        = finalTotal - paid;
+        const today      = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const customer   = document.getElementById("custName").value.trim()  || "Walk-in";
+        const phone      = document.getElementById("custPhone").value.trim() || "";
+
+        try {
+            await db.collection("orders").add({
+                invNo:     currentInvNo,
+                customer, phone,
+                items:     cart,
+                subtotal, oldDue, discount,
+                total:     finalTotal,
+                paid, due,
+                status:    "Delivered",
+                dateRaw:   today,
+                date:      new Date().toLocaleDateString("en-GB"),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Build WhatsApp message
+            const store    = storeData.name || "Surjya Bakery";
+            const itemList = cart.map(i => `  • ${i.name} ×${i.qty} — ₹${i.total.toLocaleString()}`).join("\n");
+
+            const msg =
+                `🥐 *${store}*\n` +
+                `📋 Invoice: *${currentInvNo}*\n` +
+                `📅 ${new Date().toLocaleDateString("en-GB")}\n` +
+                `👤 ${customer}\n\n` +
+                `*Items:*\n${itemList}\n\n` +
+                (discount > 0 ? `Discount: −₹${discount.toFixed(2)}\n` : "") +
+                (oldDue   > 0 ? `Old Due: +₹${oldDue.toFixed(2)}\n`   : "") +
+                `💰 *Total: ₹${finalTotal.toFixed(2)}*\n` +
+                `✅ Paid: ₹${paid.toFixed(2)}\n` +
+                (due > 0
+                    ? `⚠️ Balance Due: ₹${due.toFixed(2)}`
+                    : `✔️ Fully Paid`) +
+                `\n\nThank you for visiting ${store}! 🙏`;
+
+            // Open WhatsApp — if phone available, direct message; else share
+            const waUrl = phone
+                ? `https://wa.me/91${phone.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`
+                : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+            window.open(waUrl, "_blank");
+
+            // Reset cart
+            cart = [];
+            document.getElementById("custName").value  = "";
+            document.getElementById("custPhone").value = "";
+            document.getElementById("payOldDue").value = "";
+            document.getElementById("payReturn").value = "";
+            document.getElementById("payPaid").value   = "";
+            renderCart();
+            generateInvNo();
+
+        } catch(e) {
+            alert("Error saving: " + e.message);
+        }
+
+        waBtn.disabled = false;
+        waBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> WhatsApp';
+    }
+
+    // ── PWA Print Modal ──
+    let _pwaInvData = null;
+
+    function openPrintModal(invNo, subtotal, oldDue, discount, paid, finalTotal, due) {
+        _pwaInvData = { invNo, subtotal, oldDue, discount, paid, finalTotal, due };
+        document.getElementById("printModalInvNo").innerText = "Invoice #" + invNo;
+        document.getElementById("printModal").classList.add("active");
+    }
+
+    function closePrintModal() {
+        document.getElementById("printModal").classList.remove("active");
+        // Reset cart after closing
+        cart = [];
+        document.getElementById("custName").value  = "";
+        document.getElementById("custPhone").value = "";
+        document.getElementById("payOldDue").value = "";
+        document.getElementById("payReturn").value = "";
+        document.getElementById("payPaid").value   = "";
+        renderCart();
+        generateInvNo();
+    }
+
+    function pwaWhatsApp() {
+        if (!_pwaInvData) return;
+        const { invNo, finalTotal, paid, due } = _pwaInvData;
+        const customer = document.getElementById("custName").value || "Customer";
+        const phone    = document.getElementById("custPhone").value || "";
+        const itemList = cart.map(i => `  • ${i.name} ×${i.qty} = ₹${i.total}`).join("\n");
+        const store    = storeData.name || "Surjya Bakery";
+
+        const msg = `*${store}* 🥐\n` +
+            `Invoice: *${invNo}*\n` +
+            `Customer: ${customer}\n` +
+            `Date: ${new Date().toLocaleDateString("en-GB")}\n\n` +
+            `*Items:*\n${itemList}\n\n` +
+            `*Total: ₹${finalTotal.toFixed(2)}*\n` +
+            `Paid: ₹${paid.toFixed(2)}\n` +
+            (due > 0 ? `Balance Due: ₹${due.toFixed(2)}\n` : `Status: ✓ Paid in Full\n`) +
+            `\nThank you! 🙏`;
+
+        const url = phone
+            ? `https://wa.me/91${phone.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`
+            : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+        window.open(url, "_blank");
+        closePrintModal();
+    }
+
+    function pwaCopyText() {
+        if (!_pwaInvData) return;
+        const { invNo, finalTotal, paid, due } = _pwaInvData;
+        const customer = document.getElementById("custName").value || "Walk-in";
+        const itemList = cart.map(i => `${i.name} x${i.qty} = Rs.${i.total}`).join("\n");
+        const store    = storeData.name || "Surjya Bakery";
+
+        const text = `${store}\nInvoice: ${invNo}\nDate: ${new Date().toLocaleDateString("en-GB")}\nCustomer: ${customer}\n\n${itemList}\n\nTotal: Rs.${finalTotal.toFixed(2)}\nPaid: Rs.${paid.toFixed(2)}\n${due > 0 ? `Due: Rs.${due.toFixed(2)}` : "Status: Paid"}`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Bill text copied! Kisi bhi app mein paste kar sakte ho.");
+            closePrintModal();
+        }).catch(() => alert("Copy nahi hua. WhatsApp option try karo."));
+    }
+
+    function pwaTryPrint() {
+        window.print();
+        closePrintModal();
     }
 
     // ── Logout ──
@@ -605,5 +801,6 @@
     function goPage(p)       { window.location.href = p; }
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
+    <script src="animations.js" defer></script>
 </body>
 </html>
