@@ -110,12 +110,18 @@
         .due-negative { color: #4ade80; }
 
         /* Print button */
-        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .btn-print { padding: 16px; border: none; border-radius: 16px; background: var(--text); color: #fff; font-size: 14px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+        .template-scroll { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+        .tmpl-btn { flex-shrink: 0; width: 80px; border-radius: 12px; border: 2.5px solid var(--border); overflow: hidden; cursor: pointer; transition: all 0.2s; background: var(--bg); }
+        .tmpl-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,134,10,0.15); }
+        .tmpl-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .tmpl-preview { width: 100%; height: 54px; display: flex; flex-direction: column; align-items: stretch; overflow: hidden; }
+        .tmpl-label { font-size: 9.5px; font-weight: 700; text-align: center; padding: 4px 2px 5px; color: var(--sub); background: var(--card-bg); letter-spacing: 0.3px; }
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-print { padding: 15px 8px; border: none; border-radius: 16px; background: var(--text); color: #fff; font-size: 13px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; white-space: nowrap; }
         .btn-print:hover { opacity: 0.88; }
         .btn-print:active { transform: scale(0.98); }
         .btn-print:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-wa-share { padding: 16px; border: none; border-radius: 16px; background: #25d366; color: #fff; font-size: 14px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+        .btn-wa-share { padding: 15px 8px; border: none; border-radius: 16px; background: #25d366; color: #fff; font-size: 13px; font-weight: 800; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; white-space: nowrap; }
         .btn-wa-share:hover { opacity: 0.88; }
         .btn-wa-share:active { transform: scale(0.98); }
         .btn-wa-share:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -289,6 +295,12 @@
             <div class="total-label">Total Payable</div>
             <div class="total-amount" id="grandTotal">₹ 0.00</div>
             <div class="due-label due-zero" id="dueLabel">Add items to start billing</div>
+        </div>
+
+        <!-- PDF Template Selector -->
+        <span class="section-label" style="margin-top:8px;">PDF Design</span>
+        <div class="card" style="padding:14px 16px; margin-bottom:14px;">
+            <div class="template-scroll" id="templateScroll"></div>
         </div>
 
         <!-- Print Button -->
@@ -652,6 +664,303 @@
         }
     }
 
+    // ══════════════════════════════════════════
+    //   PDF TEMPLATE SYSTEM — 6 Unique Designs
+    // ══════════════════════════════════════════
+    const TEMPLATES = [
+        {
+            id: "dark-gold",
+            label: "Dark Gold",
+            preview: [
+                { h: 18, color: "#1a1208" },
+                { h: 3,  color: "#c8860a" },
+                { h: 10, color: "#f8f5f0" },
+                { h: 10, color: "#fff8ed" },
+                { h: 13, color: "#f8f5f0" }
+            ]
+        },
+        {
+            id: "minimal-white",
+            label: "Minimal",
+            preview: [
+                { h: 12, color: "#ffffff", border: "#e5e7eb" },
+                { h: 4,  color: "#c8860a" },
+                { h: 12, color: "#ffffff" },
+                { h: 12, color: "#f9fafb" },
+                { h: 14, color: "#ffffff" }
+            ]
+        },
+        {
+            id: "royal-blue",
+            label: "Royal Blue",
+            preview: [
+                { h: 18, color: "#1e3a5f" },
+                { h: 3,  color: "#3b82f6" },
+                { h: 10, color: "#eff6ff" },
+                { h: 10, color: "#dbeafe" },
+                { h: 13, color: "#eff6ff" }
+            ]
+        },
+        {
+            id: "forest-green",
+            label: "Forest",
+            preview: [
+                { h: 18, color: "#14532d" },
+                { h: 3,  color: "#22c55e" },
+                { h: 10, color: "#f0fdf4" },
+                { h: 10, color: "#dcfce7" },
+                { h: 13, color: "#f0fdf4" }
+            ]
+        },
+        {
+            id: "rose-elegant",
+            label: "Rose",
+            preview: [
+                { h: 8,  color: "#fff1f2" },
+                { h: 6,  color: "#be123c" },
+                { h: 3,  color: "#fda4af" },
+                { h: 12, color: "#ffffff" },
+                { h: 10, color: "#fff1f2" },
+                { h: 15, color: "#ffffff" }
+            ]
+        },
+        {
+            id: "bold-black",
+            label: "Bold",
+            preview: [
+                { h: 22, color: "#000000" },
+                { h: 6,  color: "#facc15" },
+                { h: 10, color: "#f8fafc" },
+                { h: 10, color: "#f1f5f9" },
+                { h: 6,  color: "#000000" }
+            ]
+        }
+    ];
+
+    let selectedTemplate = "dark-gold";
+
+    function renderTemplateSelector() {
+        const scroll = document.getElementById("templateScroll");
+        scroll.innerHTML = TEMPLATES.map(t => {
+            const bars = t.preview.map(b =>
+                `<div style="height:${b.h}px; background:${b.color}; ${b.border ? `border-bottom:1px solid ${b.border};` : ""}"></div>`
+            ).join("");
+            return `
+            <div class="tmpl-btn ${t.id === selectedTemplate ? 'selected' : ''}"
+                 onclick="selectTemplate('${t.id}')" title="${t.label}">
+                <div class="tmpl-preview">${bars}</div>
+                <div class="tmpl-label">${t.label}</div>
+            </div>`;
+        }).join("");
+    }
+
+    function selectTemplate(id) {
+        selectedTemplate = id;
+        renderTemplateSelector();
+    }
+
+    // ── PDF Generators per template ──
+    function generatePDF(data) {
+        const { jsPDF } = window.jspdf;
+        const { invNo, customer, phone, items, subtotal, oldDue, discount, finalTotal, paid, due, store, address, dateStr } = data;
+
+        switch (selectedTemplate) {
+            case "dark-gold":    return pdf_DarkGold(jsPDF, data);
+            case "minimal-white":return pdf_Minimal(jsPDF, data);
+            case "royal-blue":   return pdf_RoyalBlue(jsPDF, data);
+            case "forest-green": return pdf_Forest(jsPDF, data);
+            case "rose-elegant": return pdf_Rose(jsPDF, data);
+            case "bold-black":   return pdf_Bold(jsPDF, data);
+            default:             return pdf_DarkGold(jsPDF, data);
+        }
+    }
+
+    /* ── Template 1: Dark Gold ── */
+    function pdf_DarkGold(jsPDF, d) {
+        const doc = new jsPDF({ unit:"mm", format:"a5" });
+        doc.setFillColor(26,18,8); doc.rect(0,0,148,22,"F");
+        doc.setFillColor(200,134,10); doc.rect(0,0,5,22,"F");
+        doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold");
+        doc.text("INVOICE", 12, 10);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`# ${d.invNo}`, 12, 16);
+        doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text(d.store, 144, 10, {align:"right"});
+        doc.setFontSize(7); doc.setFont("helvetica","normal"); if(d.address) doc.text(d.address, 144, 15, {align:"right"});
+        doc.setTextColor(26,18,8);
+        doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text("Bill To", 10, 30);
+        doc.setFont("helvetica","normal"); doc.text(d.customer, 10, 36);
+        if(d.phone) doc.text(d.phone, 10, 41);
+        doc.setFont("helvetica","bold"); doc.text("Date", 138, 30, {align:"right"});
+        doc.setFont("helvetica","normal"); doc.text(d.dateStr, 138, 36, {align:"right"});
+        _autoTable(doc, d, 46, [26,18,8], [255,255,255]);
+        const y = doc.lastAutoTable.finalY + 6;
+        _totals(doc, d, y, [200,134,10]);
+        doc.setTextColor(156,142,122); doc.setFontSize(7);
+        doc.text(`Thank you for visiting ${d.store}!`, 74, y+34, {align:"center"});
+        return doc;
+    }
+
+    /* ── Template 2: Minimal White ── */
+    function pdf_Minimal(jsPDF, d) {
+        const doc = new jsPDF({ unit:"mm", format:"a5" });
+        doc.setDrawColor(200,134,10); doc.setLineWidth(1.2);
+        doc.line(10, 8, 138, 8);
+        doc.setTextColor(26,18,8); doc.setFontSize(18); doc.setFont("helvetica","bold");
+        doc.text(d.store, 10, 17);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(156,142,122);
+        doc.text(`Invoice #${d.invNo}  •  ${d.dateStr}`, 10, 23);
+        doc.setLineWidth(0.2); doc.setDrawColor(220,215,210);
+        doc.line(10, 26, 138, 26);
+        doc.setTextColor(26,18,8); doc.setFontSize(9); doc.setFont("helvetica","bold");
+        doc.text(d.customer, 10, 33); doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        if(d.phone) doc.text(d.phone, 10, 38);
+        _autoTable(doc, d, 44, [245,240,235], [26,18,8], true);
+        const y = doc.lastAutoTable.finalY + 6;
+        _totals(doc, d, y, [200,134,10]);
+        doc.setDrawColor(200,134,10); doc.setLineWidth(0.8);
+        doc.line(10, y+36, 138, y+36);
+        doc.setTextColor(156,142,122); doc.setFontSize(7);
+        doc.text(`Thank you! — ${d.store}`, 74, y+41, {align:"center"});
+        return doc;
+    }
+
+    /* ── Template 3: Royal Blue ── */
+    function pdf_RoyalBlue(jsPDF, d) {
+        const doc = new jsPDF({ unit:"mm", format:"a5" });
+        doc.setFillColor(30,58,95); doc.rect(0,0,148,26,"F");
+        doc.setFillColor(59,130,246); doc.rect(0,23,148,3,"F");
+        doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont("helvetica","bold");
+        doc.text("INVOICE", 10, 12);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`#${d.invNo}`, 10, 18);
+        doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text(d.store, 144, 12, {align:"right"});
+        doc.setFontSize(7); doc.setFont("helvetica","normal"); if(d.address) doc.text(d.address,144,18,{align:"right"});
+        doc.setTextColor(30,58,95);
+        doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text("Customer:", 10, 35);
+        doc.setFont("helvetica","normal"); doc.text(d.customer, 35, 35);
+        if(d.phone) doc.text(d.phone, 35, 40);
+        doc.setFont("helvetica","bold"); doc.text("Date:", 105, 35);
+        doc.setFont("helvetica","normal"); doc.text(d.dateStr, 118, 35);
+        _autoTable(doc, d, 46, [30,58,95], [255,255,255]);
+        const y = doc.lastAutoTable.finalY + 6;
+        _totals(doc, d, y, [59,130,246]);
+        doc.setFillColor(30,58,95); doc.rect(0, y+36, 148, 8, "F");
+        doc.setTextColor(255,255,255); doc.setFontSize(7);
+        doc.text(`Thank you for your business! — ${d.store}`, 74, y+41, {align:"center"});
+        return doc;
+    }
+
+    /* ── Template 4: Forest Green ── */
+    function pdf_Forest(jsPDF, d) {
+        const doc = new jsPDF({ unit:"mm", format:"a5" });
+        doc.setFillColor(20,83,45); doc.rect(0,0,148,24,"F");
+        doc.setFillColor(34,197,94); doc.rect(0,21,148,3,"F");
+        doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold");
+        doc.text("BILL / INVOICE", 10, 11);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`#${d.invNo}  •  ${d.dateStr}`, 10, 17);
+        doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text(d.store, 144, 11, {align:"right"});
+        doc.setFontSize(7); doc.setFont("helvetica","normal"); if(d.address) doc.text(d.address,144,17,{align:"right"});
+        doc.setTextColor(20,83,45); doc.setFontSize(9); doc.setFont("helvetica","bold");
+        doc.text(d.customer, 10, 33); doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        if(d.phone) doc.text(d.phone, 10, 38);
+        _autoTable(doc, d, 44, [20,83,45], [255,255,255]);
+        const y = doc.lastAutoTable.finalY + 6;
+        _totals(doc, d, y, [22,163,74]);
+        doc.setTextColor(156,142,122); doc.setFontSize(7);
+        doc.text("🌿  " + d.store + "  — Thank you!", 74, y+36, {align:"center"});
+        return doc;
+    }
+
+    /* ── Template 5: Rose Elegant ── */
+    function pdf_Rose(jsPDF, d) {
+        const doc = new jsPDF({ unit:"mm", format:"a5" });
+        doc.setFillColor(255,241,242); doc.rect(0,0,148,210,"F");
+        doc.setFillColor(190,18,60); doc.rect(0,0,148,8,"F");
+        doc.setFillColor(253,164,175); doc.rect(0,8,148,3,"F");
+        doc.setTextColor(190,18,60); doc.setFontSize(16); doc.setFont("helvetica","bold");
+        doc.text(d.store.toUpperCase(), 74, 22, {align:"center"});
+        doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(156,142,122);
+        doc.text("✦  INVOICE  ✦", 74, 28, {align:"center"});
+        doc.setDrawColor(253,164,175); doc.setLineWidth(0.5);
+        doc.line(20, 31, 128, 31);
+        doc.setTextColor(26,18,8); doc.setFontSize(8); doc.setFont("helvetica","bold");
+        doc.text(`Invoice: ${d.invNo}`, 10, 38); doc.setFont("helvetica","normal");
+        doc.text(d.customer, 10, 44); if(d.phone) doc.text(d.phone, 10, 49);
+        doc.setFont("helvetica","bold"); doc.text(d.dateStr, 138, 38, {align:"right"});
+        _autoTable(doc, d, 55, [190,18,60], [255,255,255], false, [255,236,239]);
+        const y = doc.lastAutoTable.finalY + 6;
+        _totals(doc, d, y, [190,18,60]);
+        doc.setDrawColor(253,164,175); doc.line(20, y+36, 128, y+36);
+        doc.setTextColor(190,18,60); doc.setFontSize(7);
+        doc.text(`With love — ${d.store}  ♥`, 74, y+41, {align:"center"});
+        return doc;
+    }
+
+    /* ── Template 6: Bold Black ── */
+    function pdf_Bold(jsPDF, d) {
+        const doc = new jsPDF({ unit:"mm", format:"a5" });
+        doc.setFillColor(0,0,0); doc.rect(0,0,148,28,"F");
+        doc.setFillColor(250,204,21); doc.rect(0,25,148,6,"F");
+        doc.setTextColor(255,255,255); doc.setFontSize(20); doc.setFont("helvetica","bold");
+        doc.text("INVOICE", 10, 16);
+        doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(156,156,156);
+        doc.text(`#${d.invNo}`, 10, 22);
+        doc.setTextColor(0,0,0); doc.setFontSize(9); doc.setFont("helvetica","bold");
+        doc.text(d.store, 144, 22, {align:"right"});
+        doc.setTextColor(26,18,8); doc.setFontSize(11); doc.setFont("helvetica","bold");
+        doc.text(d.customer.toUpperCase(), 10, 40);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(100,100,100);
+        if(d.phone) doc.text(d.phone, 10, 46);
+        doc.setFont("helvetica","bold"); doc.setTextColor(26,18,8); doc.text(d.dateStr, 138, 40, {align:"right"});
+        _autoTable(doc, d, 52, [0,0,0], [255,255,255]);
+        const y = doc.lastAutoTable.finalY + 6;
+        _totals(doc, d, y, [202,138,4]);
+        doc.setFillColor(0,0,0); doc.rect(0, y+36, 148, 8, "F");
+        doc.setFillColor(250,204,21); doc.rect(0, y+36, 5, 8, "F");
+        doc.setTextColor(255,255,255); doc.setFontSize(7);
+        doc.text(`THANK YOU — ${d.store.toUpperCase()}`, 74, y+41, {align:"center"});
+        return doc;
+    }
+
+    /* ── Shared helpers ── */
+    function _autoTable(doc, d, startY, headFill, headText, lightHead=false, altColor=null) {
+        const rows = d.items.map(i => [
+            i.name, String(i.qty),
+            `Rs.${parseFloat(i.price).toFixed(2)}`,
+            `Rs.${parseFloat(i.total).toFixed(2)}`
+        ]);
+        doc.autoTable({
+            startY, head: [["Item","Qty","Rate","Total"]], body: rows,
+            theme: "striped",
+            headStyles: {
+                fillColor: lightHead ? [245,240,235] : headFill,
+                textColor: lightHead ? [26,18,8] : headText,
+                fontSize: 8, fontStyle: "bold"
+            },
+            bodyStyles: { fontSize: 8 },
+            alternateRowStyles: altColor ? { fillColor: altColor } : {},
+            columnStyles: { 0:{cellWidth:60}, 1:{halign:"center"}, 2:{halign:"right"}, 3:{halign:"right",fontStyle:"bold"} },
+            margin: { left:10, right:10 }
+        });
+    }
+
+    function _totals(doc, d, y, accentColor) {
+        doc.setFontSize(8); doc.setTextColor(156,142,122); doc.setFont("helvetica","normal");
+        if(d.discount > 0) { doc.text("Discount:", 90, y); doc.text(`-Rs.${d.discount.toFixed(2)}`, 138, y, {align:"right"}); y+=5; }
+        if(d.oldDue   > 0) { doc.text("Old Due:",  90, y); doc.text(`+Rs.${d.oldDue.toFixed(2)}`,   138, y, {align:"right"}); y+=5; }
+        doc.setDrawColor(...accentColor); doc.setLineWidth(0.4); doc.line(10, y+2, 138, y+2);
+        doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.setTextColor(...accentColor);
+        doc.text(`Rs.${d.finalTotal.toFixed(2)}`, 138, y+10, {align:"right"});
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(26,18,8);
+        doc.text(`Paid: Rs.${d.paid.toFixed(2)}`, 10, y+10);
+        if(d.due > 0) {
+            doc.setTextColor(220,38,38); doc.text(`Balance Due: Rs.${d.due.toFixed(2)}`, 10, y+16);
+        } else {
+            doc.setTextColor(22,163,74); doc.text("Paid in Full", 10, y+16);
+        }
+    }
+
+    // Init template selector on load
+    window.addEventListener("load", () => { setTimeout(renderTemplateSelector, 500); });
+
     // ── Save & WhatsApp Share ──
     async function saveAndWhatsApp() {
         if (!cart.length) return alert("Cart khaali hai — pehle items add karein.");
@@ -680,94 +989,14 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            const store = storeData.name || "Surjya Bakery";
+            const store   = storeData.name || "Surjya Bakery";
+            const address = storeData.address || "";
+            const dateStr = new Date().toLocaleDateString("en-GB");
 
-            // ── Generate PDF using jsPDF ──
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: "mm", format: "a5" });
-
-            // Header bar
-            doc.setFillColor(26, 18, 8);
-            doc.rect(0, 0, 148, 22, "F");
-            doc.setFillColor(200, 134, 10);
-            doc.rect(0, 0, 5, 22, "F");
-
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(13); doc.setFont("helvetica", "bold");
-            doc.text("INVOICE", 12, 10);
-            doc.setFontSize(8); doc.setFont("helvetica", "normal");
-            doc.text(`# ${currentInvNo}`, 12, 16);
-
-            // Store name top right
-            doc.setFontSize(10); doc.setFont("helvetica", "bold");
-            doc.text(store, 144, 10, { align: "right" });
-            doc.setFontSize(7); doc.setFont("helvetica", "normal");
-            if (storeData.address) doc.text(storeData.address, 144, 15, { align: "right" });
-
-            // Customer + Date
-            doc.setTextColor(26, 18, 8);
-            doc.setFontSize(9); doc.setFont("helvetica", "bold");
-            doc.text("Bill To", 10, 30);
-            doc.setFont("helvetica", "normal");
-            doc.text(customer, 10, 36);
-            if (phone) doc.text(phone, 10, 41);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("Date", 138, 30, { align: "right" });
-            doc.setFont("helvetica", "normal");
-            doc.text(new Date().toLocaleDateString("en-GB"), 138, 36, { align: "right" });
-
-            // Items table
-            const rows = cart.map(i => [
-                i.name,
-                String(i.qty),
-                `Rs.${parseFloat(i.price).toFixed(2)}`,
-                `Rs.${parseFloat(i.total).toFixed(2)}`
-            ]);
-
-            doc.autoTable({
-                startY: 46,
-                head: [["Item", "Qty", "Rate", "Total"]],
-                body: rows,
-                theme: "striped",
-                headStyles: { fillColor: [26, 18, 8], textColor: 255, fontSize: 8 },
-                bodyStyles: { fontSize: 8 },
-                columnStyles: { 0: { cellWidth: 65 }, 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
-                margin: { left: 10, right: 10 }
-            });
-
-            const finalY = doc.lastAutoTable.finalY + 6;
-
-            // Totals
-            doc.setFontSize(8); doc.setTextColor(156, 142, 122);
-            if (discount > 0) { doc.text("Discount:", 100, finalY);     doc.text(`-Rs.${discount.toFixed(2)}`, 138, finalY,     { align: "right" }); }
-            if (oldDue   > 0) { doc.text("Old Due:",  100, finalY + 5); doc.text(`+Rs.${oldDue.toFixed(2)}`,  138, finalY + 5, { align: "right" }); }
-
-            // Grand total
-            doc.setDrawColor(200, 134, 10);
-            doc.setLineWidth(0.4);
-            doc.line(10, finalY + 8, 138, finalY + 8);
-            doc.setFontSize(12); doc.setFont("helvetica", "bold");
-            doc.setTextColor(200, 134, 10);
-            doc.text(`Rs.${finalTotal.toFixed(2)}`, 138, finalY + 15, { align: "right" });
-
-            doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(26, 18, 8);
-            doc.text(`Paid: Rs.${paid.toFixed(2)}`, 10, finalY + 15);
-            if (due > 0) {
-                doc.setTextColor(220, 38, 38);
-                doc.text(`Balance Due: Rs.${due.toFixed(2)}`, 10, finalY + 21);
-            } else {
-                doc.setTextColor(22, 163, 74);
-                doc.text("✓ Fully Paid", 10, finalY + 21);
-            }
-
-            // Footer
-            doc.setTextColor(156, 142, 122); doc.setFontSize(7);
-            doc.text(`Thank you for visiting ${store}!`, 74, finalY + 30, { align: "center" });
-
-            // ── Download PDF ──
-            const fileName = `Invoice_${currentInvNo}.pdf`;
-            doc.save(fileName);
+            // ── Generate PDF using selected template ──
+            const pdfData = { invNo: currentInvNo, customer, phone, items: cart, subtotal, oldDue, discount, finalTotal, paid, due, store, address, dateStr };
+            const doc = generatePDF(pdfData);
+            doc.save(`Invoice_${currentInvNo}.pdf`);
 
             // ── Open WhatsApp after short delay (let PDF download start) ──
             setTimeout(() => {
