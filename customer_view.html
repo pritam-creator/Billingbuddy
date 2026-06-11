@@ -104,6 +104,140 @@
         .empty i { font-size: 36px; margin-bottom: 12px; opacity: 0.2; display: block; }
 
         .hidden { display: none !important; }
+
+        /* ── Cart / Order ── */
+        .btn-add-cart { border: none; background: var(--accent); color: #fff; border-radius: 10px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: opacity 0.2s; white-space: nowrap; }
+        .btn-add-cart:hover { opacity: 0.82; }
+        .btn-add-cart:active { transform: scale(0.95); }
+
+        .cart-row { background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .cart-row-info h4 { font-size: 14px; font-weight: 700; color: var(--text); }
+        .cart-row-info p  { font-size: 12px; color: var(--sub); margin-top: 2px; }
+        .qty-controls { display: flex; align-items: center; gap: 8px; }
+        .qty-btn { width: 30px; height: 30px; border: 1.5px solid var(--border); background: var(--bg); border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink:0; }
+        .qty-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+        .qty-input { width: 48px; height: 34px; border: 1.5px solid var(--border); border-radius: 8px; text-align: center; font-size: 15px; font-weight: 800; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--card-bg); outline: none; transition: border-color 0.2s; }
+        .qty-input:focus { border-color: var(--accent); }
+
+        /* ── Order success ── */
+        .order-success { text-align: center; padding: 40px 20px; }
+        .order-success i { font-size: 52px; color: var(--success); margin-bottom: 14px; display: block; animation: successPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+        @keyframes successPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .order-success h3 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); margin-bottom: 8px; }
+        .order-success p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+    
+/* ═══════════════════════════════════════════
+   GLOBAL CSS CONSISTENCY FIX
+   Applied to all pages
+═══════════════════════════════════════════ */
+
+/* ── 1. Typography scale — standardize ── */
+.page-title, .welcome-msg { font-size: 21px !important; }
+.section-label { font-size: 11px !important; letter-spacing: 0.9px !important; }
+.card-info p, .stat-card p, .sum-stat p { font-size: 11px !important; letter-spacing: 0.5px !important; }
+.card-info h3, .stat-card h3 { font-size: 20px !important; }
+
+/* ── 2. Border-radius — standardize ── */
+/* Cards */
+.card, .settings-card, .stat-card, .inv-card,
+.emp-card, .order-card, .item-card, .customer-card,
+.record-card, .detail-card, .stock-card, .prod-card,
+.login-card, .activity-card, .txn-card, .balance-card,
+.summary-card, .alert-card { border-radius: 18px !important; }
+
+/* Modals */
+.modal-card, .confirm-card, .logout-card { border-radius: 20px !important; }
+.modal-sheet, .detail-sheet { border-radius: 22px 22px 0 0 !important; }
+
+/* Inputs */
+input[type="text"], input[type="number"],
+input[type="tel"], input[type="password"],
+select, .entry-input, .phone-input,
+.search-wrap input, .reset-input { border-radius: 12px !important; }
+
+/* Buttons */
+.btn-primary, .btn-save, .btn-submit, .btn-create,
+.btn-print, .btn-wa-share, .btn-add, .btn-add-staff,
+.btn-add-item, .btn-export, .btn-outline,
+.btn-gave, .btn-got, .btn-settle, .btn-verify,
+.btn-restock, .btn-use, .btn-next, .btn-view,
+.act-btn, .action-chip, .checkout-btn,
+.conf-btn, .modal-btn { border-radius: 12px !important; }
+
+/* Small buttons / icon buttons */
+.icon-btn, .del-btn, .del-txn, .act-icon,
+.back-btn, .close-btn, .dark-btn { border-radius: 10px !important; }
+
+/* Chips / pills */
+.cat-chip, .tab, .chip, .badge,
+.status-pill, .stock-badge { border-radius: 8px !important; }
+
+/* FAB */
+.fab, .fab-cart { border-radius: 16px !important; }
+
+/* ── 3. Button padding — consistent touch targets ── */
+.btn-primary, .btn-save, .btn-submit, .btn-create,
+.btn-print, .btn-wa-share, .btn-verify,
+.checkout-btn { padding: 14px 20px !important; font-size: 14px !important; }
+
+.btn-add, .btn-add-staff, .btn-add-item,
+.btn-export, .action-chip { padding: 11px 18px !important; font-size: 13px !important; }
+
+.btn-gave, .btn-got, .btn-use, .btn-restock,
+.btn-settle, .btn-advance, .btn-attend-off,
+.btn-attend-on { padding: 12px 10px !important; font-size: 12.5px !important; }
+
+.conf-btn, .modal-btn { padding: 13px !important; font-size: 13.5px !important; }
+
+/* ── 4. Icon button size — consistent ── */
+.icon-btn, .act-icon, .back-btn, .dark-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+}
+
+/* ── 5. FAB — consistent size ── */
+.fab, .fab-cart {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 18px !important;
+    bottom: 24px !important;
+    right: 24px !important;
+}
+
+/* ── 6. Input padding — consistent ── */
+input[type="text"], input[type="number"],
+input[type="tel"], input[type="password"],
+select, .entry-input, .search-wrap input {
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+}
+
+/* ── 7. Card padding — consistent ── */
+.card { padding: 18px 20px !important; }
+.settings-card { padding: 22px !important; }
+.stat-card { padding: 16px 18px !important; }
+.inv-card, .order-card, .emp-card,
+.customer-card, .record-card { padding: 18px 20px !important; }
+
+/* ── 8. Menu item height — consistent ── */
+.menu li {
+    padding: 11px 14px !important;
+    font-size: 13.5px !important;
+    border-radius: 12px !important;
+}
+
+/* ── 9. Badge sizes — consistent ── */
+.badge { padding: 4px 10px !important; font-size: 11px !important; border-radius: 8px !important; }
+.stock-badge { padding: 3px 8px !important; font-size: 10.5px !important; }
+
+/* ── 10. Section label spacing ── */
+.section-label { margin-bottom: 12px !important; margin-top: 4px !important; }
+
+/* ── 11. Modal sheet consistent padding ── */
+.modal-sheet { padding: 26px 22px 36px !important; }
+.confirm-card { padding: 26px 22px !important; }
+
     </style>
     <link rel="stylesheet" href="animations.css">
 </head>
@@ -128,10 +262,14 @@
     <!-- Tabs -->
     <div class="tabs">
         <button class="tab active" id="tabMenu"   onclick="switchTab('menu')">
-            <i class="fa-solid fa-cookie"></i> Today's Menu
+            <i class="fa-solid fa-cookie"></i> Menu
+        </button>
+        <button class="tab"        id="tabOrder"  onclick="switchTab('order')">
+            <i class="fa-solid fa-basket-shopping"></i> Order
+            <span class="cart-count" id="cartCount" style="display:none; background:var(--danger); color:#fff; border-radius:50%; width:16px; height:16px; font-size:10px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-left:4px;">0</span>
         </button>
         <button class="tab"        id="tabLedger" onclick="switchTab('ledger')">
-            <i class="fa-solid fa-receipt"></i> My Account
+            <i class="fa-solid fa-receipt"></i> Account
         </button>
     </div>
 
@@ -146,6 +284,41 @@
             <div class="skeleton"></div>
             <div class="skeleton"></div>
             <div class="skeleton"></div>
+        </div>
+    </div>
+
+    <!-- ── ORDER TAB ── -->
+    <div id="orderSection" class="hidden">
+
+        <!-- Cart items -->
+        <span class="section-label">Your Cart</span>
+        <div id="cartList">
+            <div class="empty" style="padding:32px 20px;">
+                <i class="fa-solid fa-basket-shopping"></i>
+                Cart khaali hai — Menu se items add karein
+            </div>
+        </div>
+
+        <!-- Order summary -->
+        <div id="orderSummary" class="hidden">
+            <div style="background:var(--text); border-radius:18px; padding:20px 22px; margin-bottom:14px;">
+                <div style="color:rgba(255,255,255,0.6); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">Total Amount</div>
+                <div style="color:#fff; font-size:32px; font-weight:800; margin:4px 0;" id="cartTotal">₹0</div>
+            </div>
+
+            <!-- Customer name for order -->
+            <div style="margin-bottom:12px;">
+                <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:0.7px; display:block; margin-bottom:6px;">Your Name</label>
+                <input type="text" id="orderName" placeholder="Enter your name" style="width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--border); background:var(--card-bg); color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none;">
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:0.7px; display:block; margin-bottom:6px;">Phone Number</label>
+                <input type="tel" id="orderPhone" placeholder="Mobile number" style="width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--border); background:var(--card-bg); color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none;">
+            </div>
+
+            <button id="placeOrderBtn" onclick="placeOrder()" style="width:100%; padding:15px; border:none; border-radius:14px; background:var(--accent); color:#fff; font-size:15px; font-weight:800; font-family:'DM Sans',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:opacity 0.2s;">
+                <i class="fa-solid fa-paper-plane"></i> Place Order
+            </button>
         </div>
     </div>
 
@@ -227,7 +400,12 @@
                     <div class="item-name">${item.name}</div>
                     <div class="item-meta">${item.category || "General"} · ${item.unit || "Per Pcs"}</div>
                 </div>
-                <span class="price-tag">₹${parseFloat(item.price || 0).toLocaleString()}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="price-tag">₹${parseFloat(item.price || 0).toLocaleString()}</span>
+                    <button class="btn-add-cart" onclick="addToCart('${item.id}', '${item.name.replace(/'/g,"\\'")}', ${item.price || 0})">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                </div>
             </div>`).join("");
     }
 
@@ -239,10 +417,186 @@
 
     // ── Tab Switch ──
     function switchTab(tab) {
-        document.getElementById("tabMenu").classList.toggle("active", tab === "menu");
+        document.getElementById("tabMenu").classList.toggle("active",   tab === "menu");
+        document.getElementById("tabOrder").classList.toggle("active",  tab === "order");
         document.getElementById("tabLedger").classList.toggle("active", tab === "ledger");
-        document.getElementById("menuSection").classList.toggle("hidden", tab !== "menu");
-        document.getElementById("ledgerSection").classList.toggle("hidden", tab !== "ledger");
+        document.getElementById("menuSection").classList.toggle("hidden",  tab !== "menu");
+        document.getElementById("orderSection").classList.toggle("hidden", tab !== "order");
+        document.getElementById("ledgerSection").classList.toggle("hidden",tab !== "ledger");
+    }
+
+    // ── Cart System ──
+    let cart = [];
+
+    function addToCart(id, name, price) {
+        const existing = cart.find(i => i.id === id);
+        if (existing) existing.qty++;
+        else cart.push({ id, name, price, qty: 1 });
+        renderCart();
+        updateCartBadge();
+        // Switch to order tab briefly to show feedback
+        const btn = event.target.closest('.btn-add-cart');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Added';
+            btn.style.background = 'var(--success)';
+            setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 900);
+        }
+        if (navigator.vibrate) navigator.vibrate(30);
+    }
+
+    function changeQty(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
+        item.qty = Math.max(1, item.qty + delta);
+        renderCart();
+        updateCartBadge();
+    }
+
+    function setQty(id, val) {
+        const qty  = parseInt(val);
+        const item = cart.find(i => i.id === id);
+        if (!item) return;
+        if (!qty || qty < 1) { item.qty = 1; }
+        else item.qty = qty;
+        // Update row total live without full re-render
+        const lbl = document.getElementById("qtyLabel_" + id);
+        const tot = document.getElementById("rowTotal_" + id);
+        if (lbl) lbl.innerText = item.qty;
+        if (tot) tot.innerText = "₹" + (item.price * item.qty).toLocaleString();
+        // Update cart total
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        const el = document.getElementById("cartTotal");
+        if (el) el.innerText = "₹" + total.toLocaleString();
+        updateCartBadge();
+    }
+
+    function renderCart() {
+        const list    = document.getElementById("cartList");
+        const summary = document.getElementById("orderSummary");
+
+        if (!cart.length) {
+            list.innerHTML = `<div class="empty" style="padding:32px 20px;"><i class="fa-solid fa-basket-shopping"></i>Cart khaali hai — Menu se items add karein</div>`;
+            summary.classList.add("hidden");
+            document.getElementById("cartTotal").innerText = "₹0";
+            return;
+        }
+
+        list.innerHTML = cart.map(item => `
+            <div class="cart-row">
+                <div class="cart-row-info">
+                    <h4>${item.name}</h4>
+                    <p>₹${item.price} × <span id="qtyLabel_${item.id}">${item.qty}</span> = <b style="color:var(--accent)" id="rowTotal_${item.id}">₹${item.price * item.qty}</b></p>
+                </div>
+                <div class="qty-controls">
+                    <button class="qty-btn" onclick="changeQty('${item.id}', -1)"><i class="fa-solid fa-minus" style="font-size:11px;"></i></button>
+                    <input type="number" class="qty-input" value="${item.qty}" min="1"
+                        inputmode="numeric"
+                        onchange="setQty('${item.id}', this.value)"
+                        oninput="setQty('${item.id}', this.value)">
+                    <button class="qty-btn" onclick="changeQty('${item.id}', 1)"><i class="fa-solid fa-plus" style="font-size:11px;"></i></button>
+                </div>
+            </div>`).join("");
+
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        document.getElementById("cartTotal").innerText = "₹" + total.toLocaleString();
+        summary.classList.remove("hidden");
+    }
+
+    function updateCartBadge() {
+        const count = cart.reduce((s, i) => s + i.qty, 0);
+        const badge = document.getElementById("cartCount");
+        if (count > 0) {
+            badge.innerText = count > 9 ? "9+" : count;
+            badge.style.display = "inline-flex";
+        } else {
+            badge.style.display = "none";
+        }
+    }
+
+    // ── Place Order ──
+    async function placeOrder() {
+        if (!cart.length) return;
+        const name  = document.getElementById("orderName").value.trim();
+        const phone = document.getElementById("orderPhone").value.trim();
+        if (!name)  return alert("Apna naam daalo.");
+
+        const btn = document.getElementById("placeOrderBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Placing Order...';
+
+        const total   = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        const today   = new Date().toISOString().slice(0,10).replace(/-/g,"");
+        const store   = document.getElementById("storeName").innerText || "Surjya Bakery";
+
+        try {
+            await db.collection("orders").add({
+                customer:  name,
+                phone:     phone,
+                items:     cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, total: i.price * i.qty })),
+                total:     total,
+                paid:      0,
+                due:       total,
+                status:    "Pending",
+                source:    "customer_portal",
+                dateRaw:   today,
+                date:      new Date().toLocaleDateString("en-GB"),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Show success screen
+            document.getElementById("cartList").innerHTML = "";
+            document.getElementById("orderSummary").classList.add("hidden");
+            document.getElementById("orderSection").innerHTML = `
+                <div class="order-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h3>Order Placed!</h3>
+                    <p>Aapka order <b>${store}</b> ko mil gaya.<br>Jaldi ready ho jayega! 🥐</p>
+                    <div style="background:var(--accent-light); border:1.5px solid var(--border); border-radius:14px; padding:16px; margin-bottom:20px; text-align:left;">
+                        <div style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:0.7px; margin-bottom:8px;">Order Summary</div>
+                        ${cart.map(i => `<div style="font-size:13px; display:flex; justify-content:space-between; margin-bottom:5px;"><span>${i.name} ×${i.qty}</span><b>₹${i.price*i.qty}</b></div>`).join("")}
+                        <div style="border-top:1px dashed var(--border); margin-top:10px; padding-top:10px; display:flex; justify-content:space-between; font-size:15px; font-weight:800;"><span>Total</span><span style="color:var(--accent);">₹${total.toLocaleString()}</span></div>
+                    </div>
+                    <button onclick="resetOrder()" style="width:100%; padding:14px; border:none; border-radius:12px; background:var(--text); color:#fff; font-size:14px; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;">
+                        <i class="fa-solid fa-plus"></i> New Order
+                    </button>
+                </div>`;
+
+            cart = [];
+            updateCartBadge();
+
+        } catch(e) {
+            alert("Error: " + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Place Order';
+        }
+    }
+
+    function resetOrder() {
+        cart = [];
+        updateCartBadge();
+        // Reload order section
+        document.getElementById("orderSection").innerHTML = `
+            <span class="section-label">Your Cart</span>
+            <div id="cartList"><div class="empty" style="padding:32px 20px;"><i class="fa-solid fa-basket-shopping"></i>Cart khaali hai — Menu se items add karein</div></div>
+            <div id="orderSummary" class="hidden">
+                <div style="background:var(--text); border-radius:18px; padding:20px 22px; margin-bottom:14px;">
+                    <div style="color:rgba(255,255,255,0.6); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">Total Amount</div>
+                    <div style="color:#fff; font-size:32px; font-weight:800; margin:4px 0;" id="cartTotal">₹0</div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:0.7px; display:block; margin-bottom:6px;">Your Name</label>
+                    <input type="text" id="orderName" placeholder="Enter your name" style="width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--border); background:var(--card-bg); color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none;">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:0.7px; display:block; margin-bottom:6px;">Phone Number</label>
+                    <input type="tel" id="orderPhone" placeholder="Mobile number" style="width:100%; padding:12px 14px; border-radius:12px; border:1.5px solid var(--border); background:var(--card-bg); color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none;">
+                </div>
+                <button id="placeOrderBtn" onclick="placeOrder()" style="width:100%; padding:15px; border:none; border-radius:14px; background:var(--accent); color:#fff; font-size:15px; font-weight:800; font-family:'DM Sans',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:opacity 0.2s;">
+                    <i class="fa-solid fa-paper-plane"></i> Place Order
+                </button>
+            </div>`;
+        switchTab('menu');
     }
 
     // ── Ledger Verify ──

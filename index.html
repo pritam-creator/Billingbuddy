@@ -290,7 +290,120 @@
       0%, 100% { transform: scale(1); opacity: 0.6; }
       50% { transform: scale(1.1); opacity: 1; }
     }
-  </style>
+  
+/* ═══════════════════════════════════════════
+   GLOBAL CSS CONSISTENCY FIX
+   Applied to all pages
+═══════════════════════════════════════════ */
+
+/* ── 1. Typography scale — standardize ── */
+.page-title, .welcome-msg { font-size: 21px !important; }
+.section-label { font-size: 11px !important; letter-spacing: 0.9px !important; }
+.card-info p, .stat-card p, .sum-stat p { font-size: 11px !important; letter-spacing: 0.5px !important; }
+.card-info h3, .stat-card h3 { font-size: 20px !important; }
+
+/* ── 2. Border-radius — standardize ── */
+/* Cards */
+.card, .settings-card, .stat-card, .inv-card,
+.emp-card, .order-card, .item-card, .customer-card,
+.record-card, .detail-card, .stock-card, .prod-card,
+.login-card, .activity-card, .txn-card, .balance-card,
+.summary-card, .alert-card { border-radius: 18px !important; }
+
+/* Modals */
+.modal-card, .confirm-card, .logout-card { border-radius: 20px !important; }
+.modal-sheet, .detail-sheet { border-radius: 22px 22px 0 0 !important; }
+
+/* Inputs */
+input[type="text"], input[type="number"],
+input[type="tel"], input[type="password"],
+select, .entry-input, .phone-input,
+.search-wrap input, .reset-input { border-radius: 12px !important; }
+
+/* Buttons */
+.btn-primary, .btn-save, .btn-submit, .btn-create,
+.btn-print, .btn-wa-share, .btn-add, .btn-add-staff,
+.btn-add-item, .btn-export, .btn-outline,
+.btn-gave, .btn-got, .btn-settle, .btn-verify,
+.btn-restock, .btn-use, .btn-next, .btn-view,
+.act-btn, .action-chip, .checkout-btn,
+.conf-btn, .modal-btn { border-radius: 12px !important; }
+
+/* Small buttons / icon buttons */
+.icon-btn, .del-btn, .del-txn, .act-icon,
+.back-btn, .close-btn, .dark-btn { border-radius: 10px !important; }
+
+/* Chips / pills */
+.cat-chip, .tab, .chip, .badge,
+.status-pill, .stock-badge { border-radius: 8px !important; }
+
+/* FAB */
+.fab, .fab-cart { border-radius: 16px !important; }
+
+/* ── 3. Button padding — consistent touch targets ── */
+.btn-primary, .btn-save, .btn-submit, .btn-create,
+.btn-print, .btn-wa-share, .btn-verify,
+.checkout-btn { padding: 14px 20px !important; font-size: 14px !important; }
+
+.btn-add, .btn-add-staff, .btn-add-item,
+.btn-export, .action-chip { padding: 11px 18px !important; font-size: 13px !important; }
+
+.btn-gave, .btn-got, .btn-use, .btn-restock,
+.btn-settle, .btn-advance, .btn-attend-off,
+.btn-attend-on { padding: 12px 10px !important; font-size: 12.5px !important; }
+
+.conf-btn, .modal-btn { padding: 13px !important; font-size: 13.5px !important; }
+
+/* ── 4. Icon button size — consistent ── */
+.icon-btn, .act-icon, .back-btn, .dark-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+}
+
+/* ── 5. FAB — consistent size ── */
+.fab, .fab-cart {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 18px !important;
+    bottom: 24px !important;
+    right: 24px !important;
+}
+
+/* ── 6. Input padding — consistent ── */
+input[type="text"], input[type="number"],
+input[type="tel"], input[type="password"],
+select, .entry-input, .search-wrap input {
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+}
+
+/* ── 7. Card padding — consistent ── */
+.card { padding: 18px 20px !important; }
+.settings-card { padding: 22px !important; }
+.stat-card { padding: 16px 18px !important; }
+.inv-card, .order-card, .emp-card,
+.customer-card, .record-card { padding: 18px 20px !important; }
+
+/* ── 8. Menu item height — consistent ── */
+.menu li {
+    padding: 11px 14px !important;
+    font-size: 13.5px !important;
+    border-radius: 12px !important;
+}
+
+/* ── 9. Badge sizes — consistent ── */
+.badge { padding: 4px 10px !important; font-size: 11px !important; border-radius: 8px !important; }
+.stock-badge { padding: 3px 8px !important; font-size: 10.5px !important; }
+
+/* ── 10. Section label spacing ── */
+.section-label { margin-bottom: 12px !important; margin-top: 4px !important; }
+
+/* ── 11. Modal sheet consistent padding ── */
+.modal-sheet { padding: 26px 22px 36px !important; }
+.confirm-card { padding: 26px 22px !important; }
+
+    </style>
     <link rel="stylesheet" href="animations.css">
 </head>
 <body>

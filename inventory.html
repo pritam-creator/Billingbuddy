@@ -149,6 +149,119 @@
             .inv-grid { grid-template-columns: 1fr; }
             .btn-export span { display: none; }
         }
+    
+/* ═══════════════════════════════════════════
+   GLOBAL CSS CONSISTENCY FIX
+   Applied to all pages
+═══════════════════════════════════════════ */
+
+/* ── 1. Typography scale — standardize ── */
+.page-title, .welcome-msg { font-size: 21px !important; }
+.section-label { font-size: 11px !important; letter-spacing: 0.9px !important; }
+.card-info p, .stat-card p, .sum-stat p { font-size: 11px !important; letter-spacing: 0.5px !important; }
+.card-info h3, .stat-card h3 { font-size: 20px !important; }
+
+/* ── 2. Border-radius — standardize ── */
+/* Cards */
+.card, .settings-card, .stat-card, .inv-card,
+.emp-card, .order-card, .item-card, .customer-card,
+.record-card, .detail-card, .stock-card, .prod-card,
+.login-card, .activity-card, .txn-card, .balance-card,
+.summary-card, .alert-card { border-radius: 18px !important; }
+
+/* Modals */
+.modal-card, .confirm-card, .logout-card { border-radius: 20px !important; }
+.modal-sheet, .detail-sheet { border-radius: 22px 22px 0 0 !important; }
+
+/* Inputs */
+input[type="text"], input[type="number"],
+input[type="tel"], input[type="password"],
+select, .entry-input, .phone-input,
+.search-wrap input, .reset-input { border-radius: 12px !important; }
+
+/* Buttons */
+.btn-primary, .btn-save, .btn-submit, .btn-create,
+.btn-print, .btn-wa-share, .btn-add, .btn-add-staff,
+.btn-add-item, .btn-export, .btn-outline,
+.btn-gave, .btn-got, .btn-settle, .btn-verify,
+.btn-restock, .btn-use, .btn-next, .btn-view,
+.act-btn, .action-chip, .checkout-btn,
+.conf-btn, .modal-btn { border-radius: 12px !important; }
+
+/* Small buttons / icon buttons */
+.icon-btn, .del-btn, .del-txn, .act-icon,
+.back-btn, .close-btn, .dark-btn { border-radius: 10px !important; }
+
+/* Chips / pills */
+.cat-chip, .tab, .chip, .badge,
+.status-pill, .stock-badge { border-radius: 8px !important; }
+
+/* FAB */
+.fab, .fab-cart { border-radius: 16px !important; }
+
+/* ── 3. Button padding — consistent touch targets ── */
+.btn-primary, .btn-save, .btn-submit, .btn-create,
+.btn-print, .btn-wa-share, .btn-verify,
+.checkout-btn { padding: 14px 20px !important; font-size: 14px !important; }
+
+.btn-add, .btn-add-staff, .btn-add-item,
+.btn-export, .action-chip { padding: 11px 18px !important; font-size: 13px !important; }
+
+.btn-gave, .btn-got, .btn-use, .btn-restock,
+.btn-settle, .btn-advance, .btn-attend-off,
+.btn-attend-on { padding: 12px 10px !important; font-size: 12.5px !important; }
+
+.conf-btn, .modal-btn { padding: 13px !important; font-size: 13.5px !important; }
+
+/* ── 4. Icon button size — consistent ── */
+.icon-btn, .act-icon, .back-btn, .dark-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+}
+
+/* ── 5. FAB — consistent size ── */
+.fab, .fab-cart {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 18px !important;
+    bottom: 24px !important;
+    right: 24px !important;
+}
+
+/* ── 6. Input padding — consistent ── */
+input[type="text"], input[type="number"],
+input[type="tel"], input[type="password"],
+select, .entry-input, .search-wrap input {
+    padding: 12px 14px !important;
+    font-size: 14px !important;
+}
+
+/* ── 7. Card padding — consistent ── */
+.card { padding: 18px 20px !important; }
+.settings-card { padding: 22px !important; }
+.stat-card { padding: 16px 18px !important; }
+.inv-card, .order-card, .emp-card,
+.customer-card, .record-card { padding: 18px 20px !important; }
+
+/* ── 8. Menu item height — consistent ── */
+.menu li {
+    padding: 11px 14px !important;
+    font-size: 13.5px !important;
+    border-radius: 12px !important;
+}
+
+/* ── 9. Badge sizes — consistent ── */
+.badge { padding: 4px 10px !important; font-size: 11px !important; border-radius: 8px !important; }
+.stock-badge { padding: 3px 8px !important; font-size: 10.5px !important; }
+
+/* ── 10. Section label spacing ── */
+.section-label { margin-bottom: 12px !important; margin-top: 4px !important; }
+
+/* ── 11. Modal sheet consistent padding ── */
+.modal-sheet { padding: 26px 22px 36px !important; }
+.confirm-card { padding: 26px 22px !important; }
+
     </style>
     <link rel="stylesheet" href="animations.css">
 </head>
@@ -273,11 +386,33 @@
 <div class="modal-overlay" id="stockModal">
     <div class="modal-sheet">
         <h3 id="stockModalTitle">Restock Item</h3>
-        <p id="stockModalSub" style="font-size:13px; color:var(--sub); margin-bottom:16px;"></p>
+        <p id="stockModalSub" style="font-size:14px; font-weight:700; color:var(--accent); margin-bottom:4px;"></p>
+        <p id="stockModalCurrent" style="font-size:12px; color:var(--sub); margin-bottom:16px;"></p>
+
+        <!-- Quick amount chips -->
+        <div style="display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:12px;">
+            <button onclick="setStockQty(5)"  style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">5</button>
+            <button onclick="setStockQty(10)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">10</button>
+            <button onclick="setStockQty(25)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">25</button>
+            <button onclick="setStockQty(50)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">50</button>
+            <button onclick="setStockQty(100)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">100</button>
+            <button onclick="setStockQty(250)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">250</button>
+            <button onclick="setStockQty(500)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">500</button>
+        </div>
+
         <div class="form-group">
             <label id="stockModalLabel">Quantity to Add</label>
-            <input type="number" id="stockQtyInput" placeholder="0" inputmode="numeric" style="font-size:22px; font-weight:700; text-align:center;">
+            <input type="number" id="stockQtyInput" placeholder="Ya seedha number type karo..." inputmode="numeric"
+                style="font-size:24px; font-weight:800; text-align:center; letter-spacing:1px;"
+                oninput="updateStockPreview()">
         </div>
+
+        <!-- Preview of new stock -->
+        <div id="stockPreview" style="background:var(--bg); border-radius:12px; padding:12px 16px; margin-bottom:14px; text-align:center; display:none;">
+            <span style="font-size:12px; color:var(--sub); font-weight:600;">New Stock Will Be: </span>
+            <span id="stockPreviewVal" style="font-size:18px; font-weight:800; color:var(--accent);"></span>
+        </div>
+
         <button class="btn-submit" id="stockConfirmBtn">
             <i class="fa-solid fa-check"></i> Confirm
         </button>
@@ -492,13 +627,34 @@
     function openStockModal(id, name, current, mode) {
         pendingStock = { id, current, mode };
         const isAdd  = mode === "add";
-        document.getElementById("stockModalTitle").innerText = isAdd ? "Restock Item" : "Stock Use Karein";
-        document.getElementById("stockModalSub").innerText   = name;
-        document.getElementById("stockModalLabel").innerText = isAdd ? "Quantity to Add" : "Quantity Used";
-        document.getElementById("stockQtyInput").value = "";
+        document.getElementById("stockModalTitle").innerText   = isAdd ? "📦 Restock Item" : "📉 Stock Use Karein";
+        document.getElementById("stockModalSub").innerText     = name;
+        document.getElementById("stockModalCurrent").innerText = `Current stock: ${current} units`;
+        document.getElementById("stockModalLabel").innerText   = isAdd ? "Add karna hai kitna?" : "Use hua kitna?";
+        document.getElementById("stockQtyInput").value         = "";
+        document.getElementById("stockPreview").style.display  = "none";
         const btn = document.getElementById("stockConfirmBtn");
         btn.style.background = isAdd ? "var(--success)" : "var(--danger)";
         document.getElementById("stockModal").classList.add("active");
+        setTimeout(() => document.getElementById("stockQtyInput").focus(), 350);
+    }
+
+    function setStockQty(val) {
+        document.getElementById("stockQtyInput").value = val;
+        updateStockPreview();
+    }
+
+    function updateStockPreview() {
+        if (!pendingStock) return;
+        const qty     = parseFloat(document.getElementById("stockQtyInput").value);
+        const preview = document.getElementById("stockPreview");
+        const preVal  = document.getElementById("stockPreviewVal");
+        if (!qty || qty <= 0) { preview.style.display = "none"; return; }
+        const newStock = pendingStock.mode === "add"
+            ? pendingStock.current + qty
+            : Math.max(0, pendingStock.current - qty);
+        preVal.innerText = newStock + " units";
+        preview.style.display = "block";
     }
 
     function closeStockModal() {
