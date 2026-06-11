@@ -3,7 +3,7 @@
 <head>
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>Orders - Surjya Bakery</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -265,6 +265,8 @@ select, .entry-input, .search-wrap input {
 .modal-sheet { padding: 26px 22px 36px !important; }
 .confirm-card { padding: 26px 22px !important; }
 
+            /* input-zoom-fix: iOS zoom prevention */
+        input, select, textarea { font-size: 16px !important; }
     </style>
     <link rel="stylesheet" href="animations.css">
 </head>
@@ -486,8 +488,8 @@ select, .entry-input, .search-wrap input {
             <div class="order-card">
                 <div class="order-top">
                     <div>
-                        <div class="order-id">${displayId}</div>
-                        <div class="order-time">${date}</div>
+                        <div class="order-id">${displayId}${o.source === 'customer_portal' ? ' <span style="font-size:9px; background:#eff6ff; color:#2563eb; padding:2px 7px; border-radius:6px; font-weight:700; vertical-align:middle;">ONLINE</span>' : ''}</div>
+                        <div class="order-time">${o.customer ? '👤 ' + o.customer + ' · ' : ''}${date}</div>
                     </div>
                     <span class="status-pill ${pillClass}">${status}</span>
                 </div>
