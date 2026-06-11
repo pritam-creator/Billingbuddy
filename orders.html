@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
@@ -455,18 +457,18 @@ select, .entry-input, .search-wrap input {
         }
 
         grid.innerHTML = filtered.map(o => {
-            const id     = o._id;
-            const status = o.status || "Pending";
-            // FIX: consistent order ID display using doc ID last 6 chars
+            const id       = o._id;
+            const status   = o.status || "Pending";
             const displayId = "#" + id.slice(-6).toUpperCase();
-            const date   = o.date || "—";
-            const total  = parseFloat(o.total || 0).toLocaleString();
+            const date     = o.date || "—";
+            const total    = parseFloat(o.total || 0).toLocaleString();
+            const customer = o.customer || "Walk-in";
+            const phone    = o.phone || "";
 
             const pillClass = status === "Delivered" ? "pill-delivered"
                             : status === "Preparing" ? "pill-preparing"
                             : "pill-pending";
 
-            // Progress bar steps
             const s1 = status === "Pending" || status === "Preparing" || status === "Delivered";
             const s2 = status === "Preparing" || status === "Delivered";
             const s3 = status === "Delivered";
@@ -489,7 +491,7 @@ select, .entry-input, .search-wrap input {
                 <div class="order-top">
                     <div>
                         <div class="order-id">${displayId}${o.source === 'customer_portal' ? ' <span style="font-size:9px; background:#eff6ff; color:#2563eb; padding:2px 7px; border-radius:6px; font-weight:700; vertical-align:middle;">ONLINE</span>' : ''}</div>
-                        <div class="order-time">${o.customer ? '👤 ' + o.customer + ' · ' : ''}${date}</div>
+                        <div class="order-time">👤 ${customer}${phone ? ' · 📱 ' + phone : ''} · ${date}</div>
                     </div>
                     <span class="status-pill ${pillClass}">${status}</span>
                 </div>
@@ -506,6 +508,9 @@ select, .entry-input, .search-wrap input {
                         <i class="fa-brands fa-whatsapp"></i> WA
                     </button>
                 </div>
+                <button class="act-btn" style="width:100%; margin-top:8px; background:var(--accent-light); color:var(--accent); border:1.5px solid var(--border);" onclick="sendInvoiceWhatsApp('${id}')">
+                    <i class="fa-solid fa-file-invoice"></i> Send Invoice on WhatsApp
+                </button>
                 <div class="cancel-link" onclick="openDeleteModal('${id}')">Cancel Order</div>
             </div>`;
         }).join("");
@@ -561,6 +566,84 @@ select, .entry-input, .search-wrap input {
         await db.collection("orders").doc(pendingDeleteId).delete();
         closeDeleteModal();
     };
+
+    // ── Send Invoice on WhatsApp ──
+    async function sendInvoiceWhatsApp(id) {
+        const o = allOrders.find(x => x._id === id);
+        if (!o) return;
+
+        const store    = (JSON.parse(localStorage.getItem("bakery_settings") || "{}")).name || "Surjya Bakery";
+        const invNo    = o.invNo || "#" + id.slice(-6).toUpperCase();
+        const customer = o.customer || "Walk-in";
+        const phone    = o.phone || "";
+        const items    = o.items || [];
+        const total    = parseFloat(o.total || 0);
+        const paid     = parseFloat(o.paid  || 0);
+        const due      = parseFloat(o.due   || 0);
+        const dateStr  = o.date || new Date().toLocaleDateString("en-GB");
+
+        // Generate PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: "mm", format: "a5" });
+
+        // Header
+        doc.setFillColor(26,18,8); doc.rect(0,0,148,22,"F");
+        doc.setFillColor(200,134,10); doc.rect(0,0,5,22,"F");
+        doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold");
+        doc.text("INVOICE", 12, 10);
+        doc.setFontSize(8); doc.setFont("helvetica","normal");
+        doc.text(`# ${invNo}`, 12, 16);
+        doc.setFontSize(10); doc.setFont("helvetica","bold");
+        doc.text(store, 144, 10, { align: "right" });
+
+        // Customer + Date
+        doc.setTextColor(26,18,8);
+        doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text("Bill To", 10, 30);
+        doc.setFont("helvetica","normal"); doc.text(customer, 10, 36);
+        if (phone) doc.text("📱 " + phone, 10, 41);
+        doc.setFont("helvetica","bold"); doc.text("Date", 138, 30, { align:"right" });
+        doc.setFont("helvetica","normal"); doc.text(dateStr, 138, 36, { align:"right" });
+
+        // Items table
+        const startY = phone ? 47 : 43;
+        doc.autoTable({
+            startY,
+            head: [["Item","Qty","Rate","Total"]],
+            body: items.map(i => [
+                i.name, String(i.qty),
+                `Rs.${parseFloat(i.price||0).toFixed(2)}`,
+                `Rs.${parseFloat(i.total||0).toFixed(2)}`
+            ]),
+            theme: "striped",
+            headStyles: { fillColor:[26,18,8], textColor:255, fontSize:8 },
+            bodyStyles: { fontSize:8 },
+            columnStyles: { 0:{cellWidth:60}, 1:{halign:"center"}, 2:{halign:"right"}, 3:{halign:"right",fontStyle:"bold"} },
+            margin: { left:10, right:10 }
+        });
+
+        const y = doc.lastAutoTable.finalY + 6;
+        doc.setDrawColor(200,134,10); doc.setLineWidth(0.4); doc.line(10, y+2, 138, y+2);
+        doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.setTextColor(200,134,10);
+        doc.text(`Rs.${total.toFixed(2)}`, 138, y+10, { align:"right" });
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(26,18,8);
+        doc.text(`Paid: Rs.${paid.toFixed(2)}`, 10, y+10);
+        if (due > 0) { doc.setTextColor(220,38,38); doc.text(`Balance Due: Rs.${due.toFixed(2)}`, 10, y+16); }
+        else { doc.setTextColor(22,163,74); doc.text("✓ Fully Paid", 10, y+16); }
+        doc.setTextColor(156,142,122); doc.setFontSize(7);
+        doc.text(`Thank you for visiting ${store}!`, 74, y+24, { align:"center" });
+
+        // Download PDF
+        doc.save(`Invoice_${invNo}.pdf`);
+
+        // Open WhatsApp after short delay
+        setTimeout(() => {
+            const msg = `🥐 *${store}*\n📋 Invoice: *${invNo}*\n👤 ${customer}\n📅 ${dateStr}\n💰 Total: ₹${total.toFixed(2)}\n${due > 0 ? `⚠️ Due: ₹${due.toFixed(2)}` : "✅ Fully Paid"}\n\n📎 Invoice PDF downloaded on your device.\nShare karo WhatsApp pe!\n\nThank you! 🙏`;
+            const waUrl = phone
+                ? `https://wa.me/91${phone.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`
+                : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, "_blank");
+        }, 800);
+    }
 
     // ── Logout ──
     function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
