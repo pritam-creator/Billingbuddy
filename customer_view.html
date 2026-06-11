@@ -630,16 +630,18 @@ select, .entry-input, .search-wrap input {
             const customer = snap.docs[0].data();
             const custId   = snap.docs[0].id;
 
-            // FIX: fetch actual ledger transactions for this customer
+            // FIX: removed orderBy("timestamp") — no composite index needed
+            // Sort client-side instead
             const ledgerSnap = await db.collection("ledger")
                 .where("customerId", "==", custId)
-                .orderBy("timestamp", "desc")
-                .limit(10)
+                .limit(20)
                 .get();
 
             // Calculate actual balance from transactions
             let balance = parseFloat(customer.openingDue || 0);
-            const txns  = ledgerSnap.docs.map(d => d.data());
+            const txns  = ledgerSnap.docs
+                .map(d => d.data())
+                .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
             txns.forEach(t => {
                 if (t.type === "debit")  balance += parseFloat(t.amount || 0);
                 if (t.type === "credit") balance -= parseFloat(t.amount || 0);
