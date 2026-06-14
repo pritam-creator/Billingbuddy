@@ -301,6 +301,7 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
             <li class="active">                        <i class="fa-solid fa-file-invoice"></i> Invoice</li>
             <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('client_rates.html')">     <i class="fa-solid fa-tags"></i> Client Rates</li>
             <li onclick="goPage('inventory.html')">    <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
             <li onclick="goPage('orders.html')">       <i class="fa-solid fa-basket-shopping"></i> Orders</li>
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
@@ -330,6 +331,15 @@ select, .entry-input, .search-wrap input {
         <!-- Customer Details -->
         <span class="section-label">Customer Details</span>
         <div class="card">
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Client Select Karo (Custom Rate ke liye)</label>
+                <select id="clientSelect" onchange="onClientSelect()" style="padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;width:100%;">
+                    <option value="">— Walk-in / Manual —</option>
+                </select>
+            </div>
+            <div id="clientRateBadge" style="display:none;font-size:12px;background:var(--accent-light);color:var(--accent);padding:7px 12px;border-radius:10px;border:1px solid #fde68a;margin-bottom:10px;font-weight:700;">
+                <i class="fa-solid fa-tags"></i> <span id="clientRateText">Custom rates active</span>
+            </div>
             <div class="input-grid">
                 <div class="form-group">
                     <label>Customer Name</label>
@@ -506,6 +516,38 @@ select, .entry-input, .search-wrap input {
     let storeData   = { name: "Surjya Bakery", address: "Manipur, India" };
 
     // ── Init ──
+    // ── Client Rates — GLOBAL SCOPE ──
+    let allClientRates = [];
+    let selectedClient = null;
+
+    function onClientSelect() {
+        const id = document.getElementById("clientSelect").value;
+        if (!id) {
+            selectedClient = null;
+            document.getElementById("clientRateBadge").style.display = "none";
+            document.getElementById("custName").value  = "";
+            document.getElementById("custPhone").value = "";
+        } else {
+            selectedClient = allClientRates.find(c => c.id === id) || null;
+            if (selectedClient) {
+                document.getElementById("custName").value  = selectedClient.name;
+                document.getElementById("custPhone").value = selectedClient.phone || "";
+                const slabs = selectedClient.slabs || [];
+                document.getElementById("clientRateBadge").style.display = slabs.length ? "block" : "none";
+                document.getElementById("clientRateText").innerText =
+                    slabs.length ? slabs.map(s => "MRP ₹" + s.mrp + " → ₹" + s.rate).join("  |  ") : "";
+            }
+        }
+    }
+
+    function getClientPrice(basePrice) {
+        if (!selectedClient || !selectedClient.slabs || !selectedClient.slabs.length)
+            return basePrice;
+        const exact = selectedClient.slabs.find(s => Math.abs(s.mrp - basePrice) < 0.01);
+        if (exact) return exact.rate;
+        return basePrice;
+    }
+
     window.onload = async () => {
         // Load settings
         try {
@@ -520,6 +562,18 @@ select, .entry-input, .search-wrap input {
         db.collection("items").onSnapshot(snap => {
             allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         });
+
+        // Load clientRates into global array + populate dropdown
+        db.collection("clientRates").orderBy("name").onSnapshot(snap => {
+            allClientRates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const sel = document.getElementById("clientSelect");
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">— Walk-in / Manual —</option>' +
+                allClientRates.map(c => `<option value="${c.id}">${c.name}${c.phone ? " (" + c.phone + ")" : ""}</option>`).join("");
+            sel.value = cur;
+        });
+
+
 
         // Load cart from localStorage (from items.html "Add to Bill")
         const saved = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -563,8 +617,9 @@ select, .entry-input, .search-wrap input {
     }
 
     function selectItem(name, price) {
+        const clientPrice = getClientPrice(price);
         document.getElementById("iName").value  = name;
-        document.getElementById("iPrice").value = price;
+        document.getElementById("iPrice").value = clientPrice;
         document.getElementById("suggestions").style.display = "none";
         document.getElementById("iQty").focus();
     }

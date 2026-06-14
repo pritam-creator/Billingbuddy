@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Delivery - Surjya Bakery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
+            --border: #ede8df; --text: #1a1208; --sub: #9c8e7a;
+            --accent: #c8860a; --accent-light: #fff8ed;
+            --success: #16a34a; --success-bg: #dcfce7;
+            --danger: #dc2626; --danger-bg: #fee2e2;
+            --blue: #2563eb; --blue-bg: #eff6ff;
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
+        .app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 28px 16px; display: flex; flex-direction: column; position: fixed; height: 100%; transition: left 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000; left: 0; }
+        .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 8px; }
+        .s-logo { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; }
+        .profile-info h4 { font-size: 15px; font-weight: 700; color: var(--text); }
+        .profile-info p  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+        .menu { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .menu li { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 12px; cursor: pointer; transition: all 0.18s; margin-bottom: 2px; font-size: 13.5px; color: var(--sub); font-weight: 500; }
+        .menu li i { font-size: 16px; width: 20px; text-align: center; }
+        .menu li:hover { background: var(--border); color: var(--text); }
+        .menu li.active { background: var(--accent); color: #fff; }
+        .sidebar-footer { padding: 14px 8px 0; border-top: 1px solid var(--border); margin-top: 12px; }
+        .sidebar-footer button { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .content { flex: 1; padding: 28px 36px 100px; margin-left: var(--sidebar-w); overflow-y: auto; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        #menuBtn { font-size: 20px; cursor: pointer; display: none; color: var(--text); }
+        .page-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--text); }
+        .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
+        .header-actions { display: flex; gap: 8px; }
+        .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); }
+        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; color: var(--sub); font-weight: 700; display: block; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 6px; background: var(--border); padding: 5px; border-radius: 14px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; border-radius: 10px; border: none; background: transparent; color: var(--sub); font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+        .tab.active { background: var(--card-bg); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+        /* Cards */
+        .card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); padding: 20px; margin-bottom: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
+        .form-group select, .form-group input {
+            padding: 12px 14px; border-radius: 11px; border: 1.5px solid var(--border);
+            background: var(--bg); color: var(--text); font-size: 14px;
+            font-family: 'DM Sans', sans-serif; outline: none; width: 100%;
+        }
+        .form-group select:focus, .form-group input:focus { border-color: var(--accent); }
+
+        /* Item rows */
+        .item-row { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+        .item-row-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+        .item-row-price { font-size: 11px; color: var(--sub); }
+        .qty-input { width: 70px; padding: 8px 10px; border-radius: 9px; border: 1.5px solid var(--border); background: var(--card-bg); color: var(--text); font-size: 14px; font-weight: 700; text-align: center; font-family: 'DM Sans', sans-serif; outline: none; }
+        .qty-input:focus { border-color: var(--accent); background: var(--accent-light); }
+
+        /* Buttons */
+        .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 13px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-danger { width: 100%; padding: 14px; border: none; border-radius: 13px; background: var(--danger); color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; }
+        .btn-outline { width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 12px; background: transparent; color: var(--sub); font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 6px; }
+
+        /* QR Code box */
+        .qr-box { text-align: center; padding: 24px; background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); margin-bottom: 14px; }
+        .qr-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .qr-box p  { font-size: 12px; color: var(--sub); margin-bottom: 16px; }
+        #qrCanvas { display: flex; justify-content: center; margin-bottom: 14px; }
+
+        /* Scanner */
+        .scanner-box { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+        .scanner-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .scanner-header h4 { font-size: 14px; font-weight: 700; color: var(--text); }
+        #reader { width: 100%; }
+        .scan-result { padding: 14px 20px; border-top: 1px solid var(--border); display: none; }
+        .scan-result.show { display: block; }
+
+        /* Summary card */
+        .summary-card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+        .summary-row:last-child { border-bottom: none; }
+        .sr-label { font-size: 13px; color: var(--sub); font-weight: 500; }
+        .sr-sent   { font-size: 14px; font-weight: 700; color: var(--blue); }
+        .sr-return { font-size: 14px; font-weight: 700; color: var(--danger); }
+        .sr-sold   { font-size: 14px; font-weight: 800; color: var(--success); }
+        .sr-amt    { font-size: 14px; font-weight: 800; color: var(--accent); }
+
+        /* Delivery list */
+        .delivery-card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); padding: 18px 20px; margin-bottom: 12px; }
+        .dc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .dc-name { font-size: 15px; font-weight: 700; color: var(--text); }
+        .dc-date { font-size: 11px; color: var(--sub); margin-top: 2px; }
+        .status-pill { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+        .pill-out     { background: var(--blue-bg); color: var(--blue); }
+        .pill-done    { background: var(--success-bg); color: var(--success); }
+        .dc-items { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .dc-chip  { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--sub); font-weight: 600; }
+        .dc-chip.sold { background: var(--success-bg); color: var(--success); border-color: var(--success-bg); }
+
+        /* Flash */
+        .flash { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success); color: #fff; padding: 12px 26px; border-radius: 12px; font-size: 14px; font-weight: 700; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap; }
+        .flash.show { opacity: 1; }
+
+        /* Confirm */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .confirm-overlay.active { display: flex; }
+        .confirm-card { background: var(--card-bg); padding: 28px; border-radius: 22px; width: 90%; max-width: 320px; text-align: center; border: 1px solid var(--border); }
+        .confirm-card h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .confirm-card p  { font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+        .confirm-btns { display: flex; gap: 10px; margin-top: 18px; }
+        .conf-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .conf-ok { background: var(--accent); color: #fff; }
+        .conf-no { background: var(--border); color: var(--text); }
+
+        .scan-count-row { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--card-bg); border-radius:10px; margin-bottom:6px; border:1px solid var(--border); }
+        .sc-name  { font-size:13px; font-weight:700; color:var(--text); }
+        .sc-count { font-size:20px; font-weight:900; color:var(--accent); }
+        .sc-badge { background:var(--success-bg); color:var(--success); border-radius:7px; padding:2px 9px; font-size:11px; font-weight:700; }
+        .sc-beep  { animation: scalePop 0.2s ease; }
+        @keyframes scalePop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+
+        .bg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 900; }
+        .bg-overlay.active { opacity: 1; pointer-events: all; }
+
+        .empty { text-align: center; padding: 48px 20px; color: var(--sub); font-size: 14px; }
+        .empty i { font-size: 36px; margin-bottom: 12px; opacity: 0.2; display: block; }
+
+        @media(max-width: 768px) {
+            .sidebar { left: -280px; }
+            .sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.12); }
+            .content { margin-left: 0; padding: 20px 16px 100px; }
+            #menuBtn { display: block; }
+        }
+    </style>
+    <link rel="stylesheet" href="animations.css">
+</head>
+<body>
+<div class="app">
+
+    <aside class="sidebar" id="sidebar">
+        <div class="profile">
+            <img src="https://raw.githubusercontent.com/pritam-creator/billingbuddy-assets/refs/heads/main/Untitled.png" class="s-logo" alt="Logo">
+            <div class="profile-info">
+                <h4 id="sidebarName">Surjya Bakery</h4>
+                <p>Administrator</p>
+            </div>
+        </div>
+        <ul class="menu">
+            <li onclick="goPage('dashboard.html')">    <i class="fa-solid fa-house-chimney"></i> Dashboard</li>
+            <li onclick="goPage('ledger.html')">        <i class="fa-solid fa-book"></i> Ledger</li>
+            <li onclick="goPage('items.html')">         <i class="fa-solid fa-cookie"></i> Items</li>
+            <li onclick="goPage('invoice.html')">       <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('livesale.html')">      <i class="fa-solid fa-bolt"></i> Live Sale</li>
+            <li onclick="goPage('client_rates.html')">  <i class="fa-solid fa-users"></i> Clients</li>
+            <li onclick="goPage('customer_view.html')"> <i class="fa-solid fa-address-book"></i> Customers</li>
+            <li onclick="goPage('inventory.html')">     <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
+            <li onclick="goPage('orders.html')">        <i class="fa-solid fa-basket-shopping"></i> Orders</li>
+            <li onclick="goPage('records.html')">       <i class="fa-solid fa-chart-simple"></i> Records</li>
+            <li onclick="goPage('employees.html')">     <i class="fa-solid fa-user-group"></i> Employees</li>
+            <li class="active">                         <i class="fa-solid fa-truck"></i> Delivery</li>
+            <li onclick="goPage('history.html')">       <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('settings.html')">      <i class="fa-solid fa-gear"></i> Settings</li>
+        </ul>
+        <div class="sidebar-footer">
+            <button onclick="openLogout()"><i class="fa-solid fa-power-off"></i> Logout</button>
+        </div>
+    </aside>
+
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <main class="content">
+        <header class="top-header">
+            <div class="header-left">
+                <div id="menuBtn"><i class="fa-solid fa-bars-staggered"></i></div>
+                <div>
+                    <div class="page-title">Delivery</div>
+                    <div class="page-sub" id="dateLabel">Loading...</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="darkToggle">🌙</button>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" id="tab-send"   onclick="switchTab('send')">📦 Maal Bhejo</button>
+            <button class="tab"        id="tab-return" onclick="switchTab('return')">📷 Return Scan</button>
+            <button class="tab"        id="tab-log"    onclick="switchTab('log')">📋 History</button>
+        </div>
+
+        <!-- TAB 1: Maal Bhejo -->
+        <div id="section-send">
+            <span class="section-label">Delivery assign karo</span>
+            <div class="card">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-user"></i> Delivery Boy</label>
+                    <select id="boySelect">
+                        <option value="">— Select karo —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-calendar"></i> Date</label>
+                    <input type="date" id="deliveryDate">
+                </div>
+            </div>
+
+            <span class="section-label">Kitna maal de rahe ho</span>
+            <div id="sendItemRows"></div>
+
+            <button class="btn-primary" id="sendBtn" onclick="createDelivery()">
+                <i class="fa-solid fa-truck"></i> Delivery Banao & QR Generate Karo
+            </button>
+        </div>
+
+        <!-- TAB 2: Return Scan -->
+        <div id="section-return" style="display:none;">
+            <span class="section-label">Delivery boy ka QR scan karo</span>
+
+            <div class="scanner-box">
+                <div class="scanner-header">
+                    <h4><i class="fa-solid fa-qrcode" style="color:var(--accent);"></i> Camera Scanner</h4>
+                    <button class="icon-btn" id="toggleScanBtn" onclick="toggleScanner()">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                </div>
+                <div id="reader"></div>
+                <div class="scan-result" id="scanResult"></div>
+            </div>
+
+            <!-- Return form (shows after scan) -->
+            <div id="returnForm" style="display:none;">
+                <div class="card">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                        <div style="width:40px;height:40px;background:var(--success-bg);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                            <i class="fa-solid fa-check" style="color:var(--success);"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:14px;font-weight:700;color:var(--text);" id="scannedBoyName">—</div>
+                            <div style="font-size:11px;color:var(--sub);" id="scannedDate">—</div>
+                        </div>
+                    </div>
+
+                    <!-- Barcode scan counter -->
+                    <span class="section-label"><i class="fa-solid fa-barcode"></i> Bacha hua maal scan karo</span>
+                    <div style="background:var(--bg);border-radius:14px;padding:16px;margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div>
+                                <div style="font-size:13px;font-weight:700;color:var(--text);">Ek ek packet scan karo</div>
+                                <div style="font-size:11px;color:var(--sub);">Jo maal bacha hai uske packets camera pe rakhein</div>
+                            </div>
+                            <button class="icon-btn" id="bcReturnToggle" onclick="toggleReturnScanner()" style="background:var(--accent);border-color:var(--accent);color:#fff;">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+                        </div>
+                        <div id="bcReturnReader"></div>
+                        <div id="scanCountList"></div>
+                    </div>
+
+                    <!-- Manual override -->
+                    <details style="margin-bottom:12px;">
+                        <summary style="font-size:12px;color:var(--sub);cursor:pointer;font-weight:600;">Ya manually quantity daalo</summary>
+                        <div style="margin-top:10px;" id="returnItemRows"></div>
+                    </details>
+
+                    <button class="btn-danger" onclick="confirmReturn()">
+                        <i class="fa-solid fa-rotate-left"></i> Return Record Karo
+                    </button>
+                    <button class="btn-outline" onclick="cancelReturn()">Cancel</button>
+                </div>
+
+                <!-- Summary -->
+                <div id="returnSummary" style="display:none;">
+                    <span class="section-label">Aaj ki summary</span>
+                    <div class="summary-card" id="summaryRows"></div>
+                    <div class="card" style="text-align:center;">
+                        <div style="font-size:12px;color:var(--sub);margin-bottom:4px;">TOTAL BIKAA</div>
+                        <div style="font-size:32px;font-weight:900;color:var(--success);" id="totalSoldAmt">₹0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: History -->
+        <div id="section-log" style="display:none;">
+            <span class="section-label">Delivery Records</span>
+            <div id="deliveryLog"></div>
+        </div>
+    </main>
+</div>
+
+<!-- QR Modal -->
+<div class="confirm-overlay" id="qrModal">
+    <div class="confirm-card" style="max-width:360px;">
+        <h3>✅ Delivery Bani!</h3>
+        <p id="qrModalDesc" style="margin-bottom:12px;"></p>
+        <div id="qrCanvas" style="display:flex;justify-content:center;margin:12px 0;"></div>
+        <p style="font-size:11px;color:var(--sub);margin-bottom:4px;">Yeh QR delivery boy ko dikhaao ya print karo</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeQrModal()">Close</button>
+            <button class="conf-btn conf-ok" onclick="printQR()">🖨️ Print</button>
+        </div>
+    </div>
+</div>
+
+<!-- Logout -->
+<div class="confirm-overlay" id="logoutModal">
+    <div class="confirm-card">
+        <h3>Logout Karein?</h3>
+        <p>Aapka session band ho jayega.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeLogout()">Nahi</button>
+            <button class="conf-btn conf-ok" onclick="confirmLogout()">Haan</button>
+        </div>
+    </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script>
+if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",
+    authDomain: "billingbuddy-551f9.firebaseapp.com",
+    projectId: "billingbuddy-551f9",
+    appId: "1:287026017084:web:aae879570ad706e5a2a439"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Dark
+const darkToggle = document.getElementById("darkToggle");
+if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
+darkToggle.onclick = () => {
+    document.body.classList.toggle("dark");
+    const d = document.body.classList.contains("dark");
+    localStorage.setItem("darkMode", d);
+    darkToggle.innerText = d ? "☀️" : "🌙";
+};
+
+// Sidebar
+const sidebar = document.getElementById("sidebar");
+const bgOverlay = document.getElementById("bgOverlay");
+document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); bgOverlay.classList.add("active"); };
+bgOverlay.onclick = () => { sidebar.classList.remove("active"); bgOverlay.classList.remove("active"); };
+
+const s = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
+if (s.name) document.getElementById("sidebarName").innerText = s.name;
+
+// Date
+const now = new Date();
+document.getElementById("dateLabel").innerText = now.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
+document.getElementById("deliveryDate").value = now.toISOString().split("T")[0];
+
+let items = [], employees = [], scannedDelivery = null, scanner = null, scannerRunning = false;
+
+// Load items
+db.collection("items").onSnapshot(snap => {
+    items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    buildSendRows();
+});
+
+// Load employees
+db.collection("employees").onSnapshot(snap => {
+    employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const sel = document.getElementById("boySelect");
+    sel.innerHTML = '<option value="">— Select karo —</option>' +
+        employees.map(e => `<option value="${e.id}">${e.name}</option>`).join("");
+});
+
+// Load delivery log
+db.collection("deliveries").orderBy("createdAt","desc").limit(30).onSnapshot(snap => {
+    const log = document.getElementById("deliveryLog");
+    if (!snap.docs.length) {
+        log.innerHTML = `<div class="empty"><i class="fa-solid fa-truck"></i>Abhi koi delivery nahi hai.</div>`;
+        return;
+    }
+    log.innerHTML = snap.docs.map(d => {
+        const data = d.data();
+        const isDone = data.status === "returned";
+        const itemChips = (data.items || []).map(item => {
+            const soldQty = item.sent - (item.returned || 0);
+            return `<span class="dc-chip ${isDone ? 'sold' : ''}">
+                ${item.name}: ${isDone ? soldQty + ' bika' : item.sent + ' bheja'}
+            </span>`;
+        }).join("");
+        return `<div class="delivery-card">
+            <div class="dc-top">
+                <div>
+                    <div class="dc-name">🚴 ${data.boyName}</div>
+                    <div class="dc-date">${data.date} · ₹${(data.totalSold||data.totalValue||0).toLocaleString()}</div>
+                </div>
+                <span class="status-pill ${isDone ? 'pill-done' : 'pill-out'}">
+                    ${isDone ? '✅ Done' : '🚚 Out'}
+                </span>
+            </div>
+            <div class="dc-items">${itemChips}</div>
+        </div>`;
+    }).join("");
+});
+
+// Build item rows for send
+function buildSendRows() {
+    const container = document.getElementById("sendItemRows");
+    if (!items.length) { container.innerHTML = `<div style="color:var(--sub);font-size:13px;padding:10px;">Items nahi hain. Pehle items.html mein add karo.</div>`; return; }
+    container.innerHTML = items.map(item => `
+        <div class="item-row">
+            <div>
+                <div class="item-row-name">${item.name}</div>
+                <div class="item-row-price">₹${item.price}</div>
+            </div>
+            <input class="qty-input" type="number" min="0" value="0"
+                id="send_${item.id}" inputmode="numeric" placeholder="0">
+        </div>`).join("");
+}
+
+// Build return rows
+function buildReturnRows(sentItems) {
+    const container = document.getElementById("returnItemRows");
+    container.innerHTML = sentItems.map(item => `
+        <div class="item-row">
+            <div>
+                <div class="item-row-name">${item.name}</div>
+                <div class="item-row-price">Bheja: ${item.sent} · ₹${item.price}</div>
+            </div>
+            <input class="qty-input" type="number" min="0" max="${item.sent}" value="0"
+                id="ret_${item.id}" inputmode="numeric" placeholder="0">
+        </div>`).join("");
+}
+
+// Create delivery & generate QR
+async function createDelivery() {
+    const boyId = document.getElementById("boySelect").value;
+    const date  = document.getElementById("deliveryDate").value;
+    if (!boyId) { alert("Delivery boy select karo!"); return; }
+
+    const sentItems = items.map(item => ({
+        id: item.id, name: item.name, price: item.price,
+        sent: parseInt(document.getElementById("send_" + item.id).value) || 0
+    })).filter(i => i.sent > 0);
+
+    if (!sentItems.length) { alert("Kam se kam ek item ki quantity daalo!"); return; }
+
+    const boy = employees.find(e => e.id === boyId);
+    const totalValue = sentItems.reduce((s, i) => s + i.price * i.sent, 0);
+
+    const btn = document.getElementById("sendBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+    try {
+        const docRef = await db.collection("deliveries").add({
+            boyId, boyName: boy.name,
+            date, items: sentItems, totalValue,
+            status: "out",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // QR data = delivery doc ID
+        const qrData = JSON.stringify({ deliveryId: docRef.id, boyName: boy.name, date });
+        showQR(qrData, boy.name, date, sentItems);
+        showFlash("Delivery bani! QR ready hai.");
+
+        // Reset
+        items.forEach(i => { document.getElementById("send_" + i.id).value = 0; });
+        document.getElementById("boySelect").value = "";
+    } catch(e) { alert("Error: " + e.message); }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-truck"></i> Delivery Banao & QR Generate Karo';
+}
+
+// QR display
+let currentQrData = "";
+function showQR(data, boyName, date, items) {
+    currentQrData = data;
+    document.getElementById("qrModalDesc").innerText = `${boyName} · ${date} · ${items.length} item types`;
+    document.getElementById("qrCanvas").innerHTML = "";
+    new QRCode(document.getElementById("qrCanvas"), { text: data, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
+    document.getElementById("qrModal").classList.add("active");
+}
+
+function closeQrModal() { document.getElementById("qrModal").classList.remove("active"); }
+
+function printQR() {
+    const qrDiv = document.getElementById("qrCanvas").innerHTML;
+    const w = window.open("", "_blank");
+    w.document.write(`<html><body style="text-align:center;padding:40px;font-family:sans-serif;">
+        <h2>Surjya Bakery - Delivery QR</h2>
+        <p style="color:#888;">${document.getElementById("qrModalDesc").innerText}</p>
+        <div style="margin:20px auto;display:inline-block;">${qrDiv}</div>
+        <p style="font-size:12px;color:#aaa;margin-top:10px;">Wapas aate waqt yeh scan karein</p>
+    </body></html>`);
+    w.document.close();
+    w.print();
+}
+
+// QR Scanner (for delivery ID scan)
+function toggleScanner() {
+    if (scannerRunning) stopScanner();
+    else startScanner();
+}
+
+function startScanner() {
+    if (scanner) { scanner.clear(); }
+    scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+    scanner.render(onScanSuccess, onScanError);
+    scannerRunning = true;
+    document.getElementById("toggleScanBtn").innerHTML = '<i class="fa-solid fa-stop"></i>';
+}
+
+function stopScanner() {
+    if (scanner) { scanner.clear().catch(()=>{}); scanner = null; }
+    scannerRunning = false;
+    document.getElementById("toggleScanBtn").innerHTML = '<i class="fa-solid fa-camera"></i>';
+}
+
+// Barcode return scanner
+let bcReturnScanner = null, bcReturnRunning = false;
+let returnScanCounts = {}; // { itemId: count }
+
+function toggleReturnScanner() {
+    if (bcReturnRunning) stopReturnScanner();
+    else startReturnScanner();
+}
+
+function startReturnScanner() {
+    if (bcReturnScanner) { bcReturnScanner.clear().catch(()=>{}); }
+    bcReturnScanner = new Html5QrcodeScanner("bcReturnReader", {
+        fps: 15,
+        qrbox: { width: 260, height: 120 },
+        rememberLastUsedCamera: true
+    }, false);
+    bcReturnScanner.render(onReturnBarcodeScan, () => {});
+    bcReturnRunning = true;
+    document.getElementById("bcReturnToggle").innerHTML = '<i class="fa-solid fa-stop"></i>';
+}
+
+function stopReturnScanner() {
+    if (bcReturnScanner) { bcReturnScanner.clear().catch(()=>{}); bcReturnScanner = null; }
+    bcReturnRunning = false;
+    const btn = document.getElementById("bcReturnToggle");
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-camera"></i>';
+}
+
+function onReturnBarcodeScan(barcode) {
+    if (!scannedDelivery) return;
+    // Find which item has this barcode
+    const matchedItem = items.find(i => i.barcode && i.barcode === barcode);
+    if (!matchedItem) {
+        // Unknown barcode beep effect
+        showFlash("⚠️ Barcode match nahi hua: " + barcode);
+        return;
+    }
+    // Check this item is in delivery
+    const inDelivery = scannedDelivery.items.find(i => i.id === matchedItem.id);
+    if (!inDelivery) {
+        showFlash("⚠️ Yeh item is delivery mein nahi tha!");
+        return;
+    }
+    // Count it
+    returnScanCounts[matchedItem.id] = (returnScanCounts[matchedItem.id] || 0) + 1;
+    // Vibrate
+    if (navigator.vibrate) navigator.vibrate(50);
+    updateReturnScanUI();
+}
+
+function updateReturnScanUI() {
+    if (!scannedDelivery) return;
+    const list = document.getElementById("scanCountList");
+    list.innerHTML = scannedDelivery.items.map(item => {
+        const count = returnScanCounts[item.id] || 0;
+        const max   = item.sent;
+        return `<div class="scan-count-row">
+            <div>
+                <div class="sc-name">${item.name}</div>
+                <div style="font-size:11px;color:var(--sub);">Bheja: ${max} · Scan hua: ${count}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="sc-count sc-badge" id="sc_${item.id}">${count}</span>
+                <button onclick="manualReturnAdj('${item.id}', -1)" style="width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-size:13px;">−</button>
+                <button onclick="manualReturnAdj('${item.id}', 1)"  style="width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-size:13px;">+</button>
+            </div>
+        </div>`;
+    }).join("");
+    // Also sync manual inputs
+    scannedDelivery.items.forEach(item => {
+        const inp = document.getElementById("ret_" + item.id);
+        if (inp) inp.value = returnScanCounts[item.id] || 0;
+    });
+}
+
+function manualReturnAdj(itemId, delta) {
+    returnScanCounts[itemId] = Math.max(0, (returnScanCounts[itemId] || 0) + delta);
+    updateReturnScanUI();
+}
+
+async function onScanSuccess(decodedText) {
+    stopScanner();
+    try {
+        const parsed = JSON.parse(decodedText);
+        const { deliveryId, boyName, date } = parsed;
+
+        const doc = await db.collection("deliveries").doc(deliveryId).get();
+        if (!doc.exists) { alert("Delivery nahi mili!"); return; }
+        const data = doc.data();
+
+        if (data.status === "returned") {
+            alert("Yeh delivery pehle hi return ho chuki hai!");
+            return;
+        }
+
+        scannedDelivery = { id: deliveryId, ...data };
+
+        document.getElementById("scannedBoyName").innerText = "🚴 " + boyName;
+        document.getElementById("scannedDate").innerText = date;
+        buildReturnRows(data.items);
+
+        document.getElementById("returnForm").style.display = "block";
+        document.getElementById("scanResult").className = "scan-result show";
+        document.getElementById("scanResult").innerHTML = `<div style="color:var(--success);font-size:13px;font-weight:700;">✅ QR scan hua! Neeche return quantity baro.</div>`;
+    } catch(e) {
+        alert("Invalid QR code.");
+    }
+}
+
+function onScanError(err) { /* silent */ }
+
+async function confirmReturn() {
+    if (!scannedDelivery) return;
+
+    const returnedItems = scannedDelivery.items.map(item => {
+        // Prefer scan count, fallback to manual input
+        const retQty = returnScanCounts[item.id] !== undefined
+            ? returnScanCounts[item.id]
+            : parseInt(document.getElementById("ret_" + item.id)?.value) || 0;
+        return { ...item, returned: retQty, sold: item.sent - retQty };
+    });
+
+    const totalSold = returnedItems.reduce((s, i) => s + i.price * i.sold, 0);
+
+    try {
+        await db.collection("deliveries").doc(scannedDelivery.id).update({
+            items: returnedItems, totalSold,
+            status: "returned",
+            returnedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Record in cashflow
+        await db.collection("cashflow").add({
+            title: `Delivery Return — ${scannedDelivery.boyName} — ${returnedItems.filter(i=>i.sold>0).map(i=>i.name+' x'+i.sold).join(", ")}`,
+            amount: totalSold, type: "in",
+            date: new Date().toLocaleDateString("en-GB"),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Show summary
+        showReturnSummary(returnedItems, totalSold);
+        showFlash(`₹${totalSold.toLocaleString()} record hua!`);
+    } catch(e) { alert("Error: " + e.message); }
+}
+
+function showReturnSummary(returnedItems, totalSold) {
+    returnScanCounts = {};
+    stopReturnScanner();
+    document.getElementById("totalSoldAmt").innerText = "₹" + totalSold.toLocaleString();
+    document.getElementById("summaryRows").innerHTML = returnedItems.map(item => `
+        <div class="summary-row">
+            <span class="sr-label">${item.name}</span>
+            <span class="sr-sent">↑ ${item.sent} bheja</span>
+            <span class="sr-return">↓ ${item.returned} wapas</span>
+            <span class="sr-sold">✅ ${item.sold} bika</span>
+        </div>`).join("");
+    document.getElementById("returnSummary").style.display = "block";
+    scannedDelivery = null;
+}
+
+function cancelReturn() {
+    returnScanCounts = {};
+    stopReturnScanner();
+    scannedDelivery = null;
+    document.getElementById("returnForm").style.display = "none";
+    document.getElementById("returnSummary").style.display = "none";
+    document.getElementById("scanResult").className = "scan-result";
+}
+
+// Tab switch
+function switchTab(tab) {
+    ["send","return","log"].forEach(t => {
+        document.getElementById("section-" + t).style.display = t === tab ? "block" : "none";
+        document.getElementById("tab-" + t).classList.toggle("active", t === tab);
+    });
+    if (tab !== "return") stopScanner();
+}
+
+function showFlash(msg) {
+    const f = document.getElementById("flash");
+    f.innerText = "✓ " + msg;
+    f.classList.add("show");
+    setTimeout(() => f.classList.remove("show"), 2800);
+}
+
+function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
+function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
+function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
+function goPage(p)       { window.location.href = p; }
+</script>
+<script src="animations.js" defer></script>
+</body>
+</html>
