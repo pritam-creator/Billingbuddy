@@ -278,6 +278,7 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('ledger.html')">       <i class="fa-solid fa-book"></i> Ledger</li>
             <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
             <li onclick="goPage('invoice.html')">      <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('livesale.html')">     <i class="fa-solid fa-bolt"></i> Live Sale</li>
             <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
             <li onclick="goPage('inventory.html')">    <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
             <li onclick="goPage('orders.html')">       <i class="fa-solid fa-basket-shopping"></i> Orders</li>
@@ -361,6 +362,17 @@ select, .entry-input, .search-wrap input {
 
 <script>
     if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
+    // Manager ko Invoice History nahi dikhti
+    if (localStorage.getItem("userRole") === "manager") {
+        document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f8f5f0;font-family:'DM Sans',sans-serif;text-align:center;padding:20px;">
+          <div style="font-size:56px;margin-bottom:20px;">🔒</div>
+          <h2 style="font-size:20px;font-weight:800;color:#1a1208;margin-bottom:8px;">Access Restricted</h2>
+          <p style="font-size:14px;color:#9c8e7a;margin-bottom:28px;">Invoice History sirf Admin dekh sakta hai.</p>
+          <button onclick="window.location.replace('dashboard.html')" style="padding:12px 28px;background:#dc2626;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">← Dashboard Par Jao</button>
+        </div>`;
+        throw new Error("Access denied");
+    }
 
     const firebaseConfig = {
         apiKey: "AIzaSyBjETFSgZsMDw1JRI0fIcUNMCMOHxBMaLA",

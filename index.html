@@ -534,11 +534,17 @@ select, .entry-input, .search-wrap input {
 
     try {
       const docSnap = await db.collection("settings").doc("admin").get();
+      const data = docSnap.exists ? docSnap.data() : {};
 
-      if (docSnap.exists && pin === String(docSnap.data().pin)) {
+      const isAdmin = pin === String(data.pin || "");
+      const isMgr   = data.managerPin && pin === String(data.managerPin);
+
+      if (isAdmin || isMgr) {
         // ✅ Success
-        showMessage("✓ Welcome back!", "#16a34a");
+        const role = isAdmin ? "admin" : "manager";
+        showMessage("✓ Welcome" + (role === "manager" ? " Manager" : "") + "!", "#16a34a");
         localStorage.setItem("loggedIn", "true");
+        localStorage.setItem("userRole", role);
         setTimeout(() => {
           document.getElementById("transitionOverlay").classList.add("active");
         }, 400);

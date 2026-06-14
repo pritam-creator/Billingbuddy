@@ -363,6 +363,31 @@ select, .entry-input, .search-wrap input {
             <div class="status-msg" id="statusMsg">✓ Saved to Cloud</div>
         </div>
 
+        <span class="section-label">Security</span>
+        <div class="settings-card" id="managerPinCard">
+            <h3><i class="fa-solid fa-user-shield"></i> Manager PIN</h3>
+            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">Manager login ke liye alag PIN set karein. Manager ko Invoice History nahi dikhegi.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Manager PIN (4 digits)</label>
+                    <input type="password" id="managerPinInput" placeholder="New Manager PIN" maxlength="4" inputmode="numeric" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Manager PIN</label>
+                    <input type="password" id="managerPinConfirm" placeholder="Confirm PIN" maxlength="4" inputmode="numeric" autocomplete="off">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+                <button class="btn-save" id="saveMgrPinBtn" onclick="saveManagerPin()" style="width:auto;padding:10px 20px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Manager PIN
+                </button>
+                <button class="btn-outline" id="removeMgrPinBtn" onclick="removeManagerPin()" style="padding:10px 20px;">
+                    <i class="fa-solid fa-trash"></i> Remove Manager PIN
+                </button>
+            </div>
+            <div id="mgrPinStatus" style="font-size:13px;margin-top:10px;font-weight:600;"></div>
+        </div>
+
         <span class="section-label">Data Maintenance</span>
         <div class="settings-card">
             <h3><i class="fa-solid fa-database"></i> Backup &amp; Restore</h3>
@@ -504,6 +529,37 @@ select, .entry-input, .search-wrap input {
             } catch (err) { alert("Invalid backup file!"); }
         };
         reader.readAsText(file);
+    }
+
+    // ── Manager PIN ──
+    async function saveManagerPin() {
+        const p1 = document.getElementById("managerPinInput").value.trim();
+        const p2 = document.getElementById("managerPinConfirm").value.trim();
+        const st = document.getElementById("mgrPinStatus");
+        if (p1.length !== 4 || !/^\d{4}$/.test(p1)) { st.style.color="#dc2626"; st.innerText="PIN 4 digits ka hona chahiye."; return; }
+        if (p1 !== p2) { st.style.color="#dc2626"; st.innerText="PINs match nahi kar rahe."; return; }
+        const btn = document.getElementById("saveMgrPinBtn");
+        btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        try {
+            await db.collection("settings").doc("admin").set({ managerPin: p1 }, { merge: true });
+            st.style.color="#16a34a"; st.innerText="✓ Manager PIN save ho gaya!";
+            document.getElementById("managerPinInput").value = "";
+            document.getElementById("managerPinConfirm").value = "";
+        } catch(e) { st.style.color="#dc2626"; st.innerText="Error: " + e.message; }
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Manager PIN';
+    }
+    async function removeManagerPin() {
+        const st = document.getElementById("mgrPinStatus");
+        if (!confirm("Manager PIN hata dein?")) return;
+        try {
+            await db.collection("settings").doc("admin").update({ managerPin: firebase.firestore.FieldValue.delete() });
+            st.style.color="#16a34a"; st.innerText="✓ Manager PIN remove ho gaya.";
+        } catch(e) { st.style.color="#dc2626"; st.innerText="Error: " + e.message; }
+    }
+    // Hide manager PIN card from manager themselves
+    if (localStorage.getItem("userRole") === "manager") {
+        const c = document.getElementById("managerPinCard");
+        if (c) c.style.display = "none";
     }
 
     function openLogout()    { document.getElementById("logoutModal").style.display = "flex"; }

@@ -650,7 +650,8 @@ select, .entry-input, .search-wrap input {
             showLedgerResult(customer, balance, txns);
 
         } catch(e) {
-            errEl.innerText = "Error: " + e.message;
+            console.error("Ledger error:", e);
+            errEl.innerText = "Kuch problem aayi, dobara try karein.";
         }
 
         btn.disabled = false;

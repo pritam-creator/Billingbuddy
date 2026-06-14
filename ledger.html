@@ -306,6 +306,7 @@ select, .entry-input, .search-wrap input {
             <li class="active">                        <i class="fa-solid fa-book"></i> Ledger</li>
             <li onclick="goPage('items.html')">        <i class="fa-solid fa-cookie"></i> Items</li>
             <li onclick="goPage('invoice.html')">      <i class="fa-solid fa-file-invoice"></i> Invoice</li>
+            <li onclick="goPage('livesale.html')">     <i class="fa-solid fa-bolt"></i> Live Sale</li>
             <li onclick="goPage('customer_view.html')"><i class="fa-solid fa-address-book"></i> Customers</li>
             <li onclick="goPage('inventory.html')">    <i class="fa-solid fa-boxes-stacked"></i> Inventory</li>
             <li onclick="goPage('orders.html')">       <i class="fa-solid fa-basket-shopping"></i> Orders</li>
@@ -373,6 +374,16 @@ select, .entry-input, .search-wrap input {
             <label>Opening Balance (₹) — optional</label>
             <input type="number" class="entry-input" id="newOpening" placeholder="0" inputmode="numeric">
         </div>
+        <div class="form-group" style="margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" id="toggleCustomPrices" onchange="toggleCustomPricesSection(this.checked)" style="width:16px;height:16px;accent-color:var(--accent);">
+                Iske liye custom item rates set karein
+            </label>
+        </div>
+        <div id="customPricesSection" style="display:none; margin-top:8px; border-top:1px solid var(--border); padding-top:12px;">
+            <p style="font-size:12px;color:var(--sub);margin-bottom:10px;">Sirf jo alag rate hai wo bharein. Baaki items ka normal rate lagega.</p>
+            <div id="customPricesList"></div>
+        </div>
         <button class="btn-create" id="createBtn" onclick="createCustomer()">
             <i class="fa-solid fa-cloud-arrow-up"></i> Create Account
         </button>
@@ -395,6 +406,7 @@ select, .entry-input, .search-wrap input {
             <div class="detail-actions">
                 <div class="act-icon act-wa"  onclick="sendWhatsApp()"  title="WhatsApp Reminder"><i class="fa-brands fa-whatsapp"></i></div>
                 <div class="act-icon act-pdf" onclick="downloadPDF()"   title="Download PDF"><i class="fa-solid fa-file-pdf"></i></div>
+                <div class="act-icon" onclick="openCustomRates()" title="Custom Rates" style="background:#fff8ed;color:#c8860a;border:1px solid #fde68a;"><i class="fa-solid fa-tags"></i></div>
                 <div class="act-icon act-del" onclick="openDeleteCust()" title="Delete Account"><i class="fa-solid fa-trash"></i></div>
                 <div class="act-icon act-close" onclick="closeDetail()" title="Close"><i class="fa-solid fa-xmark"></i></div>
             </div>
@@ -431,6 +443,22 @@ select, .entry-input, .search-wrap input {
                 </button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Custom Rates Modal -->
+<div class="confirm-overlay" id="customRatesModal" style="align-items:flex-end;">
+    <div style="background:var(--card-bg);border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:520px;margin:0 auto;border:1px solid var(--border);max-height:75vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h3 style="font-size:16px;font-weight:700;color:var(--text);"><i class="fa-solid fa-tags" style="color:var(--accent);"></i> Custom Item Rates</h3>
+            <button onclick="closeCustomRates()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--sub);">✕</button>
+        </div>
+        <p style="font-size:12px;color:var(--sub);margin-bottom:14px;">Khali chhodo = normal rate lagega. Sirf jinka rate alag hai uska bharo.</p>
+        <div id="customRatesList"></div>
+        <button onclick="saveCustomRates()" style="width:100%;margin-top:16px;padding:14px;border:none;border-radius:13px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Custom Rates
+        </button>
+        <div id="customRatesMsg" style="text-align:center;font-size:13px;font-weight:600;margin-top:10px;"></div>
     </div>
 </div>
 
@@ -587,8 +615,10 @@ select, .entry-input, .search-wrap input {
     }
 
     // ── Open Customer Detail ──
+    let currentCustomer = null;
     function openDetail(id) {
         activeId = id;
+        currentCustomer = allCustomers.find(c => c.id === id) || null;
         document.getElementById("detailModal").classList.add("active");
         renderDetail();
     }
@@ -602,6 +632,7 @@ select, .entry-input, .search-wrap input {
         if (!activeId) return;
         const cust    = allCustomers.find(c => c.id === activeId);
         if (!cust) return;
+        currentCustomer = cust; // keep in sync
 
         document.getElementById("detAvatar").innerText  = (cust.name || "?")[0].toUpperCase();
         document.getElementById("detName").innerText    = cust.name;
@@ -697,15 +728,28 @@ select, .entry-input, .search-wrap input {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
+        // Collect custom prices
+        const customPrices = {};
+        document.querySelectorAll(".custom-price-input").forEach(inp => {
+            const val = parseFloat(inp.value);
+            if (inp.value.trim() !== "" && !isNaN(val) && val >= 0) {
+                customPrices[inp.dataset.itemid] = val;
+            }
+        });
+
         // FIX: save to "customers" collection
-        await db.collection("customers").add({
+        const custData = {
             name, phone, openingDue: opening,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        if (Object.keys(customPrices).length > 0) custData.customPrices = customPrices;
+        await db.collection("customers").add(custData);
 
         document.getElementById("newName").value    = "";
         document.getElementById("newPhone").value   = "";
         document.getElementById("newOpening").value = "";
+        document.getElementById("toggleCustomPrices").checked = false;
+        document.getElementById("customPricesSection").style.display = "none";
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Create Account';
         closeAddModal();
@@ -789,6 +833,80 @@ select, .entry-input, .search-wrap input {
     }
 
     // ── Modals ──
+    // ── Custom Rates Modal ──
+    function openCustomRates() {
+        const list = document.getElementById("customRatesList");
+        const existing = currentCustomer ? (currentCustomer.customPrices || {}) : {};
+        if (!allItemsForPricing.length) {
+            list.innerHTML = "<p style='font-size:13px;color:var(--sub);text-align:center;padding:20px 0;'>Items load ho rahe hain...</p>";
+        } else {
+            list.innerHTML = allItemsForPricing.map(item => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:var(--text);">${item.name}</div>
+                        <div style="font-size:11px;color:var(--sub);">Normal: ₹${parseFloat(item.price||0).toLocaleString()}</div>
+                    </div>
+                    <input type="number" class="custom-rate-edit-input" data-itemid="${item.id}"
+                        value="${existing[item.id] !== undefined ? existing[item.id] : ""}"
+                        placeholder="₹" inputmode="decimal" step="0.5"
+                        style="width:90px;padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;text-align:right;">
+                </div>`).join("");
+        }
+        document.getElementById("customRatesMsg").innerText = "";
+        document.getElementById("customRatesModal").style.display = "flex";
+        document.getElementById("customRatesModal").classList.add("active");
+    }
+    function closeCustomRates() {
+        document.getElementById("customRatesModal").style.display = "";
+        document.getElementById("customRatesModal").classList.remove("active");
+    }
+    async function saveCustomRates() {
+        if (!currentCustomer) return;
+        const customPrices = {};
+        document.querySelectorAll(".custom-rate-edit-input").forEach(inp => {
+            const val = parseFloat(inp.value);
+            if (inp.value.trim() !== "" && !isNaN(val) && val >= 0) {
+                customPrices[inp.dataset.itemid] = val;
+            }
+        });
+        try {
+            await db.collection("customers").doc(currentCustomer.id).update({ customPrices });
+            currentCustomer.customPrices = customPrices;
+            document.getElementById("customRatesMsg").style.color = "#16a34a";
+            document.getElementById("customRatesMsg").innerText = "✓ Custom rates save ho gaye!";
+            setTimeout(closeCustomRates, 1200);
+        } catch(e) {
+            document.getElementById("customRatesMsg").style.color = "#dc2626";
+            document.getElementById("customRatesMsg").innerText = "Error: " + e.message;
+        }
+    }
+
+    // Custom prices toggle
+    let allItemsForPricing = [];
+    db.collection("items").orderBy("name").onSnapshot(snap => {
+        allItemsForPricing = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    });
+    function toggleCustomPricesSection(show) {
+        const sec = document.getElementById("customPricesSection");
+        sec.style.display = show ? "block" : "none";
+        if (show) {
+            const list = document.getElementById("customPricesList");
+            if (!allItemsForPricing.length) {
+                list.innerHTML = "<p style='font-size:12px;color:var(--sub);'>Items load ho rahe hain...</p>";
+            } else {
+                list.innerHTML = allItemsForPricing.map(item => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:var(--text);">${item.name}</div>
+                            <div style="font-size:11px;color:var(--sub);">Normal: ₹${parseFloat(item.price||0).toLocaleString()}</div>
+                        </div>
+                        <input type="number" class="custom-price-input" data-itemid="${item.id}"
+                            placeholder="Custom ₹" inputmode="decimal" step="0.5"
+                            style="width:90px;padding:7px 10px;border:1.5px solid var(--border);border-radius:10px;background:var(--card-bg);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;text-align:right;">
+                    </div>`).join("");
+            }
+        }
+    }
     function openAddModal()  { document.getElementById("addModal").classList.add("active"); }
     function closeAddModal() { document.getElementById("addModal").classList.remove("active"); }
     function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
