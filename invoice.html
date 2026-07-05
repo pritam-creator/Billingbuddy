@@ -349,6 +349,10 @@ select, .entry-input, .search-wrap input {
                     <label>Mobile Number</label>
                     <input type="tel" id="custPhone" placeholder="+91 00000 00000">
                 </div>
+                <div class="form-group">
+                    <label>Invoice Date</label>
+                    <input type="date" id="invoiceDate">
+                </div>
             </div>
         </div>
 
@@ -548,7 +552,29 @@ select, .entry-input, .search-wrap input {
         return basePrice;
     }
 
+    // ── Invoice date helpers (reads the custom date input, falls back to today) ──
+    function getInvoiceDateInput() {
+        const val = document.getElementById("invoiceDate").value; // YYYY-MM-DD
+        if (!val) return new Date();
+        const [y, m, d] = val.split("-").map(Number);
+        return new Date(y, m - 1, d);
+    }
+    function getInvoiceDateStr() {
+        return getInvoiceDateInput().toLocaleDateString("en-GB"); // DD/MM/YYYY
+    }
+    function getInvoiceDateRaw() {
+        const val = document.getElementById("invoiceDate").value; // YYYY-MM-DD
+        if (!val) return new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        return val.replace(/-/g, "");
+    }
+
     window.onload = async () => {
+        // Default invoice date = today, but user can change it
+        const dateInput = document.getElementById("invoiceDate");
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().slice(0, 10);
+        }
+
         // Load settings
         try {
             const doc = await db.collection("settings").doc("store_config").get();
@@ -697,7 +723,7 @@ select, .entry-input, .search-wrap input {
     function buildPrintHTML(invNo, subtotal, oldDue, discount, paid, finalTotal, due) {
         const customer = document.getElementById("custName").value || "Walk-in Customer";
         const phone    = document.getElementById("custPhone").value || "";
-        const today    = new Date().toLocaleDateString("en-GB");
+        const today    = getInvoiceDateStr();
         const rows     = cart.map(i =>
             `<tr>
                 <td>${i.name}</td>
@@ -709,7 +735,7 @@ select, .entry-input, .search-wrap input {
         return `
         <div class="inv-header">
             <div style="display:flex; align-items:center; gap:16px;">
-                <div class="inv-accent"></div>
+                ${storeData.logo ? `<img src="${storeData.logo}" style="width:48px;height:48px;object-fit:contain;border-radius:10px;background:#fff;">` : `<div class="inv-accent"></div>`}
                 <div>
                     <h1 style="font-size:26px; font-family:'DM Sans',sans-serif; font-weight:800;">INVOICE</h1>
                     <p style="font-size:13px; opacity:0.7;"># ${invNo}</p>
@@ -719,6 +745,7 @@ select, .entry-input, .search-wrap input {
                 <h2 style="font-size:18px; font-family:'DM Sans',sans-serif;">${storeData.name || "Surjya Bakery"}</h2>
                 <p style="font-size:12px; opacity:0.7; margin-top:4px;">${storeData.address || ""}</p>
                 ${storeData.phone ? `<p style="font-size:12px; opacity:0.7;">${storeData.phone}</p>` : ""}
+                ${storeData.gst ? `<p style="font-size:12px; opacity:0.7;">GSTIN: ${storeData.gst}</p>` : ""}
             </div>
         </div>
         <div class="inv-body">
@@ -749,7 +776,14 @@ select, .entry-input, .search-wrap input {
                     ${due > 0 ? `<b style="color:#dc2626;">Balance Due: ₹${due.toFixed(2)}</b>` : `<b style="color:#16a34a;">✓ Paid in Full</b>`}
                 </div>
             </div>
-            <div style="margin-top:32px; text-align:center; font-size:12px; color:#9c8e7a; border-top:1px dashed #ede8df; padding-top:16px;">
+            ${storeData.seal ? `
+            <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+                <div style="text-align:center;">
+                    <img src="${storeData.seal}" style="width:110px; max-height:70px; object-fit:contain;">
+                    <p style="font-size:11px; color:#9c8e7a; margin-top:4px;">Authorized Signatory</p>
+                </div>
+            </div>` : ""}
+            <div style="margin-top:16px; text-align:center; font-size:12px; color:#9c8e7a; border-top:1px dashed #ede8df; padding-top:16px;">
                 Thank you for your visit! 🥐 ${storeData.name || "Surjya Bakery"}
             </div>
         </div>`;
@@ -771,7 +805,7 @@ select, .entry-input, .search-wrap input {
         const paid       = parseFloat(document.getElementById("payPaid").value) || 0;
         const finalTotal = (subtotal - discount) + oldDue;
         const due        = finalTotal - paid;
-        const today      = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const today      = getInvoiceDateRaw();
 
         try {
             // FIX: save to "orders" collection (not "sales")
@@ -788,7 +822,7 @@ select, .entry-input, .search-wrap input {
                 due,
                 status:    "Delivered",
                 dateRaw:   today,
-                date:      new Date().toLocaleDateString("en-GB"),
+                date:      getInvoiceDateStr(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
@@ -945,16 +979,36 @@ select, .entry-input, .search-wrap input {
         }
     }
 
+    /* ── Shared branding helpers: Logo / GST / Seal+Signature ── */
+    function _addLogo(doc, d, x, y, size, withBg) {
+        if (!d.logo) return;
+        try {
+            if (withBg) { doc.setFillColor(255,255,255); doc.roundedRect(x-1.2, y-1.2, size+2.4, size+2.4, 1.5, 1.5, "F"); }
+            doc.addImage(d.logo, "JPEG", x, y, size, size);
+        } catch(e) {}
+    }
+    function _addSealSignature(doc, d, x, y, labelColor) {
+        if (d.seal) {
+            try { doc.addImage(d.seal, "JPEG", x, y, 32, 17); } catch(e) {}
+        }
+        doc.setFontSize(6.5); doc.setFont("helvetica","normal");
+        doc.setTextColor(...(labelColor || [140,130,115]));
+        doc.text("Authorized Signatory", x+16, y+21, {align:"center"});
+    }
+
     /* ── Template 1: Dark Gold ── */
     function pdf_DarkGold(jsPDF, d) {
         const doc = new jsPDF({ unit:"mm", format:"a5" });
         doc.setFillColor(26,18,8); doc.rect(0,0,148,22,"F");
         doc.setFillColor(200,134,10); doc.rect(0,0,5,22,"F");
+        const lx = d.logo ? 28 : 12;
+        _addLogo(doc, d, 9, 3, 16, true);
         doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold");
-        doc.text("INVOICE", 12, 10);
-        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`# ${d.invNo}`, 12, 16);
+        doc.text("INVOICE", lx, 10);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`# ${d.invNo}`, lx, 16);
         doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text(d.store, 144, 10, {align:"right"});
         doc.setFontSize(7); doc.setFont("helvetica","normal"); if(d.address) doc.text(d.address, 144, 15, {align:"right"});
+        if(d.gst) { doc.setFontSize(6.5); doc.text(`GSTIN: ${d.gst}`, 144, 19.5, {align:"right"}); }
         doc.setTextColor(26,18,8);
         doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text("Bill To", 10, 30);
         doc.setFont("helvetica","normal"); doc.text(d.customer, 10, 36);
@@ -964,8 +1018,10 @@ select, .entry-input, .search-wrap input {
         _autoTable(doc, d, 46, [26,18,8], [255,255,255]);
         const y = doc.lastAutoTable.finalY + 6;
         _totals(doc, d, y, [200,134,10]);
+        let footerY = y + 18;
+        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [140,130,115]); footerY += 26; } else { footerY += 6; }
         doc.setTextColor(156,142,122); doc.setFontSize(7);
-        doc.text(`Thank you for visiting ${d.store}!`, 74, y+34, {align:"center"});
+        doc.text(`Thank you for visiting ${d.store}!`, 74, footerY, {align:"center"});
         return doc;
     }
 
@@ -974,22 +1030,26 @@ select, .entry-input, .search-wrap input {
         const doc = new jsPDF({ unit:"mm", format:"a5" });
         doc.setDrawColor(200,134,10); doc.setLineWidth(1.2);
         doc.line(10, 8, 138, 8);
+        _addLogo(doc, d, 122, 3, 16, false);
         doc.setTextColor(26,18,8); doc.setFontSize(18); doc.setFont("helvetica","bold");
         doc.text(d.store, 10, 17);
         doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(156,142,122);
         doc.text(`Invoice #${d.invNo}  •  ${d.dateStr}`, 10, 23);
+        if(d.gst) { doc.setFontSize(7); doc.text(`GSTIN: ${d.gst}`, 10, 28); }
         doc.setLineWidth(0.2); doc.setDrawColor(220,215,210);
-        doc.line(10, 26, 138, 26);
+        doc.line(10, 31, 138, 31);
         doc.setTextColor(26,18,8); doc.setFontSize(9); doc.setFont("helvetica","bold");
-        doc.text(d.customer, 10, 33); doc.setFont("helvetica","normal"); doc.setFontSize(8);
-        if(d.phone) doc.text(d.phone, 10, 38);
-        _autoTable(doc, d, 44, [245,240,235], [26,18,8], true);
+        doc.text(d.customer, 10, 38); doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        if(d.phone) doc.text(d.phone, 10, 43);
+        _autoTable(doc, d, 49, [245,240,235], [26,18,8], true);
         const y = doc.lastAutoTable.finalY + 6;
         _totals(doc, d, y, [200,134,10]);
+        let footerY = y + 18;
+        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [140,130,115]); footerY += 26; } else { footerY += 4; }
         doc.setDrawColor(200,134,10); doc.setLineWidth(0.8);
-        doc.line(10, y+36, 138, y+36);
+        doc.line(10, footerY, 138, footerY);
         doc.setTextColor(156,142,122); doc.setFontSize(7);
-        doc.text(`Thank you! — ${d.store}`, 74, y+41, {align:"center"});
+        doc.text(`Thank you! — ${d.store}`, 74, footerY+5, {align:"center"});
         return doc;
     }
 
@@ -998,11 +1058,14 @@ select, .entry-input, .search-wrap input {
         const doc = new jsPDF({ unit:"mm", format:"a5" });
         doc.setFillColor(30,58,95); doc.rect(0,0,148,26,"F");
         doc.setFillColor(59,130,246); doc.rect(0,23,148,3,"F");
+        const lx = d.logo ? 26 : 10;
+        _addLogo(doc, d, 8, 4, 16, true);
         doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont("helvetica","bold");
-        doc.text("INVOICE", 10, 12);
-        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`#${d.invNo}`, 10, 18);
+        doc.text("INVOICE", lx, 12);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`#${d.invNo}`, lx, 18);
         doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text(d.store, 144, 12, {align:"right"});
         doc.setFontSize(7); doc.setFont("helvetica","normal"); if(d.address) doc.text(d.address,144,18,{align:"right"});
+        if(d.gst) { doc.setFontSize(6.5); doc.text(`GSTIN: ${d.gst}`, 144, 22.5, {align:"right"}); }
         doc.setTextColor(30,58,95);
         doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text("Customer:", 10, 35);
         doc.setFont("helvetica","normal"); doc.text(d.customer, 35, 35);
@@ -1012,9 +1075,11 @@ select, .entry-input, .search-wrap input {
         _autoTable(doc, d, 46, [30,58,95], [255,255,255]);
         const y = doc.lastAutoTable.finalY + 6;
         _totals(doc, d, y, [59,130,246]);
-        doc.setFillColor(30,58,95); doc.rect(0, y+36, 148, 8, "F");
+        let footerY = y + 18;
+        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [225,232,245]); footerY += 26; } else { footerY += 6; }
+        doc.setFillColor(30,58,95); doc.rect(0, footerY-4, 148, 8, "F");
         doc.setTextColor(255,255,255); doc.setFontSize(7);
-        doc.text(`Thank you for your business! — ${d.store}`, 74, y+41, {align:"center"});
+        doc.text(`Thank you for your business! — ${d.store}`, 74, footerY+1, {align:"center"});
         return doc;
     }
 
@@ -1023,19 +1088,24 @@ select, .entry-input, .search-wrap input {
         const doc = new jsPDF({ unit:"mm", format:"a5" });
         doc.setFillColor(20,83,45); doc.rect(0,0,148,24,"F");
         doc.setFillColor(34,197,94); doc.rect(0,21,148,3,"F");
+        const lx = d.logo ? 26 : 10;
+        _addLogo(doc, d, 8, 3, 15, true);
         doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold");
-        doc.text("BILL / INVOICE", 10, 11);
-        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`#${d.invNo}  •  ${d.dateStr}`, 10, 17);
+        doc.text("BILL / INVOICE", lx, 11);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`#${d.invNo}  •  ${d.dateStr}`, lx, 17);
         doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text(d.store, 144, 11, {align:"right"});
         doc.setFontSize(7); doc.setFont("helvetica","normal"); if(d.address) doc.text(d.address,144,17,{align:"right"});
+        if(d.gst) { doc.setFontSize(6.5); doc.text(`GSTIN: ${d.gst}`, 144, 21.5, {align:"right"}); }
         doc.setTextColor(20,83,45); doc.setFontSize(9); doc.setFont("helvetica","bold");
         doc.text(d.customer, 10, 33); doc.setFont("helvetica","normal"); doc.setFontSize(8);
         if(d.phone) doc.text(d.phone, 10, 38);
         _autoTable(doc, d, 44, [20,83,45], [255,255,255]);
         const y = doc.lastAutoTable.finalY + 6;
         _totals(doc, d, y, [22,163,74]);
+        let footerY = y + 18;
+        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [140,130,115]); footerY += 26; } else { footerY += 4; }
         doc.setTextColor(156,142,122); doc.setFontSize(7);
-        doc.text("🌿  " + d.store + "  — Thank you!", 74, y+36, {align:"center"});
+        doc.text("🌿  " + d.store + "  — Thank you!", 74, footerY, {align:"center"});
         return doc;
     }
 
@@ -1045,6 +1115,7 @@ select, .entry-input, .search-wrap input {
         doc.setFillColor(255,241,242); doc.rect(0,0,148,210,"F");
         doc.setFillColor(190,18,60); doc.rect(0,0,148,8,"F");
         doc.setFillColor(253,164,175); doc.rect(0,8,148,3,"F");
+        _addLogo(doc, d, 8, 12, 14, true);
         doc.setTextColor(190,18,60); doc.setFontSize(16); doc.setFont("helvetica","bold");
         doc.text(d.store.toUpperCase(), 74, 22, {align:"center"});
         doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(156,142,122);
@@ -1054,13 +1125,16 @@ select, .entry-input, .search-wrap input {
         doc.setTextColor(26,18,8); doc.setFontSize(8); doc.setFont("helvetica","bold");
         doc.text(`Invoice: ${d.invNo}`, 10, 38); doc.setFont("helvetica","normal");
         doc.text(d.customer, 10, 44); if(d.phone) doc.text(d.phone, 10, 49);
+        if(d.gst) { doc.setFontSize(7); doc.text(`GSTIN: ${d.gst}`, 10, 54); }
         doc.setFont("helvetica","bold"); doc.text(d.dateStr, 138, 38, {align:"right"});
-        _autoTable(doc, d, 55, [190,18,60], [255,255,255], false, [255,236,239]);
+        _autoTable(doc, d, 58, [190,18,60], [255,255,255], false, [255,236,239]);
         const y = doc.lastAutoTable.finalY + 6;
         _totals(doc, d, y, [190,18,60]);
-        doc.setDrawColor(253,164,175); doc.line(20, y+36, 128, y+36);
+        let footerY = y + 18;
+        if (d.seal) { _addSealSignature(doc, d, 96, footerY, [190,18,60]); footerY += 26; } else { footerY += 6; }
+        doc.setDrawColor(253,164,175); doc.line(20, footerY, 128, footerY);
         doc.setTextColor(190,18,60); doc.setFontSize(7);
-        doc.text(`With love — ${d.store}  ♥`, 74, y+41, {align:"center"});
+        doc.text(`With love — ${d.store}  ♥`, 74, footerY+5, {align:"center"});
         return doc;
     }
 
@@ -1069,24 +1143,29 @@ select, .entry-input, .search-wrap input {
         const doc = new jsPDF({ unit:"mm", format:"a5" });
         doc.setFillColor(0,0,0); doc.rect(0,0,148,28,"F");
         doc.setFillColor(250,204,21); doc.rect(0,25,148,6,"F");
+        const lx = d.logo ? 30 : 10;
+        _addLogo(doc, d, 8, 4, 18, true);
         doc.setTextColor(255,255,255); doc.setFontSize(20); doc.setFont("helvetica","bold");
-        doc.text("INVOICE", 10, 16);
+        doc.text("INVOICE", lx, 16);
         doc.setFontSize(7); doc.setFont("helvetica","normal"); doc.setTextColor(156,156,156);
-        doc.text(`#${d.invNo}`, 10, 22);
+        doc.text(`#${d.invNo}`, lx, 22);
         doc.setTextColor(0,0,0); doc.setFontSize(9); doc.setFont("helvetica","bold");
         doc.text(d.store, 144, 22, {align:"right"});
         doc.setTextColor(26,18,8); doc.setFontSize(11); doc.setFont("helvetica","bold");
         doc.text(d.customer.toUpperCase(), 10, 40);
         doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(100,100,100);
         if(d.phone) doc.text(d.phone, 10, 46);
+        if(d.gst) { doc.setFontSize(7); doc.text(`GSTIN: ${d.gst}`, 10, 51); }
         doc.setFont("helvetica","bold"); doc.setTextColor(26,18,8); doc.text(d.dateStr, 138, 40, {align:"right"});
-        _autoTable(doc, d, 52, [0,0,0], [255,255,255]);
+        _autoTable(doc, d, 56, [0,0,0], [255,255,255]);
         const y = doc.lastAutoTable.finalY + 6;
         _totals(doc, d, y, [202,138,4]);
-        doc.setFillColor(0,0,0); doc.rect(0, y+36, 148, 8, "F");
-        doc.setFillColor(250,204,21); doc.rect(0, y+36, 5, 8, "F");
+        let footerY = y + 18;
+        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [90,90,90]); footerY += 26; } else { footerY += 6; }
+        doc.setFillColor(0,0,0); doc.rect(0, footerY-4, 148, 8, "F");
+        doc.setFillColor(250,204,21); doc.rect(0, footerY-4, 5, 8, "F");
         doc.setTextColor(255,255,255); doc.setFontSize(7);
-        doc.text(`THANK YOU — ${d.store.toUpperCase()}`, 74, y+41, {align:"center"});
+        doc.text(`THANK YOU — ${d.store.toUpperCase()}`, 74, footerY+1, {align:"center"});
         return doc;
     }
 
@@ -1145,7 +1224,7 @@ select, .entry-input, .search-wrap input {
         const paid       = parseFloat(document.getElementById("payPaid").value) || 0;
         const finalTotal = (subtotal - discount) + oldDue;
         const due        = finalTotal - paid;
-        const today      = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const today      = getInvoiceDateRaw();
         const customer   = document.getElementById("custName").value.trim()  || "Walk-in";
         const phone      = document.getElementById("custPhone").value.trim() || "";
 
@@ -1155,16 +1234,17 @@ select, .entry-input, .search-wrap input {
                 items: cart, subtotal, oldDue, discount,
                 total: finalTotal, paid, due,
                 status: "Delivered", dateRaw: today,
-                date: new Date().toLocaleDateString("en-GB"),
+                date: getInvoiceDateStr(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             const store   = storeData.name || "Surjya Bakery";
             const address = storeData.address || "";
-            const dateStr = new Date().toLocaleDateString("en-GB");
+            const dateStr = getInvoiceDateStr();
 
             // ── Generate PDF using selected template ──
-            const pdfData = { invNo: currentInvNo, customer, phone, items: cart, subtotal, oldDue, discount, finalTotal, paid, due, store, address, dateStr };
+            const pdfData = { invNo: currentInvNo, customer, phone, items: cart, subtotal, oldDue, discount, finalTotal, paid, due, store, address, dateStr,
+                               gst: storeData.gst || "", logo: storeData.logo || "", seal: storeData.seal || "" };
             const doc = generatePDF(pdfData);
             doc.save(`Invoice_${currentInvNo}.pdf`);
 
@@ -1228,7 +1308,7 @@ select, .entry-input, .search-wrap input {
         const msg = `*${store}* 🥐\n` +
             `Invoice: *${invNo}*\n` +
             `Customer: ${customer}\n` +
-            `Date: ${new Date().toLocaleDateString("en-GB")}\n\n` +
+            `Date: ${getInvoiceDateStr()}\n\n` +
             `*Items:*\n${itemList}\n\n` +
             `*Total: ₹${finalTotal.toFixed(2)}*\n` +
             `Paid: ₹${paid.toFixed(2)}\n` +
@@ -1250,7 +1330,7 @@ select, .entry-input, .search-wrap input {
         const itemList = cart.map(i => `${i.name} x${i.qty} = Rs.${i.total}`).join("\n");
         const store    = storeData.name || "Surjya Bakery";
 
-        const text = `${store}\nInvoice: ${invNo}\nDate: ${new Date().toLocaleDateString("en-GB")}\nCustomer: ${customer}\n\n${itemList}\n\nTotal: Rs.${finalTotal.toFixed(2)}\nPaid: Rs.${paid.toFixed(2)}\n${due > 0 ? `Due: Rs.${due.toFixed(2)}` : "Status: Paid"}`;
+        const text = `${store}\nInvoice: ${invNo}\nDate: ${getInvoiceDateStr()}\nCustomer: ${customer}\n\n${itemList}\n\nTotal: Rs.${finalTotal.toFixed(2)}\nPaid: Rs.${paid.toFixed(2)}\n${due > 0 ? `Due: Rs.${due.toFixed(2)}` : "Status: Paid"}`;
 
         navigator.clipboard.writeText(text).then(() => {
             alert("Bill text copied! Kisi bhi app mein paste kar sakte ho.");

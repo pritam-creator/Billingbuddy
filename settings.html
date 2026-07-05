@@ -343,6 +343,40 @@ select, .entry-input, .search-wrap input {
                     <label>Store Address</label>
                     <input type="text" id="storeAddress" placeholder="Street, City, PIN">
                 </div>
+                <div class="form-group full">
+                    <label>GST Number (GSTIN)</label>
+                    <input type="text" id="gstNumber" placeholder="e.g. 22ABCDE1234F1Z5" maxlength="15" style="text-transform:uppercase;">
+                </div>
+            </div>
+        </div>
+
+        <span class="section-label">Invoice Branding</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-image"></i> Logo, Seal &amp; Signature</h3>
+            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
+                Yeh images aapke invoice PDF par automatically print hongi. Chhoti aur clear image use karein.
+            </p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Business Logo</label>
+                    <input type="file" id="logoFile" accept="image/*" onchange="handleImageUpload(event,'logo')">
+                    <div id="logoPreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
+                        <img id="logoPreview" style="width:64px; height:64px; object-fit:contain; border-radius:12px; border:1.5px solid var(--border); background:#fff;">
+                        <button type="button" class="btn-outline" style="padding:8px 14px; font-size:12px;" onclick="removeImage('logo')">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Seal &amp; Signature</label>
+                    <input type="file" id="sealFile" accept="image/*" onchange="handleImageUpload(event,'seal')">
+                    <div id="sealPreviewWrap" style="display:none; margin-top:10px; align-items:center; gap:12px;">
+                        <img id="sealPreview" style="width:90px; height:54px; object-fit:contain; border-radius:8px; border:1.5px solid var(--border); background:#fff;">
+                        <button type="button" class="btn-outline" style="padding:8px 14px; font-size:12px;" onclick="removeImage('seal')">
+                            <i class="fa-solid fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -446,6 +480,70 @@ select, .entry-input, .search-wrap input {
     document.getElementById("menuBtn").onclick = () => { sidebar.classList.add("active"); overlay.classList.add("active"); };
     overlay.onclick = () => { sidebar.classList.remove("active"); overlay.classList.remove("active"); };
 
+    // ── Logo / Seal image state (base64 data URLs) ──
+    let logoData = "";
+    let sealData = "";
+
+    // Resize + compress an uploaded image so it stays small enough for Firestore
+    function resizeImage(file, maxW, maxH, quality) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    let w = img.width, h = img.height;
+                    const ratio = Math.min(maxW / w, maxH / h, 1);
+                    w = Math.round(w * ratio);
+                    h = Math.round(h * ratio);
+                    const canvas = document.createElement("canvas");
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext("2d");
+                    // white background (handles transparent PNGs cleanly for PDF)
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL("image/jpeg", quality));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function handleImageUpload(event, type) {
+        const file = event.target.files[0];
+        if (!file) return;
+        try {
+            const maxDim = type === "logo" ? 300 : 400;
+            const dataUrl = await resizeImage(file, maxDim, maxDim, 0.75);
+            if (type === "logo") {
+                logoData = dataUrl;
+                document.getElementById("logoPreview").src = dataUrl;
+                document.getElementById("logoPreviewWrap").style.display = "flex";
+            } else {
+                sealData = dataUrl;
+                document.getElementById("sealPreview").src = dataUrl;
+                document.getElementById("sealPreviewWrap").style.display = "flex";
+            }
+        } catch (e) {
+            alert("Image load nahi hui, dobara try karein.");
+        }
+    }
+
+    function removeImage(type) {
+        if (type === "logo") {
+            logoData = "";
+            document.getElementById("logoFile").value = "";
+            document.getElementById("logoPreviewWrap").style.display = "none";
+        } else {
+            sealData = "";
+            document.getElementById("sealFile").value = "";
+            document.getElementById("sealPreviewWrap").style.display = "none";
+        }
+    }
+
     window.onload = async function () {
         try {
             const doc = await db.collection("settings").doc("store_config").get();
@@ -457,7 +555,19 @@ select, .entry-input, .search-wrap input {
                 document.getElementById("currency").value     = d.currency    || "₹";
                 document.getElementById("ownerName").value    = d.ownerName   || "";
                 document.getElementById("salesTarget").value  = d.salesTarget || "";
+                document.getElementById("gstNumber").value    = d.gst         || "";
                 if (d.name) document.getElementById("sidebarName").innerText = d.name;
+
+                if (d.logo) {
+                    logoData = d.logo;
+                    document.getElementById("logoPreview").src = d.logo;
+                    document.getElementById("logoPreviewWrap").style.display = "flex";
+                }
+                if (d.seal) {
+                    sealData = d.seal;
+                    document.getElementById("sealPreview").src = d.seal;
+                    document.getElementById("sealPreviewWrap").style.display = "flex";
+                }
                 localStorage.setItem("bakery_settings", JSON.stringify(d));
             }
         } catch (e) { console.warn("Load error:", e); }
@@ -476,6 +586,9 @@ select, .entry-input, .search-wrap input {
             currency:    document.getElementById("currency").value.trim() || "₹",
             ownerName:   document.getElementById("ownerName").value.trim(),
             salesTarget: parseFloat(document.getElementById("salesTarget").value) || 5000,
+            gst:         document.getElementById("gstNumber").value.trim().toUpperCase(),
+            logo:        logoData,
+            seal:        sealData,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         };
 
