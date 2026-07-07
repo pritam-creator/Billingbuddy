@@ -21,8 +21,10 @@
             --danger: #dc2626; --danger-bg: #fee2e2;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -298,6 +300,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">     <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">   <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">     <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li class="active" onclick="goPage('settings.html')"><i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -347,6 +351,22 @@ select, .entry-input, .search-wrap input {
                     <label>GST Number (GSTIN)</label>
                     <input type="text" id="gstNumber" placeholder="e.g. 22ABCDE1234F1Z5" maxlength="15" style="text-transform:uppercase;">
                 </div>
+                <div class="form-group">
+                    <label>GST Rate (%)</label>
+                    <select id="gstRate">
+                        <option value="0">No Tax Breakup</option>
+                        <option value="5">5% (2.5% CGST + 2.5% SGST)</option>
+                        <option value="12">12% (6% CGST + 6% SGST)</option>
+                        <option value="18">18% (9% CGST + 9% SGST)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price Type</label>
+                    <select id="gstInclusive">
+                        <option value="yes">Prices are Tax-Inclusive</option>
+                        <option value="no">Prices are Tax-Exclusive</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -391,6 +411,45 @@ select, .entry-input, .search-wrap input {
             </div>
         </div>
 
+        <span class="section-label">UPI Payments</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-qrcode"></i> UPI QR on Invoice</h3>
+            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
+                UPI ID daalo to jab bhi invoice mein balance due ho, ek QR code automatically print hoga jise customer scan karke pay kar sake.
+            </p>
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>UPI ID</label>
+                    <input type="text" id="upiId" placeholder="e.g. surjyabakery@okhdfcbank">
+                </div>
+            </div>
+        </div>
+
+        <span class="section-label">Loyalty Points</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-gift"></i> Customer Loyalty Program</h3>
+            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
+                Customer ke mobile number se points automatically track honge (jinhone bhi phone number diya hoga).
+            </p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Enable Loyalty Points</label>
+                    <select id="loyaltyEnabled">
+                        <option value="no">Off</option>
+                        <option value="yes">On</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>₹ Spent per 1 Point</label>
+                    <input type="number" id="loyaltyRate" placeholder="e.g. 100" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>₹ Value per 1 Point (for redemption)</label>
+                    <input type="number" id="loyaltyValue" placeholder="e.g. 1" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+
         <div style="display:flex; align-items:center; gap:16px; margin-bottom:28px;">
             <button class="btn-save" id="saveBtn" onclick="saveSettings()">
                 <i class="fa-solid fa-cloud-arrow-up"></i> Save Changes
@@ -421,6 +480,17 @@ select, .entry-input, .search-wrap input {
                 </button>
             </div>
             <div id="mgrPinStatus" style="font-size:13px;margin-top:10px;font-weight:600;"></div>
+        </div>
+
+        <span class="section-label">App</span>
+        <div class="settings-card">
+            <h3><i class="fa-solid fa-mobile-screen-button"></i> Install App</h3>
+            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
+                App ko phone ke home screen pe install karo — faster access aur offline mode ke liye.
+            </p>
+            <button class="btn-save" style="margin-top:0;" onclick="window.triggerPWAInstall && window.triggerPWAInstall()">
+                <i class="fa-solid fa-download"></i> Install App
+            </button>
         </div>
 
         <span class="section-label">Data Maintenance</span>
@@ -465,6 +535,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     const darkToggle = document.getElementById("darkToggle");
     if (localStorage.getItem("darkMode") === "true") { document.body.classList.add("dark"); darkToggle.innerText = "☀️"; }
@@ -556,6 +629,12 @@ select, .entry-input, .search-wrap input {
                 document.getElementById("ownerName").value    = d.ownerName   || "";
                 document.getElementById("salesTarget").value  = d.salesTarget || "";
                 document.getElementById("gstNumber").value    = d.gst         || "";
+                document.getElementById("gstRate").value      = d.gstRate != null ? String(d.gstRate) : "0";
+                document.getElementById("gstInclusive").value = d.gstInclusive || "yes";
+                document.getElementById("loyaltyEnabled").value = d.loyaltyEnabled || "no";
+                document.getElementById("loyaltyRate").value    = d.loyaltyRate   || 100;
+                document.getElementById("loyaltyValue").value   = d.loyaltyValue  || 1;
+                document.getElementById("upiId").value = d.upiId || "";
                 if (d.name) document.getElementById("sidebarName").innerText = d.name;
 
                 if (d.logo) {
@@ -587,6 +666,12 @@ select, .entry-input, .search-wrap input {
             ownerName:   document.getElementById("ownerName").value.trim(),
             salesTarget: parseFloat(document.getElementById("salesTarget").value) || 5000,
             gst:         document.getElementById("gstNumber").value.trim().toUpperCase(),
+            gstRate:     parseFloat(document.getElementById("gstRate").value) || 0,
+            gstInclusive: document.getElementById("gstInclusive").value,
+            loyaltyEnabled: document.getElementById("loyaltyEnabled").value,
+            loyaltyRate:    parseFloat(document.getElementById("loyaltyRate").value)  || 100,
+            loyaltyValue:   parseFloat(document.getElementById("loyaltyValue").value) || 1,
+            upiId: document.getElementById("upiId").value.trim(),
             logo:        logoData,
             seal:        sealData,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
@@ -611,11 +696,17 @@ select, .entry-input, .search-wrap input {
     }
 
     async function exportData() {
-        const cols = ["items", "orders", "cashflow", "ledger", "customers", "employees"];
+        const cols = ["items", "orders", "cashflow", "ledger", "customers", "employees",
+                      "clientRates", "deliveries", "expenses", "livesales", "production", "settings",
+                      "loyalty", "creditNotes", "subscriptions", "suppliers", "supplierLedger"];
         let allData = { backupDate: new Date().toISOString() };
         for (let col of cols) {
-            const snap = await db.collection(col).get();
-            allData[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            try {
+                const snap = await db.collection(col).get();
+                allData[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch (e) {
+                allData[col] = []; // collection may not exist yet — skip safely
+            }
         }
         const a = document.createElement("a");
         a.setAttribute("href", "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2)));
@@ -670,8 +761,8 @@ select, .entry-input, .search-wrap input {
             st.style.color="#16a34a"; st.innerText="✓ Manager PIN remove ho gaya.";
         } catch(e) { st.style.color="#dc2626"; st.innerText="Error: " + e.message; }
     }
-    // Hide manager PIN card from manager themselves
-    if (localStorage.getItem("userRole") === "manager") {
+    // Hide manager PIN card from manager/staff themselves
+    if (localStorage.getItem("userRole") === "manager" || localStorage.getItem("userRole") === "staff") {
         const c = document.getElementById("managerPinCard");
         if (c) c.style.display = "none";
     }
@@ -683,5 +774,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (msg, src, line) => console.error("Error:", msg, "at", src, line);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

@@ -19,8 +19,10 @@
             --danger: #dc2626; --danger-bg: #fee2e2;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -76,7 +78,7 @@
         .clr-out { color: #fb923c; }
 
         /* Filter tabs */
-        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; }
+        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; -webkit-overflow-scrolling: touch; }
         .tab { padding: 8px 18px; border-radius: 100px; background: var(--card-bg); border: 1.5px solid var(--border); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.18s; color: var(--sub); font-family: 'DM Sans', sans-serif; }
         .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
         body.dark .tab.active { background: var(--accent); border-color: var(--accent); }
@@ -287,6 +289,8 @@ select, .entry-input, .search-wrap input {
             <li class="active">                        <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -322,6 +326,23 @@ select, .entry-input, .search-wrap input {
                     <p>Total Cash Out</p>
                     <h4 class="clr-out" id="totalOut">₹ 0</h4>
                 </div>
+            </div>
+        </div>
+
+        <!-- Reports -->
+        <span class="section-label">Reports</span>
+        <div class="summary-card" style="margin-bottom:16px;">
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                <div style="flex:1; min-width:140px;">
+                    <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; display:block; margin-bottom:6px;">Month</label>
+                    <input type="month" id="reportMonth" style="width:100%; padding:11px 12px; border-radius:10px; border:1.5px solid var(--border); font-family:'DM Sans',sans-serif; font-size:14px; background:var(--card-bg); color:var(--text);">
+                </div>
+                <button class="icon-btn" style="width:auto; padding:0 16px; height:44px; font-size:13px; font-weight:700;" onclick="generatePnlReport()">
+                    <i class="fa-solid fa-chart-pie"></i>&nbsp; P&amp;L Report
+                </button>
+                <button class="icon-btn" style="width:auto; padding:0 16px; height:44px; font-size:13px; font-weight:700;" onclick="exportGstSummary()">
+                    <i class="fa-solid fa-file-csv"></i>&nbsp; GSTR-1 CSV
+                </button>
             </div>
         </div>
 
@@ -367,6 +388,19 @@ select, .entry-input, .search-wrap input {
     </div>
 </div>
 
+<!-- P&L Report Modal -->
+<div class="modal-overlay" id="pnlModal">
+    <div class="modal-sheet">
+        <h3><i class="fa-solid fa-chart-pie" style="color:var(--accent);"></i> Profit &amp; Loss Report</h3>
+        <p id="pnlMonthLabel" style="font-size:13px; color:var(--sub); margin-bottom:16px;"></p>
+        <div id="pnlBody" style="font-size:14px;"></div>
+        <p style="font-size:11px; color:var(--sub); margin-top:16px; line-height:1.5;">
+            <i class="fa-solid fa-circle-info"></i> COGS un items ke liye calculate hota hai jinka Recipe/Ingredient Cost Inventory mein set hai. "Other Expenses" mein Cash Records ke saare "Cash Out" entries shamil hain — agar salary/purchase yahin log hoti hai to woh bhi ismein aa jayega.
+        </p>
+        <button class="btn-cancel-m" onclick="closePnlModal()">Close</button>
+    </div>
+</div>
+
 <!-- Delete Confirm Modal -->
 <div class="confirm-overlay" id="deleteModal">
     <div class="confirm-card">
@@ -405,6 +439,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -430,10 +467,21 @@ select, .entry-input, .search-wrap input {
 
     // State
     let allRecords  = [];
+    let allOrders   = [];
+    let allItemsMap = {};
+    let storeData   = s;
     let entryType   = "in";
     let currentFilter = "All";
     let pendingDeleteId = null;
     const todayStr  = today.toLocaleDateString("en-GB");
+
+    db.collection("settings").doc("store_config").get().then(doc => { if (doc.exists) storeData = doc.data(); }).catch(()=>{});
+    db.collection("orders").onSnapshot(snap => { allOrders = snap.docs.map(d => d.data()); });
+    db.collection("items").onSnapshot(snap => {
+        allItemsMap = {};
+        snap.docs.forEach(d => { const it = d.data(); allItemsMap[(it.name||"").trim().toLowerCase()] = it; });
+    });
+    document.getElementById("reportMonth").value = new Date().toISOString().slice(0,7);
 
     db.collection("cashflow").orderBy("timestamp", "desc").onSnapshot(snap => {
         allRecords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -546,6 +594,88 @@ select, .entry-input, .search-wrap input {
         document.getElementById("entryModal").classList.add("active");
     }
     function closeModal() { document.getElementById("entryModal").classList.remove("active"); }
+    // ── Monthly Profit & Loss Report ──
+    function ddmmyyyyToYm(dateStr) {
+        // dateStr is "DD/MM/YYYY"
+        const parts = (dateStr || "").split("/");
+        if (parts.length !== 3) return "";
+        return `${parts[2]}-${parts[1].padStart(2,"0")}`;
+    }
+
+    function closePnlModal() { document.getElementById("pnlModal").classList.remove("active"); }
+
+    function generatePnlReport() {
+        const ym = document.getElementById("reportMonth").value; // YYYY-MM
+        if (!ym) return alert("Month select karo.");
+        const ymCompact = ym.replace("-", "");
+
+        const monthOrders = allOrders.filter(o => String(o.dateRaw || "").startsWith(ymCompact));
+        const revenue = monthOrders.reduce((s,o) => s + parseFloat(o.total || 0), 0);
+
+        let cogs = 0, uncosted = 0;
+        monthOrders.forEach(o => {
+            (o.items || []).forEach(i => {
+                const match = allItemsMap[(i.name||"").trim().toLowerCase()];
+                if (match && match.costPrice != null) {
+                    cogs += parseFloat(match.costPrice) * parseFloat(i.qty || 0);
+                } else {
+                    uncosted += parseFloat(i.price||0) * parseFloat(i.qty||0);
+                }
+            });
+        });
+
+        const monthExpenses = allRecords.filter(r => r.type === "out" && ddmmyyyyToYm(r.date) === ym)
+            .reduce((s,r) => s + parseFloat(r.amount || 0), 0);
+
+        const grossProfit = revenue - cogs;
+        const netProfit    = grossProfit - monthExpenses;
+        const [yy, mm] = ym.split("-");
+        const label = new Date(yy, mm-1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+
+        document.getElementById("pnlMonthLabel").innerText = label;
+        document.getElementById("pnlBody").innerHTML = `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);"><span style="color:var(--sub);">Revenue (Sales)</span><b>₹${revenue.toFixed(2)}</b></div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);"><span style="color:var(--sub);">Cost of Goods Sold (COGS)</span><b style="color:var(--danger,#dc2626);">−₹${cogs.toFixed(2)}</b></div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-weight:800;"><span>Gross Profit</span><b>₹${grossProfit.toFixed(2)}</b></div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);"><span style="color:var(--sub);">Other Expenses (Cash Out)</span><b style="color:var(--danger,#dc2626);">−₹${monthExpenses.toFixed(2)}</b></div>
+            <div style="display:flex; justify-content:space-between; padding:12px 0; font-size:17px; font-weight:800; color:var(--accent);"><span>Net Profit</span><b>₹${netProfit.toFixed(2)}</b></div>
+            ${uncosted > 0 ? `<p style="font-size:11px; color:var(--sub); margin-top:6px;">Note: ₹${uncosted.toFixed(2)} ki sales aise items ki hain jinka Recipe Cost set nahi hai — COGS mein shamil nahi hui.</p>` : ""}
+        `;
+        document.getElementById("pnlModal").classList.add("active");
+    }
+
+    // ── GSTR-1 Style Tax Summary Export ──
+    function exportGstSummary() {
+        const ym = document.getElementById("reportMonth").value;
+        if (!ym) return alert("Month select karo.");
+        const gstRate = parseFloat(storeData.gstRate) || 0;
+        if (!gstRate) return alert("Settings mein GST Rate set karo pehle.");
+
+        const ymCompact = ym.replace("-", "");
+        const monthOrders = allOrders.filter(o => String(o.dateRaw || "").startsWith(ymCompact));
+
+        let totalTaxable = 0, totalTax = 0, totalInvoiceValue = 0;
+        const rows = monthOrders.map(o => {
+            const saleValue = Math.max(parseFloat(o.subtotal||o.total||0) - parseFloat(o.discount||0), 0);
+            const taxable = storeData.gstInclusive === "no" ? saleValue : saleValue / (1 + gstRate/100);
+            const tax     = storeData.gstInclusive === "no" ? saleValue * (gstRate/100) : saleValue - taxable;
+            totalTaxable += taxable; totalTax += tax; totalInvoiceValue += parseFloat(o.total||0);
+            return [o.invNo || "", o.date || "", o.customer || "", taxable.toFixed(2), (tax/2).toFixed(2), (tax/2).toFixed(2), parseFloat(o.total||0).toFixed(2)];
+        });
+
+        let csv = "Invoice No,Date,Customer,Taxable Value,CGST,SGST,Total Invoice Value\n";
+        rows.forEach(r => { csv += r.map(c => `"${c}"`).join(",") + "\n"; });
+        csv += `\n"TOTAL","","","${totalTaxable.toFixed(2)}","${(totalTax/2).toFixed(2)}","${(totalTax/2).toFixed(2)}","${totalInvoiceValue.toFixed(2)}"\n`;
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `GST_Summary_${ym}.csv`;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+    }
+
     function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
     function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
     function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
@@ -553,5 +683,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

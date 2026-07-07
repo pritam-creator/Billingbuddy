@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
             --bg: #f8f5f0; --sidebar-bg: #ffffff; --card-bg: #ffffff;
@@ -20,8 +22,10 @@
             --warn: #d97706; --warn-bg: #fef9c3;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -69,7 +73,7 @@
         .stat-card h3 { font-size: 20px; font-weight: 700; color: var(--text); }
 
         /* Filter tabs */
-        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; }
+        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; -webkit-overflow-scrolling: touch; }
         .tab { padding: 8px 18px; border-radius: 100px; background: var(--card-bg); border: 1.5px solid var(--border); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.18s; color: var(--sub); font-family: 'DM Sans', sans-serif; }
         .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
         body.dark .tab.active { background: var(--accent); border-color: var(--accent); }
@@ -259,6 +263,13 @@ select, .entry-input, .search-wrap input {
 
             /* input-zoom-fix: iOS zoom prevention */
         input, select, textarea { font-size: 16px !important; }
+    /* ── Print styles: only the printable invoice shows when printing ── */
+    #printSection { display: none; }
+    @media print {
+        body * { visibility: hidden; }
+        #printSection, #printSection * { visibility: visible; }
+        #printSection { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+    }
     </style>
     <link rel="stylesheet" href="animations.css">
 </head>
@@ -286,6 +297,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
             <li class="active">                        <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -331,7 +344,11 @@ select, .entry-input, .search-wrap input {
         </div>
 
         <!-- Invoice List -->
-        <div id="invoiceList"></div>
+        <div id="invoiceList">
+            <div class="skeleton" style="height:70px; margin-bottom:12px;"></div>
+            <div class="skeleton" style="height:70px; margin-bottom:12px;"></div>
+            <div class="skeleton" style="height:70px; margin-bottom:12px;"></div>
+        </div>
     </main>
 </div>
 
@@ -343,11 +360,71 @@ select, .entry-input, .search-wrap input {
             <button class="close-btn" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="modal-scroll" id="detailContent"></div>
-        <div class="modal-footer">
-            <button class="btn-close-modal" onclick="closeDetail()">Close</button>
+        <div class="modal-footer" style="display:flex; flex-wrap:wrap; gap:8px;">
+            <button class="btn-close-modal" style="flex:1 1 auto; width:auto; background:#eef0f2; color:#1a1208;" onclick="printCurrentInvoice()">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
+            <button class="btn-close-modal" style="flex:1 1 auto; width:auto; background:#eef0f2; color:#1a1208;" onclick="downloadCurrentInvoicePDF()">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+            </button>
+            <button class="btn-close-modal" style="flex:1 1 100%; width:auto; background:#eef0f2; color:#1a1208;" onclick="printThermalFromHistory()">
+                <i class="fa-solid fa-bluetooth-b"></i> Bluetooth Thermal Print <span style="font-size:10px; opacity:0.6;">(experimental)</span>
+            </button>
+            <button class="btn-close-modal" style="flex:1 1 auto; width:auto; background:#fff7ed; color:#c2410c;" onclick="openReturnModal()">
+                <i class="fa-solid fa-rotate-left"></i> Return
+            </button>
+            <button class="btn-close-modal" style="flex:1 1 auto; width:auto; background:#fee2e2; color:#dc2626;" onclick="askDeleteCurrentInvoice()">
+                <i class="fa-solid fa-trash"></i> Delete
+            </button>
+            <button class="btn-close-modal" style="flex:1 1 100%; width:auto;" onclick="closeDetail()">Close</button>
         </div>
     </div>
 </div>
+
+<!-- Return / Credit Note Modal -->
+<div class="modal-overlay" id="returnModal">
+    <div class="modal-sheet">
+        <div class="modal-header">
+            <h3>Item Return / Credit Note</h3>
+            <button class="close-btn" onclick="closeReturnModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-scroll">
+            <p style="font-size:13px; color:var(--sub); margin-bottom:12px;">
+                Jo items customer wapas kar raha hai unhe select karo aur quantity set karo.
+            </p>
+            <div id="returnItemsList"></div>
+            <div style="margin-top:14px;">
+                <label style="font-size:12px; font-weight:700; color:var(--sub); display:block; margin-bottom:6px;">Reason (optional)</label>
+                <input type="text" id="returnReason" placeholder="e.g. Item damaged / Wrong item"
+                       style="width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--border); font-family:'DM Sans',sans-serif; font-size:14px; box-sizing:border-box;">
+            </div>
+            <div style="background:var(--bg); border-radius:12px; padding:14px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:13px; font-weight:700;">Refund Amount</span>
+                <span id="returnTotalDisplay" style="font-size:20px; font-weight:800; color:#c2410c;">₹0.00</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-close-modal" style="background:#c2410c; color:#fff;" onclick="confirmReturn()">
+                <i class="fa-solid fa-check"></i> Confirm Return
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="confirm-overlay" id="deleteModal">
+    <div class="confirm-card">
+        <h3>Invoice Delete Karein?</h3>
+        <p>Yeh action wapas nahi ho sakta. Invoice permanently delete ho jayega.</p>
+        <div class="confirm-btns">
+            <button class="conf-btn conf-no" onclick="closeDeleteModal()">Nahi</button>
+            <button class="conf-btn conf-ok" style="background:#dc2626;" onclick="confirmDeleteInvoice()">Haan, Delete Karo</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden printable invoice section (used only when printing) -->
+<div id="printSection"></div>
 
 <!-- Logout Modal -->
 <div class="confirm-overlay" id="logoutModal">
@@ -363,8 +440,8 @@ select, .entry-input, .search-wrap input {
 
 <script>
     if (localStorage.getItem("loggedIn") !== "true") window.location.replace("index.html");
-    // Manager ko Invoice History nahi dikhti
-    if (localStorage.getItem("userRole") === "manager") {
+    // Manager/Staff ko Invoice History nahi dikhti
+    if (localStorage.getItem("userRole") === "manager" || localStorage.getItem("userRole") === "staff") {
         document.body.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f8f5f0;font-family:'DM Sans',sans-serif;text-align:center;padding:20px;">
           <div style="font-size:56px;margin-bottom:20px;">🔒</div>
@@ -383,6 +460,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -401,6 +481,17 @@ select, .entry-input, .search-wrap input {
 
     const s = JSON.parse(localStorage.getItem("bakery_settings") || "{}");
     if (s.name) document.getElementById("sidebarName").innerText = s.name;
+
+    // Fresh store settings (logo/GST/seal/name/address) for print & PDF
+    let storeData = s;
+    db.collection("settings").doc("store_config").get().then(doc => {
+        if (doc.exists) {
+            storeData = doc.data();
+            if (storeData.name) document.getElementById("sidebarName").innerText = storeData.name;
+        }
+    }).catch(() => {});
+
+    let currentInvoiceId = null;
 
     const todayDate = new Date().toLocaleDateString("en-GB");
     let allInvoices   = [];
@@ -495,6 +586,7 @@ select, .entry-input, .search-wrap input {
     function viewInvoice(id) {
         const inv = allInvoices.find(x => x._id === id);
         if (!inv) return;
+        currentInvoiceId = id;
 
         const invNo    = inv.invNo || "#" + id.slice(-6).toUpperCase();
         const customer = inv.customer || "Walk-in Customer";
@@ -544,6 +636,16 @@ select, .entry-input, .search-wrap input {
                 ${due > 0 ? `<div class="total-line"><span style="color:var(--warn);">Balance Due</span><span style="color:var(--warn); font-weight:800;">₹${due.toFixed(2)}</span></div>` : `<div class="total-line"><span style="color:var(--success);">Status</span><span style="color:var(--success); font-weight:700;">✓ Fully Paid</span></div>`}
             </div>
 
+            ${(inv.returns && inv.returns.length) ? `
+            <div style="background:#fff7ed; border-radius:12px; padding:12px 14px; margin-top:14px;">
+                <p style="font-size:12px; font-weight:800; color:#c2410c; margin-bottom:8px;"><i class="fa-solid fa-rotate-left"></i> Return / Credit Note History</p>
+                ${inv.returns.map(r => `
+                    <div style="font-size:12px; color:#7c2d12; margin-bottom:6px; padding-bottom:6px; border-bottom:1px dashed #fed7aa;">
+                        <b>${r.date || ""}</b> — ${(r.items||[]).map(i => `${i.name} ×${i.qty}`).join(", ")}
+                        <br>Refund: ₹${parseFloat(r.refundAmount||0).toFixed(2)}${r.reason ? ` · ${r.reason}` : ""}
+                    </div>`).join("")}
+            </div>` : ""}
+
             <div style="text-align:center; font-size:12px; color:var(--sub); margin-top:20px; padding-top:14px; border-top:1px dashed var(--border);">
                 Thank you for your visit! 🥐
             </div>`;
@@ -553,6 +655,486 @@ select, .entry-input, .search-wrap input {
 
     function closeDetail() { document.getElementById("detailModal").classList.remove("active"); }
 
+    // ── Delete Invoice ──
+    function askDeleteCurrentInvoice() {
+        if (!currentInvoiceId) return;
+        document.getElementById("deleteModal").classList.add("active");
+    }
+    function closeDeleteModal() { document.getElementById("deleteModal").classList.remove("active"); }
+
+    async function confirmDeleteInvoice() {
+        if (!currentInvoiceId) return closeDeleteModal();
+        try {
+            await db.collection("orders").doc(currentInvoiceId).delete();
+            closeDeleteModal();
+            closeDetail();
+            currentInvoiceId = null;
+            // list updates automatically via onSnapshot
+        } catch (e) {
+            alert("Delete nahi hua: " + e.message);
+        }
+    }
+
+    // ── Print Invoice (browser print) ──
+    function buildInvoicePrintHTML(inv) {
+        const invNo    = inv.invNo || "#" + inv._id.slice(-6).toUpperCase();
+        const customer = inv.customer || "Walk-in Customer";
+        const items    = inv.items || [];
+        const subtotal = parseFloat(inv.subtotal || inv.total || 0);
+        const discount = parseFloat(inv.discount || 0);
+        const oldDue   = parseFloat(inv.oldDue   || 0);
+        const total    = parseFloat(inv.total    || 0);
+        const paid     = parseFloat(inv.paid     || 0);
+        const due      = parseFloat(inv.due      || 0);
+
+        const rows = items.map(i => `
+            <tr>
+                <td style="padding:6px 0;">${i.name}</td>
+                <td style="padding:6px 0; text-align:center;">${i.qty}</td>
+                <td style="padding:6px 0; text-align:right;">₹${parseFloat(i.price||0).toFixed(2)}</td>
+                <td style="padding:6px 0; text-align:right; font-weight:700;">₹${(parseFloat(i.price||0)*parseFloat(i.qty||1)).toFixed(2)}</td>
+            </tr>`).join("");
+
+        return `
+        <div style="font-family:'DM Sans',sans-serif; max-width:480px; margin:0 auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #c8860a; padding-bottom:14px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    ${storeData.logo ? `<img src="${storeData.logo}" style="width:46px;height:46px;object-fit:contain;border-radius:8px;">` : ""}
+                    <div>
+                        <h1 style="font-size:22px; margin:0;">INVOICE</h1>
+                        <p style="font-size:12px; opacity:0.7; margin:2px 0 0;">${invNo}</p>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <h2 style="font-size:16px; margin:0;">${storeData.name || "Surjya Bakery"}</h2>
+                    <p style="font-size:11px; opacity:0.7; margin:2px 0 0;">${storeData.address || ""}</p>
+                    ${storeData.gst ? `<p style="font-size:11px; opacity:0.7; margin:2px 0 0;">GSTIN: ${storeData.gst}</p>` : ""}
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:16px; font-size:13px;">
+                <div><b>${customer}</b>${inv.phone ? `<br>${inv.phone}` : ""}</div>
+                <div style="text-align:right;"><b>Date:</b> ${inv.date || "—"}</div>
+            </div>
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead><tr style="border-bottom:1px solid #ccc; text-align:left;">
+                    <th style="padding:6px 0;">Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Total</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div style="margin-top:14px; text-align:right; font-size:13px;">
+                ${discount > 0 ? `<p>Discount: −₹${discount.toFixed(2)}</p>` : ""}
+                ${oldDue   > 0 ? `<p>Old Due: +₹${oldDue.toFixed(2)}</p>` : ""}
+                ${(() => {
+                    const gstRate = parseFloat(storeData.gstRate) || 0;
+                    if (!gstRate) return "";
+                    const saleValue = Math.max(subtotal - discount, 0);
+                    const taxable = storeData.gstInclusive === "no" ? saleValue : saleValue / (1 + gstRate / 100);
+                    const taxAmt  = storeData.gstInclusive === "no" ? saleValue * (gstRate / 100) : saleValue - taxable;
+                    const half = taxAmt / 2;
+                    return `<p>Taxable Value: ₹${taxable.toFixed(2)}</p>
+                            <p>CGST @ ${(gstRate/2).toFixed(1)}%: ₹${half.toFixed(2)}</p>
+                            <p>SGST @ ${(gstRate/2).toFixed(1)}%: ₹${half.toFixed(2)}</p>`;
+                })()}
+                <p style="font-size:18px; font-weight:800; border-top:2px solid #c8860a; padding-top:6px; margin-top:6px;">₹${formatINRHistory(total)}</p>
+                <p>Paid: ₹${paid.toFixed(2)}</p>
+                ${due > 0 ? `<p style="color:#dc2626; font-weight:700;">Balance Due: ₹${due.toFixed(2)}</p>` : `<p style="color:#16a34a; font-weight:700;">✓ Paid in Full</p>`}
+            </div>
+            ${(storeData.seal || (storeData.upiId && due > 0)) ? `
+            <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:flex-end;">
+                ${(storeData.upiId && due > 0) ? `
+                <div style="text-align:center;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(`upi://pay?pa=${storeData.upiId}&pn=${encodeURIComponent(storeData.name||"Surjya Bakery")}&am=${due.toFixed(2)}&cu=INR&tn=Invoice%20Payment`)}" style="width:80px; height:80px;">
+                    <p style="font-size:10px; opacity:0.7; margin-top:4px;">Scan &amp; Pay Due</p>
+                </div>` : `<div></div>`}
+                ${storeData.seal ? `
+                <div style="text-align:center;">
+                    <img src="${storeData.seal}" style="width:100px; max-height:64px; object-fit:contain;">
+                    <p style="font-size:10px; opacity:0.7; margin-top:4px;">Authorized Signatory</p>
+                </div>` : ""}
+            </div>` : ""}
+            <div style="text-align:center; font-size:11px; opacity:0.7; margin-top:18px; padding-top:12px; border-top:1px dashed #ccc;">
+                Thank you for your visit! 🥐 ${storeData.name || "Surjya Bakery"}
+            </div>
+        </div>`;
+    }
+
+    function printCurrentInvoice() {
+        if (!currentInvoiceId) return;
+        const inv = allInvoices.find(x => x._id === currentInvoiceId);
+        if (!inv) return;
+        document.getElementById("printSection").innerHTML = buildInvoicePrintHTML(inv);
+        setTimeout(() => window.print(), 200);
+    }
+
+    // ── Download PDF (jsPDF) ──
+    // ── UPI QR helper (jsPDF needs a dataURL, so we rasterize via canvas) ──
+    function loadImageAsDataURL(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext("2d").drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL("image/png"));
+                } catch(e) { reject(e); }
+            };
+            img.onerror = reject;
+            img.src = url;
+        });
+    }
+    async function getUpiQrDataUrlHistory(amount) {
+        if (!storeData.upiId || !(amount > 0)) return "";
+        const upiString = `upi://pay?pa=${encodeURIComponent(storeData.upiId)}&pn=${encodeURIComponent(storeData.name || "Surjya Bakery")}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent("Invoice Payment")}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+        try { return await loadImageAsDataURL(qrUrl); } catch(e) { return ""; }
+    }
+
+    function formatINRHistory(n) {
+        return Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    async function downloadCurrentInvoicePDF() {
+        if (!currentInvoiceId) return;
+        const inv = allInvoices.find(x => x._id === currentInvoiceId);
+        if (!inv) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc  = new jsPDF({ unit: "mm", format: "a5" });
+        const invNo    = inv.invNo || "#" + inv._id.slice(-6).toUpperCase();
+        const customer = inv.customer || "Walk-in Customer";
+        const items    = inv.items || [];
+        const subtotal = parseFloat(inv.subtotal || inv.total || 0);
+        const discount = parseFloat(inv.discount || 0);
+        const oldDue   = parseFloat(inv.oldDue   || 0);
+        const total    = parseFloat(inv.total    || 0);
+        const paid     = parseFloat(inv.paid     || 0);
+        const due      = parseFloat(inv.due      || 0);
+        const store    = storeData.name    || "Surjya Bakery";
+        const address  = storeData.address || "";
+        const qrDataUrl = await getUpiQrDataUrlHistory(due);
+
+        // Header
+        doc.setFillColor(26,18,8); doc.rect(0,0,148,22,"F");
+        doc.setFillColor(200,134,10); doc.rect(0,0,5,22,"F");
+        let lx = 12;
+        if (storeData.logo) {
+            try {
+                doc.setFillColor(255,255,255); doc.roundedRect(7.8, 1.8, 18.4, 18.4, 1.5, 1.5, "F");
+                doc.addImage(storeData.logo, "JPEG", 9, 3, 16, 16);
+                lx = 28;
+            } catch(e) {}
+        }
+        doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica","bold");
+        doc.text("INVOICE", lx, 10);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.text(`# ${invNo}`, lx, 16);
+        doc.setFontSize(10); doc.setFont("helvetica","bold"); doc.text(store, 144, 10, {align:"right"});
+        doc.setFontSize(7); doc.setFont("helvetica","normal"); if(address) doc.text(address, 144, 15, {align:"right"});
+        if (storeData.gst) { doc.setFontSize(6.5); doc.text(`GSTIN: ${storeData.gst}`, 144, 19.5, {align:"right"}); }
+
+        // Bill To / Date
+        doc.setTextColor(26,18,8);
+        doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.text("Bill To", 10, 30);
+        doc.setFont("helvetica","normal"); doc.text(customer, 10, 36);
+        if (inv.phone) doc.text(inv.phone, 10, 41);
+        doc.setFont("helvetica","bold"); doc.text("Date", 138, 30, {align:"right"});
+        doc.setFont("helvetica","normal"); doc.text(inv.date || "—", 138, 36, {align:"right"});
+
+        // Items table
+        const rows = items.map(i => [
+            i.name, String(i.qty),
+            `Rs.${formatINRHistory(i.price)}`,
+            `Rs.${formatINRHistory(parseFloat(i.price||0)*parseFloat(i.qty||1))}`
+        ]);
+        doc.autoTable({
+            startY: 46, head: [["Item","Qty","Rate","Total"]], body: rows,
+            theme: "striped",
+            headStyles: { fillColor: [26,18,8], textColor: [255,255,255], fontSize: 8, fontStyle: "bold" },
+            bodyStyles: { fontSize: 8 },
+            columnStyles: { 0:{cellWidth:60}, 1:{halign:"center"}, 2:{halign:"right"}, 3:{halign:"right",fontStyle:"bold"} },
+            margin: { left: 10, right: 10 }
+        });
+
+        let y = doc.lastAutoTable.finalY + 6;
+        if (y + 55 > 195) { doc.addPage(); y = 15; }
+        doc.setFontSize(8); doc.setTextColor(156,142,122); doc.setFont("helvetica","normal");
+        if (discount > 0) { doc.text("Discount:", 90, y); doc.text(`-Rs.${formatINRHistory(discount)}`, 138, y, {align:"right"}); y += 5; }
+        if (oldDue   > 0) { doc.text("Old Due:",  90, y); doc.text(`+Rs.${formatINRHistory(oldDue)}`,   138, y, {align:"right"}); y += 5; }
+        const gstRate = parseFloat(storeData.gstRate) || 0;
+        if (gstRate > 0) {
+            const saleValue = Math.max(subtotal - discount, 0);
+            const taxable = storeData.gstInclusive === "no" ? saleValue : saleValue / (1 + gstRate / 100);
+            const taxAmt  = storeData.gstInclusive === "no" ? saleValue * (gstRate / 100) : saleValue - taxable;
+            const half = taxAmt / 2;
+            doc.text("Taxable Value:", 90, y); doc.text(`Rs.${formatINRHistory(taxable)}`, 138, y, {align:"right"}); y += 5;
+            doc.text(`CGST @ ${(gstRate/2).toFixed(1)}%:`, 90, y); doc.text(`Rs.${formatINRHistory(half)}`, 138, y, {align:"right"}); y += 5;
+            doc.text(`SGST @ ${(gstRate/2).toFixed(1)}%:`, 90, y); doc.text(`Rs.${formatINRHistory(half)}`, 138, y, {align:"right"}); y += 5;
+        }
+        doc.setDrawColor(200,134,10); doc.setLineWidth(0.4); doc.line(10, y+2, 138, y+2);
+        doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.setTextColor(200,134,10);
+        doc.text(`Rs.${formatINRHistory(total)}`, 138, y+10, {align:"right"});
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(26,18,8);
+        doc.text(`Paid: Rs.${formatINRHistory(paid)}`, 10, y+10);
+        if (due > 0) { doc.setTextColor(220,38,38); doc.text(`Balance Due: Rs.${formatINRHistory(due)}`, 10, y+16); }
+        else         { doc.setTextColor(22,163,74); doc.text("Paid in Full", 10, y+16); }
+
+        let footerY = y + 28;
+        if (qrDataUrl) {
+            try { doc.addImage(qrDataUrl, "PNG", 10, footerY, 24, 24); } catch(e) {}
+            doc.setFontSize(6.5); doc.setFont("helvetica","normal"); doc.setTextColor(140,130,115);
+            doc.text("Scan & Pay Due", 22, footerY+28, {align:"center"});
+        }
+        if (storeData.seal) {
+            try { doc.addImage(storeData.seal, "JPEG", 104, footerY, 32, 17); } catch(e) {}
+            doc.setFontSize(6.5); doc.setFont("helvetica","normal"); doc.setTextColor(140,130,115);
+            doc.text("Authorized Signatory", 120, footerY+21, {align:"center"});
+        }
+        footerY += qrDataUrl ? 32 : (storeData.seal ? 26 : 6);
+        doc.setTextColor(156,142,122); doc.setFontSize(7);
+        doc.text(`Thank you for visiting ${store}!`, 74, footerY, {align:"center"});
+
+        try {
+            const wmLabel = due > 0 ? "DUE" : "PAID";
+            const wmColor = due > 0 ? [220,38,38] : [22,163,74];
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.09 }));
+            doc.setTextColor(...wmColor);
+            doc.setFontSize(60); doc.setFont("helvetica","bold");
+            doc.text(wmLabel, 74, 120, { angle: 35, align: "center" });
+            doc.restoreGraphicsState();
+        } catch(e) { /* GState unsupported — skip watermark gracefully */ }
+
+        doc.save(`Invoice_${invNo}.pdf`);
+    }
+
+    // ── Item Return / Credit Note ──
+    let returnCache = null; // { inv, itemStates: [{name, qty, price, maxQty, selQty, checked}] }
+
+    function openReturnModal() {
+        if (!currentInvoiceId) return;
+        const inv = allInvoices.find(x => x._id === currentInvoiceId);
+        if (!inv) return;
+        const items = inv.items || [];
+        if (!items.length) { alert("Is invoice mein koi item nahi hai."); return; }
+
+        // Subtract any quantity already returned in earlier credit notes (so it can't be returned twice)
+        const alreadyReturned = {}; // name -> qty
+        (inv.returns || []).forEach(r => {
+            (r.items || []).forEach(ri => {
+                alreadyReturned[ri.name] = (alreadyReturned[ri.name] || 0) + parseFloat(ri.qty || 0);
+            });
+        });
+
+        const itemStates = items.map(i => {
+            const originalQty = parseFloat(i.qty || 0);
+            const usedUp      = alreadyReturned[i.name] || 0;
+            const maxQty      = Math.max(originalQty - usedUp, 0);
+            return { name: i.name, price: parseFloat(i.price || 0), maxQty, selQty: maxQty, checked: maxQty > 0 };
+        });
+        returnCache = { inv, itemStates };
+
+        renderReturnItems();
+        document.getElementById("returnReason").value = "";
+        document.getElementById("returnModal").classList.add("active");
+    }
+
+    function closeReturnModal() {
+        document.getElementById("returnModal").classList.remove("active");
+        returnCache = null;
+    }
+
+    function renderReturnItems() {
+        const wrap = document.getElementById("returnItemsList");
+        if (!returnCache) return;
+        wrap.innerHTML = returnCache.itemStates.map((it, idx) => `
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); ${it.maxQty <= 0 ? 'opacity:0.4;' : ''}">
+                <input type="checkbox" id="ret_chk_${idx}" ${it.checked ? "checked" : ""} ${it.maxQty <= 0 ? "disabled" : ""}
+                       onchange="toggleReturnItem(${idx}, this.checked)" style="width:18px; height:18px;">
+                <div style="flex:1;">
+                    <p style="font-size:14px; font-weight:700;">${it.name}</p>
+                    <p style="font-size:12px; color:var(--sub);">₹${it.price.toFixed(2)} each ${it.maxQty <= 0 ? "· already fully returned" : "· max " + it.maxQty}</p>
+                </div>
+                <input type="number" id="ret_qty_${idx}" min="0" max="${it.maxQty}" step="1" value="${it.selQty}"
+                       ${it.maxQty <= 0 ? "disabled" : ""} oninput="updateReturnQty(${idx}, this.value)"
+                       style="width:60px; padding:8px; border-radius:8px; border:1.5px solid var(--border); text-align:center; font-family:'DM Sans',sans-serif;">
+            </div>`).join("");
+        updateReturnTotal();
+    }
+
+    function toggleReturnItem(idx, checked) {
+        returnCache.itemStates[idx].checked = checked;
+        updateReturnTotal();
+    }
+    function updateReturnQty(idx, val) {
+        const it = returnCache.itemStates[idx];
+        let q = parseFloat(val) || 0;
+        q = Math.max(0, Math.min(q, it.maxQty));
+        it.selQty = q;
+        updateReturnTotal();
+    }
+    function updateReturnTotal() {
+        if (!returnCache) return;
+        const total = returnCache.itemStates.reduce((sum, it) =>
+            sum + (it.checked ? it.selQty * it.price : 0), 0);
+        document.getElementById("returnTotalDisplay").innerText = "₹" + total.toFixed(2);
+    }
+
+    async function confirmReturn() {
+        if (!returnCache) return;
+        const { inv, itemStates } = returnCache;
+        const selected = itemStates.filter(it => it.checked && it.selQty > 0);
+        if (!selected.length) { alert("Kam se kam ek item select karo."); return; }
+
+        const refundAmount = selected.reduce((s, it) => s + it.selQty * it.price, 0);
+        const reason = document.getElementById("returnReason").value.trim();
+        const creditNoteItems = selected.map(it => ({ name: it.name, qty: it.selQty, price: it.price, amount: it.selQty * it.price }));
+
+        try {
+            // 1. Log the credit note for records/audit
+            const cnRef = await db.collection("creditNotes").add({
+                orderId: inv._id,
+                invNo: inv.invNo || "",
+                customer: inv.customer || "Walk-in",
+                phone: inv.phone || "",
+                items: creditNoteItems,
+                refundAmount,
+                reason,
+                date: new Date().toLocaleDateString("en-GB"),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // 2. Adjust the original invoice's total & due
+            const newTotal = Math.max(parseFloat(inv.total || 0) - refundAmount, 0);
+            const paid     = parseFloat(inv.paid || 0);
+            const newDue   = Math.max(newTotal - paid, 0);
+            await db.collection("orders").doc(inv._id).update({
+                total: newTotal,
+                due: newDue,
+                returns: firebase.firestore.FieldValue.arrayUnion({
+                    creditNoteId: cnRef.id, items: creditNoteItems, refundAmount, reason,
+                    date: new Date().toLocaleDateString("en-GB")
+                })
+            });
+
+            // 3. Best-effort: add returned quantity back to matching inventory items (by name)
+            try {
+                const itemsSnap = await db.collection("items").get();
+                const batch = db.batch();
+                itemsSnap.docs.forEach(d => {
+                    const match = creditNoteItems.find(ci => ci.name.trim().toLowerCase() === (d.data().name || "").trim().toLowerCase());
+                    if (match) batch.update(d.ref, { stock: firebase.firestore.FieldValue.increment(match.qty) });
+                });
+                await batch.commit();
+            } catch (e) { /* inventory restock is best-effort only */ }
+
+            closeReturnModal();
+            closeDetail();
+            alert("✓ Return record ho gaya. Refund: ₹" + refundAmount.toFixed(2));
+        } catch (e) {
+            alert("Return save nahi hua: " + e.message);
+        }
+    }
+
+    // ── Bluetooth Thermal Print (Experimental) ──
+    // Different printer models use different BLE service UUIDs, so this tries
+    // a few common ones. Works only on Chrome/Android — not on iPhone/Safari.
+    const THERMAL_SERVICE_CANDIDATES = [
+        "000018f0-0000-1000-8000-00805f9b34fb",
+        "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+        "0000ff00-0000-1000-8000-00805f9b34fb"
+    ];
+
+    function buildEscPosReceipt(d) {
+        const enc = new TextEncoder();
+        let bytes = [];
+        const push = (str) => { bytes.push(...enc.encode(str)); };
+        const cmd  = (...arr) => { bytes.push(...arr); };
+        const ESC = 0x1B, GS = 0x1D;
+        const line = (label, value) => label.padEnd(20).slice(0,20) + value + "\n";
+
+        cmd(ESC, 0x40);
+        cmd(ESC, 0x61, 1);
+        cmd(ESC, 0x21, 0x30);
+        push((d.store || "Surjya Bakery") + "\n");
+        cmd(ESC, 0x21, 0x00);
+        if (d.address) push(d.address + "\n");
+        if (d.gst) push("GSTIN: " + d.gst + "\n");
+        push("--------------------------------\n");
+        cmd(ESC, 0x61, 0);
+        push(`Invoice: ${d.invNo}\n`);
+        push(`Date: ${d.dateStr}\n`);
+        push(`Customer: ${d.customer}\n`);
+        push("--------------------------------\n");
+        (d.items || []).forEach(i => {
+            const nameStr = String(i.name).padEnd(16).slice(0,16);
+            const qtyStr  = `x${i.qty}`.padEnd(5);
+            const amtStr  = `Rs.${(parseFloat(i.price)*parseFloat(i.qty)).toFixed(2)}`;
+            push(nameStr + qtyStr + amtStr + "\n");
+        });
+        push("--------------------------------\n");
+        if (d.discount > 0) push(line("Discount:", "-Rs." + d.discount.toFixed(2)));
+        if (d.oldDue   > 0) push(line("Old Due:",  "+Rs." + d.oldDue.toFixed(2)));
+        cmd(ESC, 0x21, 0x10);
+        push(line("TOTAL:", "Rs." + d.finalTotal.toFixed(2)));
+        cmd(ESC, 0x21, 0x00);
+        push(line("Paid:", "Rs." + d.paid.toFixed(2)));
+        if (d.due > 0) push(line("Balance Due:", "Rs." + d.due.toFixed(2)));
+        push("\n");
+        cmd(ESC, 0x61, 1);
+        push(`Thank you! ${d.store}\n\n\n`);
+        cmd(GS, 0x56, 0x42, 0x00);
+        return new Uint8Array(bytes);
+    }
+
+    async function printViaBluetooth(pdfData) {
+        if (!navigator.bluetooth) {
+            alert("Bluetooth printing sirf Chrome (Android) mein kaam karta hai. iPhone/Safari mein available nahi hai.");
+            return;
+        }
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: THERMAL_SERVICE_CANDIDATES
+            });
+            const server = await device.gatt.connect();
+            let writeChar = null;
+            for (const svcUUID of THERMAL_SERVICE_CANDIDATES) {
+                try {
+                    const service = await server.getPrimaryService(svcUUID);
+                    const chars   = await service.getCharacteristics();
+                    writeChar = chars.find(c => c.properties.write || c.properties.writeWithoutResponse) || null;
+                    if (writeChar) break;
+                } catch(e) { /* try next candidate service */ }
+            }
+            if (!writeChar) {
+                alert("Printer connect ho gaya lekin compatible print service nahi mila. Yeh feature sirf kuch printer models ke saath kaam karta hai.");
+                return;
+            }
+            const data = buildEscPosReceipt(pdfData);
+            const chunkSize = 180;
+            for (let i = 0; i < data.length; i += chunkSize) {
+                await writeChar.writeValue(data.slice(i, i + chunkSize));
+            }
+            alert("✓ Print bhej diya gaya printer ko!");
+        } catch(e) {
+            alert("Bluetooth print nahi hua: " + e.message + "\n\n(Yeh experimental feature hai — sabhi printer models ke saath kaam nahi karega.)");
+        }
+    }
+
+    function printThermalFromHistory() {
+        if (!currentInvoiceId) return;
+        const inv = allInvoices.find(x => x._id === currentInvoiceId);
+        if (!inv) return;
+        printViaBluetooth({
+            invNo: inv.invNo || "", customer: inv.customer || "Walk-in", items: inv.items || [],
+            discount: parseFloat(inv.discount || 0), oldDue: parseFloat(inv.oldDue || 0),
+            finalTotal: parseFloat(inv.total || 0), paid: parseFloat(inv.paid || 0), due: parseFloat(inv.due || 0),
+            store: storeData.name || "Surjya Bakery", address: storeData.address || "",
+            gst: storeData.gst || "", dateStr: inv.date || ""
+        });
+    }
+
     function openLogout()    { document.getElementById("logoutModal").classList.add("active"); }
     function closeLogout()   { document.getElementById("logoutModal").classList.remove("active"); }
     function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
@@ -560,5 +1142,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

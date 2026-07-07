@@ -18,8 +18,10 @@
             --success: #16a34a; --success-bg: #dcfce7;
             --danger: #dc2626; --danger-bg: #fee2e2;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; padding-bottom: 48px; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; padding-bottom: 48px; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         /* ── Header ── */
@@ -361,6 +363,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkBtn = document.getElementById("darkBtn");
@@ -711,5 +716,6 @@ select, .entry-input, .search-wrap input {
     });
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

@@ -22,7 +22,9 @@
             --blue: #2563eb; --blue-bg: #eff6ff;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
         body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
@@ -131,7 +133,7 @@
         .del-txn:hover { background: var(--danger-bg); color: var(--danger); }
 
         .entry-panel { padding: 12px 18px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
-        .quick-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
+        .quick-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .chip { padding: 7px 14px; border-radius: 100px; background: var(--bg); border: 1.5px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: var(--sub); font-family: 'DM Sans', sans-serif; }
         .chip:hover { border-color: var(--accent); color: var(--accent); }
         .entry-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 10px; }
@@ -314,6 +316,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -375,6 +379,16 @@ select, .entry-input, .search-wrap input {
             <label>Opening Balance (₹) — optional</label>
             <input type="number" class="entry-input" id="newOpening" placeholder="0" inputmode="numeric">
         </div>
+        <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+                <label>Birthday — optional</label>
+                <input type="date" class="entry-input" id="newBirthday">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Anniversary — optional</label>
+                <input type="date" class="entry-input" id="newAnniversary">
+            </div>
+        </div>
         <div class="form-group" style="margin-top:4px;">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="toggleCustomPrices" onchange="toggleCustomPricesSection(this.checked)" style="width:16px;height:16px;accent-color:var(--accent);">
@@ -402,6 +416,10 @@ select, .entry-input, .search-wrap input {
                 <div>
                     <div class="detail-name"  id="detName">—</div>
                     <div class="detail-phone" id="detPhone">—</div>
+                    <div style="display:flex; gap:14px; margin-top:4px;">
+                        <span style="font-size:11.5px; color:var(--sub); cursor:pointer;" onclick="editBirthday()">🎂 <span id="detBirthdayText">Add Birthday</span></span>
+                        <span style="font-size:11.5px; color:var(--sub); cursor:pointer;" onclick="editAnniversary()">💍 <span id="detAnniversaryText">Add Anniversary</span></span>
+                    </div>
                 </div>
             </div>
             <div class="detail-actions">
@@ -514,6 +532,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -638,6 +659,8 @@ select, .entry-input, .search-wrap input {
         document.getElementById("detAvatar").innerText  = (cust.name || "?")[0].toUpperCase();
         document.getElementById("detName").innerText    = cust.name;
         document.getElementById("detPhone").innerText   = cust.phone ? "📱 " + cust.phone : "No phone saved";
+        document.getElementById("detBirthdayText").innerText    = cust.birthday    ? formatDMY(cust.birthday)    : "Add Birthday";
+        document.getElementById("detAnniversaryText").innerText = cust.anniversary ? formatDMY(cust.anniversary) : "Add Anniversary";
 
         // FIX: filter entries by customerId
         const entries = allEntries
@@ -718,11 +741,34 @@ select, .entry-input, .search-wrap input {
 
     function fillAmt(v) { document.getElementById("entryAmt").value = Math.abs(Math.round(v)); }
 
+    function formatDMY(isoDate) {
+        if (!isoDate) return "";
+        const [y, m, d] = isoDate.split("-");
+        return `${d}/${m}`;
+    }
+
+    async function editBirthday() {
+        if (!activeId) return;
+        const cur = currentCustomer?.birthday || "";
+        const val = prompt("Birthday (YYYY-MM-DD):", cur);
+        if (val === null) return;
+        await db.collection("customers").doc(activeId).update({ birthday: val });
+    }
+    async function editAnniversary() {
+        if (!activeId) return;
+        const cur = currentCustomer?.anniversary || "";
+        const val = prompt("Anniversary (YYYY-MM-DD):", cur);
+        if (val === null) return;
+        await db.collection("customers").doc(activeId).update({ anniversary: val });
+    }
+
     // ── Create Customer ──
     async function createCustomer() {
         const name    = document.getElementById("newName").value.trim();
         const phone   = document.getElementById("newPhone").value.trim();
         const opening = parseFloat(document.getElementById("newOpening").value) || 0;
+        const birthday    = document.getElementById("newBirthday").value    || "";
+        const anniversary = document.getElementById("newAnniversary").value || "";
         if (!name) return alert("Naam daalna zaroori hai.");
 
         const btn = document.getElementById("createBtn");
@@ -743,12 +789,16 @@ select, .entry-input, .search-wrap input {
             name, phone, openingDue: opening,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
+        if (birthday)    custData.birthday    = birthday;
+        if (anniversary) custData.anniversary = anniversary;
         if (Object.keys(customPrices).length > 0) custData.customPrices = customPrices;
         await db.collection("customers").add(custData);
 
         document.getElementById("newName").value    = "";
         document.getElementById("newPhone").value   = "";
         document.getElementById("newOpening").value = "";
+        document.getElementById("newBirthday").value    = "";
+        document.getElementById("newAnniversary").value = "";
         document.getElementById("toggleCustomPrices").checked = false;
         document.getElementById("customPricesSection").style.display = "none";
         btn.disabled = false;
@@ -917,5 +967,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

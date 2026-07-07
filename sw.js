@@ -1,4 +1,4 @@
-const CACHE_NAME = "surjya-bakery-v1";
+const CACHE_NAME = "surjya-bakery-v2";
 const STATIC_ASSETS = [
   "./index.html",
   "./dashboard.html",
@@ -8,14 +8,22 @@ const STATIC_ASSETS = [
   "./orders.html",
   "./cart.html",
   "./invoice.html",
-  "./customer-view.html",
+  "./customer_view.html",
+  "./client_rates.html",
+  "./delivery.html",
+  "./livesale.html",
+  "./subscriptions.html",
+  "./suppliers.html",
   "./ledger.html",
   "./records.html",
   "./history.html",
   "./employees.html",
   "./settings.html",
   "./reset-pin.html",
-  "./manifest.json"
+  "./manifest.json",
+  "./animations.css",
+  "./animations.js",
+  "./pwa-install.js"
 ];
 
 // Install: cache static files

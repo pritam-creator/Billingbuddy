@@ -21,8 +21,10 @@
             --danger: #dc2626; --danger-bg: #fee2e2;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -110,7 +112,7 @@
         .due-negative { color: #4ade80; }
 
         /* Print button */
-        .template-scroll { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+        .template-scroll { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
         .tmpl-btn { flex-shrink: 0; width: 80px; border-radius: 12px; border: 2.5px solid var(--border); overflow: hidden; cursor: pointer; transition: all 0.2s; background: var(--bg); }
         .tmpl-btn.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,134,10,0.15); }
         .tmpl-btn:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -307,6 +309,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -347,12 +351,15 @@ select, .entry-input, .search-wrap input {
                 </div>
                 <div class="form-group">
                     <label>Mobile Number</label>
-                    <input type="tel" id="custPhone" placeholder="+91 00000 00000">
+                    <input type="tel" id="custPhone" placeholder="+91 00000 00000" onblur="checkLoyaltyPoints()">
                 </div>
                 <div class="form-group">
                     <label>Invoice Date</label>
                     <input type="date" id="invoiceDate">
                 </div>
+            </div>
+            <div id="loyaltyBadge" style="display:none;font-size:12px;background:#fff7ed;color:#c2410c;padding:7px 12px;border-radius:10px;border:1px solid #fed7aa;margin-bottom:4px;font-weight:700;">
+                <i class="fa-solid fa-gift"></i> <span id="loyaltyText"></span>
             </div>
         </div>
 
@@ -441,6 +448,9 @@ select, .entry-input, .search-wrap input {
                 <i class="fa-brands fa-whatsapp"></i> WhatsApp
             </button>
         </div>
+        <button class="btn-print" style="width:100%; margin-top:10px; background:#eef0f2; color:#1a1208;" onclick="printThermalCurrent()">
+            <i class="fa-solid fa-bluetooth-b"></i> Bluetooth Thermal Print <span style="font-size:10px; opacity:0.6;">(experimental)</span>
+        </button>
     </main>
 </div>
 
@@ -497,6 +507,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -542,6 +555,65 @@ select, .entry-input, .search-wrap input {
                     slabs.length ? slabs.map(s => "MRP ₹" + s.mrp + " → ₹" + s.rate).join("  |  ") : "";
             }
         }
+    }
+
+    // ── Loyalty Points: lookup on phone entry ──
+    // ── UPI QR Code (generated via qrserver.com; needs internet at PDF-generation time) ──
+    function loadImageAsDataURL(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext("2d").drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL("image/png"));
+                } catch(e) { reject(e); }
+            };
+            img.onerror = reject;
+            img.src = url;
+        });
+    }
+
+    async function getUpiQrDataUrl(amount) {
+        if (!storeData.upiId || !(amount > 0)) return "";
+        const upiString = `upi://pay?pa=${encodeURIComponent(storeData.upiId)}&pn=${encodeURIComponent(storeData.name || "Surjya Bakery")}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent("Invoice Payment")}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+        try { return await loadImageAsDataURL(qrUrl); } catch(e) { return ""; }
+    }
+
+    async function checkLoyaltyPoints() {
+        const phone = document.getElementById("custPhone").value.trim();
+        const badge = document.getElementById("loyaltyBadge");
+        if (!phone || storeData.loyaltyEnabled !== "yes") { badge.style.display = "none"; return; }
+        try {
+            const doc = await db.collection("loyalty").doc(phone).get();
+            if (doc.exists && doc.data().points > 0) {
+                const pts = doc.data().points;
+                const val = (parseFloat(storeData.loyaltyValue) || 1) * pts;
+                document.getElementById("loyaltyText").innerText = `${pts} points available (~₹${val.toFixed(0)} value)`;
+                badge.style.display = "block";
+            } else {
+                badge.style.display = "none";
+            }
+        } catch(e) { badge.style.display = "none"; }
+    }
+
+    // Award points for this sale (called only when the invoice is actually saved)
+    async function awardLoyaltyPoints(phone, name, saleValue) {
+        if (storeData.loyaltyEnabled !== "yes" || !phone || saleValue <= 0) return;
+        const rate = parseFloat(storeData.loyaltyRate) || 100;
+        const pointsEarned = Math.floor(saleValue / rate);
+        if (pointsEarned <= 0) return;
+        try {
+            await db.collection("loyalty").doc(phone).set({
+                phone, name: name || "",
+                points: firebase.firestore.FieldValue.increment(pointsEarned),
+                totalSpend: firebase.firestore.FieldValue.increment(saleValue),
+                lastVisit: getInvoiceDateStr()
+            }, { merge: true });
+        } catch(e) { /* non-blocking */ }
     }
 
     function getClientPrice(basePrice) {
@@ -612,17 +684,43 @@ select, .entry-input, .search-wrap input {
         await generateInvNo();
     };
 
-    async function generateInvNo() {
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    function getFY() {
+        const now = new Date();
+        const y = now.getFullYear(), m = now.getMonth() + 1; // 1-12
+        const fyStart = m >= 4 ? y : y - 1; // Indian FY: Apr–Mar
+        return `${fyStart}-${String((fyStart + 1) % 100).padStart(2, "0")}`;
+    }
+
+    // Preview the next invoice number WITHOUT reserving it (safe to call repeatedly)
+    async function peekInvNo() {
+        const fy = getFY();
         try {
-            // FIX: use "orders" collection (not "sales")
-            const snap = await db.collection("orders").where("dateRaw", "==", today).get();
-            currentInvNo = "SB-" + today + "-" + String(snap.size + 1).padStart(3, "0");
-        } catch(e) {
-            currentInvNo = "SB-" + today + "-001";
+            const doc = await db.collection("settings").doc("invoice_counter").get();
+            let nextCount = 1;
+            if (doc.exists && doc.data().fy === fy) nextCount = (doc.data().count || 0) + 1;
+            currentInvNo = `SB/${fy}/${String(nextCount).padStart(4, "0")}`;
+        } catch (e) {
+            currentInvNo = `SB/${fy}/0001`;
         }
         document.getElementById("invNoLabel").innerText = "Invoice #" + currentInvNo;
     }
+
+    // Actually reserve the next invoice number (call only when the sale is being saved)
+    async function commitInvNo() {
+        const fy  = getFY();
+        const ref = db.collection("settings").doc("invoice_counter");
+        return db.runTransaction(async (t) => {
+            const doc = await t.get(ref);
+            let count = 1;
+            if (doc.exists && doc.data().fy === fy) count = (doc.data().count || 0) + 1;
+            t.set(ref, { fy, count }, { merge: true });
+            return `SB/${fy}/${String(count).padStart(4, "0")}`;
+        });
+    }
+
+    // Kept for backward-compatible calls elsewhere in this file
+    async function generateInvNo() { await peekInvNo(); }
+
 
     // ── Item Search / Autocomplete ──
     function searchItems() {
@@ -709,7 +807,7 @@ select, .entry-input, .search-wrap input {
         const finalTotal = (subtotal - discount) + oldDue;
         const due        = finalTotal - paid;
 
-        document.getElementById("grandTotal").innerText = "₹ " + finalTotal.toFixed(2);
+        document.getElementById("grandTotal").innerText = "₹ " + formatINR(finalTotal);
 
         const lbl = document.getElementById("dueLabel");
         lbl.className = "due-label";
@@ -769,19 +867,37 @@ select, .entry-input, .search-wrap input {
                     <tr><td style="padding:4px 16px; color:#9c8e7a;">Items Total</td><td style="font-weight:700; text-align:right;">₹${subtotal.toFixed(2)}</td></tr>
                     ${discount > 0 ? `<tr><td style="padding:4px 16px; color:#dc2626;">Discount</td><td style="text-align:right; color:#dc2626;">−₹${discount.toFixed(2)}</td></tr>` : ""}
                     ${oldDue > 0   ? `<tr><td style="padding:4px 16px; color:#d97706;">Old Due</td><td style="text-align:right; color:#d97706;">+₹${oldDue.toFixed(2)}</td></tr>` : ""}
+                    ${(() => {
+                        const gstRate = parseFloat(storeData.gstRate) || 0;
+                        if (!gstRate) return "";
+                        const saleValue = Math.max(subtotal - discount, 0);
+                        const taxable = storeData.gstInclusive === "no" ? saleValue : saleValue / (1 + gstRate / 100);
+                        const taxAmt  = storeData.gstInclusive === "no" ? saleValue * (gstRate / 100) : saleValue - taxable;
+                        const half = taxAmt / 2;
+                        return `
+                        <tr><td style="padding:4px 16px; color:#9c8e7a;">Taxable Value</td><td style="text-align:right;">₹${taxable.toFixed(2)}</td></tr>
+                        <tr><td style="padding:4px 16px; color:#9c8e7a;">CGST @ ${(gstRate/2).toFixed(1)}%</td><td style="text-align:right;">₹${half.toFixed(2)}</td></tr>
+                        <tr><td style="padding:4px 16px; color:#9c8e7a;">SGST @ ${(gstRate/2).toFixed(1)}%</td><td style="text-align:right;">₹${half.toFixed(2)}</td></tr>`;
+                    })()}
                 </table>
-                <div class="inv-grand">₹${finalTotal.toFixed(2)}</div>
+                <div class="inv-grand">₹${formatINR(finalTotal)}</div>
                 <div style="margin-top:12px; font-size:13px; color:#9c8e7a;">
                     Paid: <b style="color:#1a1208;">₹${paid.toFixed(2)}</b> &nbsp;|&nbsp;
                     ${due > 0 ? `<b style="color:#dc2626;">Balance Due: ₹${due.toFixed(2)}</b>` : `<b style="color:#16a34a;">✓ Paid in Full</b>`}
                 </div>
             </div>
-            ${storeData.seal ? `
-            <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+            ${(storeData.seal || (storeData.upiId && due > 0)) ? `
+            <div style="margin-top:24px; display:flex; justify-content:space-between; align-items:flex-end;">
+                ${(storeData.upiId && due > 0) ? `
+                <div style="text-align:center;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(`upi://pay?pa=${storeData.upiId}&pn=${encodeURIComponent(storeData.name||"Surjya Bakery")}&am=${due.toFixed(2)}&cu=INR&tn=Invoice%20Payment`)}" style="width:90px; height:90px;">
+                    <p style="font-size:11px; color:#9c8e7a; margin-top:4px;">Scan &amp; Pay Due</p>
+                </div>` : `<div></div>`}
+                ${storeData.seal ? `
                 <div style="text-align:center;">
                     <img src="${storeData.seal}" style="width:110px; max-height:70px; object-fit:contain;">
                     <p style="font-size:11px; color:#9c8e7a; margin-top:4px;">Authorized Signatory</p>
-                </div>
+                </div>` : ""}
             </div>` : ""}
             <div style="margin-top:16px; text-align:center; font-size:12px; color:#9c8e7a; border-top:1px dashed #ede8df; padding-top:16px;">
                 Thank you for your visit! 🥐 ${storeData.name || "Surjya Bakery"}
@@ -808,6 +924,7 @@ select, .entry-input, .search-wrap input {
         const today      = getInvoiceDateRaw();
 
         try {
+            currentInvNo = await commitInvNo(); // reserve the real invoice number now
             // FIX: save to "orders" collection (not "sales")
             await db.collection("orders").add({
                 invNo:     currentInvNo,
@@ -823,8 +940,13 @@ select, .entry-input, .search-wrap input {
                 status:    "Delivered",
                 dateRaw:   today,
                 date:      getInvoiceDateStr(),
+                soldBy:     localStorage.getItem("staffId")   || null,
+                soldByName: localStorage.getItem("staffName") || "",
+                gstRate: parseFloat(storeData.gstRate) || 0,
+                gstInclusive: storeData.gstInclusive || "yes",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            awardLoyaltyPoints(document.getElementById("custPhone").value.trim(), document.getElementById("custName").value.trim(), Math.max(subtotal - discount, 0));
 
             // Build print HTML then print
             document.getElementById("printSection").innerHTML =
@@ -865,6 +987,140 @@ select, .entry-input, .search-wrap input {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-print"></i> Print';
                 waBtn.disabled = false;
+        }
+    }
+
+    // ══════════════════════════════════════════
+    //   BLUETOOTH THERMAL PRINTER (Experimental)
+    //   Works only on Chrome/Android with Web Bluetooth support.
+    //   Different printer models use different BLE service UUIDs,
+    //   so this tries a few common ones — not guaranteed to work
+    //   with every printer.
+    // ══════════════════════════════════════════
+    const THERMAL_SERVICE_CANDIDATES = [
+        "000018f0-0000-1000-8000-00805f9b34fb",
+        "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+        "0000ff00-0000-1000-8000-00805f9b34fb"
+    ];
+
+    function buildEscPosReceipt(d) {
+        const enc = new TextEncoder();
+        let bytes = [];
+        const push = (str) => { bytes.push(...enc.encode(str)); };
+        const cmd  = (...arr) => { bytes.push(...arr); };
+        const ESC = 0x1B, GS = 0x1D;
+        const line = (label, value) => label.padEnd(20).slice(0,20) + value + "\n";
+
+        cmd(ESC, 0x40);          // initialize
+        cmd(ESC, 0x61, 1);       // center align
+        cmd(ESC, 0x21, 0x30);    // double height+width
+        push((d.store || "Surjya Bakery") + "\n");
+        cmd(ESC, 0x21, 0x00);    // normal size
+        if (d.address) push(d.address + "\n");
+        if (d.gst) push("GSTIN: " + d.gst + "\n");
+        push("--------------------------------\n");
+        cmd(ESC, 0x61, 0);       // left align
+        push(`Invoice: ${d.invNo}\n`);
+        push(`Date: ${d.dateStr}\n`);
+        push(`Customer: ${d.customer}\n`);
+        push("--------------------------------\n");
+        (d.items || []).forEach(i => {
+            const nameStr = String(i.name).padEnd(16).slice(0,16);
+            const qtyStr  = `x${i.qty}`.padEnd(5);
+            const amtStr  = `Rs.${(i.price*i.qty).toFixed(2)}`;
+            push(nameStr + qtyStr + amtStr + "\n");
+        });
+        push("--------------------------------\n");
+        if (d.discount > 0) push(line("Discount:", "-Rs." + d.discount.toFixed(2)));
+        if (d.oldDue   > 0) push(line("Old Due:",  "+Rs." + d.oldDue.toFixed(2)));
+        cmd(ESC, 0x21, 0x10);    // emphasized
+        push(line("TOTAL:", "Rs." + d.finalTotal.toFixed(2)));
+        cmd(ESC, 0x21, 0x00);
+        push(line("Paid:", "Rs." + d.paid.toFixed(2)));
+        if (d.due > 0) push(line("Balance Due:", "Rs." + d.due.toFixed(2)));
+        push("\n");
+        cmd(ESC, 0x61, 1);
+        push(`Thank you! ${d.store}\n\n\n`);
+        cmd(GS, 0x56, 0x42, 0x00); // partial paper cut (ignored harmlessly if unsupported)
+        return new Uint8Array(bytes);
+    }
+
+    async function printViaBluetooth(pdfData) {
+        if (!navigator.bluetooth) {
+            alert("Bluetooth printing sirf Chrome (Android) mein kaam karta hai. iPhone/Safari mein available nahi hai.");
+            return;
+        }
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: THERMAL_SERVICE_CANDIDATES
+            });
+            const server = await device.gatt.connect();
+            let writeChar = null;
+            for (const svcUUID of THERMAL_SERVICE_CANDIDATES) {
+                try {
+                    const service = await server.getPrimaryService(svcUUID);
+                    const chars   = await service.getCharacteristics();
+                    writeChar = chars.find(c => c.properties.write || c.properties.writeWithoutResponse) || null;
+                    if (writeChar) break;
+                } catch(e) { /* try next candidate service */ }
+            }
+            if (!writeChar) {
+                alert("Printer connect ho gaya lekin compatible print service nahi mila. Yeh feature sirf kuch printer models ke saath kaam karta hai.");
+                return;
+            }
+            const data = buildEscPosReceipt(pdfData);
+            const chunkSize = 180;
+            for (let i = 0; i < data.length; i += chunkSize) {
+                await writeChar.writeValue(data.slice(i, i + chunkSize));
+            }
+            alert("✓ Print bhej diya gaya printer ko!");
+        } catch(e) {
+            alert("Bluetooth print nahi hua: " + e.message + "\n\n(Yeh experimental feature hai — sabhi printer models ke saath kaam nahi karega.)");
+        }
+    }
+
+    async function printThermalCurrent() {
+        if (!cart.length) return alert("Cart khaali hai — pehle items add karein.");
+        const subtotal   = cart.reduce((s, i) => s + i.total, 0);
+        const oldDue     = parseFloat(document.getElementById("payOldDue").value) || 0;
+        const discount   = parseFloat(document.getElementById("payReturn").value) || 0;
+        const paid       = parseFloat(document.getElementById("payPaid").value) || 0;
+        const finalTotal = (subtotal - discount) + oldDue;
+        const due        = finalTotal - paid;
+        const customer   = document.getElementById("custName").value.trim()  || "Walk-in";
+        const phone      = document.getElementById("custPhone").value.trim() || "";
+
+        try {
+            currentInvNo = await commitInvNo();
+            await db.collection("orders").add({
+                invNo: currentInvNo, customer, phone, items: cart, subtotal, oldDue, discount,
+                total: finalTotal, paid, due, status: "Delivered",
+                dateRaw: getInvoiceDateRaw(), date: getInvoiceDateStr(),
+                soldBy:     localStorage.getItem("staffId")   || null,
+                soldByName: localStorage.getItem("staffName") || "",
+                gstRate: parseFloat(storeData.gstRate) || 0,
+                gstInclusive: storeData.gstInclusive || "yes",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            awardLoyaltyPoints(phone, customer, Math.max(subtotal - discount, 0));
+
+            await printViaBluetooth({
+                invNo: currentInvNo, customer, items: cart, subtotal, oldDue, discount, finalTotal, paid, due,
+                store: storeData.name || "Surjya Bakery", address: storeData.address || "",
+                gst: storeData.gst || "", dateStr: getInvoiceDateStr()
+            });
+
+            cart = [];
+            document.getElementById("custName").value  = "";
+            document.getElementById("custPhone").value = "";
+            document.getElementById("payOldDue").value = "";
+            document.getElementById("payReturn").value = "";
+            document.getElementById("payPaid").value   = "";
+            renderCart();
+            generateInvNo();
+        } catch(e) {
+            alert("Error: " + e.message);
         }
     }
 
@@ -996,6 +1252,39 @@ select, .entry-input, .search-wrap input {
         doc.text("Authorized Signatory", x+16, y+21, {align:"center"});
     }
 
+    function formatINR(n) {
+        return Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function _addWatermark(doc, d) {
+        try {
+            const label = d.due > 0 ? "DUE" : "PAID";
+            const color = d.due > 0 ? [220,38,38] : [22,163,74];
+            doc.saveGraphicsState();
+            doc.setGState(new doc.GState({ opacity: 0.09 }));
+            doc.setTextColor(...color);
+            doc.setFontSize(60);
+            doc.setFont("helvetica", "bold");
+            doc.text(label, 74, 120, { angle: 35, align: "center" });
+            doc.restoreGraphicsState();
+        } catch(e) { /* GState not supported in this jsPDF build — skip watermark gracefully */ }
+    }
+
+    // Ensure there's enough room left on the page for totals + footer;
+    // if not, start a fresh page so nothing gets cut off on long carts.
+    function _ensureSpace(doc, y, needed) {
+        if (y + needed > 195) { doc.addPage(); return 15; }
+        return y;
+    }
+
+    function _addUpiQr(doc, d, x, y, labelColor) {
+        if (!d.qr) return;
+        try { doc.addImage(d.qr, "PNG", x, y, 24, 24); } catch(e) {}
+        doc.setFontSize(6.5); doc.setFont("helvetica","normal");
+        doc.setTextColor(...(labelColor || [140,130,115]));
+        doc.text("Scan & Pay Due", x+12, y+28, {align:"center"});
+    }
+
     /* ── Template 1: Dark Gold ── */
     function pdf_DarkGold(jsPDF, d) {
         const doc = new jsPDF({ unit:"mm", format:"a5" });
@@ -1016,12 +1305,16 @@ select, .entry-input, .search-wrap input {
         doc.setFont("helvetica","bold"); doc.text("Date", 138, 30, {align:"right"});
         doc.setFont("helvetica","normal"); doc.text(d.dateStr, 138, 36, {align:"right"});
         _autoTable(doc, d, 46, [26,18,8], [255,255,255]);
-        const y = doc.lastAutoTable.finalY + 6;
-        _totals(doc, d, y, [200,134,10]);
-        let footerY = y + 18;
-        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [140,130,115]); footerY += 26; } else { footerY += 6; }
+        let y = doc.lastAutoTable.finalY + 6;
+        y = _ensureSpace(doc, y, 55);
+        const contentEndY = _totals(doc, d, y, [200,134,10]);
+        let footerY = contentEndY + 12;
+        if (d.qr) _addUpiQr(doc, d, 10, footerY, [140,130,115]);
+        if (d.seal) _addSealSignature(doc, d, 104, footerY, [140,130,115]);
+        footerY += d.qr ? 32 : (d.seal ? 26 : 6);
         doc.setTextColor(156,142,122); doc.setFontSize(7);
         doc.text(`Thank you for visiting ${d.store}!`, 74, footerY, {align:"center"});
+        _addWatermark(doc, d);
         return doc;
     }
 
@@ -1042,14 +1335,18 @@ select, .entry-input, .search-wrap input {
         doc.text(d.customer, 10, 38); doc.setFont("helvetica","normal"); doc.setFontSize(8);
         if(d.phone) doc.text(d.phone, 10, 43);
         _autoTable(doc, d, 49, [245,240,235], [26,18,8], true);
-        const y = doc.lastAutoTable.finalY + 6;
-        _totals(doc, d, y, [200,134,10]);
-        let footerY = y + 18;
-        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [140,130,115]); footerY += 26; } else { footerY += 4; }
+        let y = doc.lastAutoTable.finalY + 6;
+        y = _ensureSpace(doc, y, 55);
+        const contentEndY = _totals(doc, d, y, [200,134,10]);
+        let footerY = contentEndY + 12;
+        if (d.qr) _addUpiQr(doc, d, 10, footerY, [140,130,115]);
+        if (d.seal) _addSealSignature(doc, d, 104, footerY, [140,130,115]);
+        footerY += d.qr ? 32 : (d.seal ? 26 : 4);
         doc.setDrawColor(200,134,10); doc.setLineWidth(0.8);
         doc.line(10, footerY, 138, footerY);
         doc.setTextColor(156,142,122); doc.setFontSize(7);
         doc.text(`Thank you! — ${d.store}`, 74, footerY+5, {align:"center"});
+        _addWatermark(doc, d);
         return doc;
     }
 
@@ -1073,13 +1370,17 @@ select, .entry-input, .search-wrap input {
         doc.setFont("helvetica","bold"); doc.text("Date:", 105, 35);
         doc.setFont("helvetica","normal"); doc.text(d.dateStr, 118, 35);
         _autoTable(doc, d, 46, [30,58,95], [255,255,255]);
-        const y = doc.lastAutoTable.finalY + 6;
-        _totals(doc, d, y, [59,130,246]);
-        let footerY = y + 18;
-        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [225,232,245]); footerY += 26; } else { footerY += 6; }
+        let y = doc.lastAutoTable.finalY + 6;
+        y = _ensureSpace(doc, y, 55);
+        const contentEndY = _totals(doc, d, y, [59,130,246]);
+        let footerY = contentEndY + 12;
+        if (d.qr) _addUpiQr(doc, d, 10, footerY, [225,232,245]);
+        if (d.seal) _addSealSignature(doc, d, 104, footerY, [225,232,245]);
+        footerY += d.qr ? 32 : (d.seal ? 26 : 6);
         doc.setFillColor(30,58,95); doc.rect(0, footerY-4, 148, 8, "F");
         doc.setTextColor(255,255,255); doc.setFontSize(7);
         doc.text(`Thank you for your business! — ${d.store}`, 74, footerY+1, {align:"center"});
+        _addWatermark(doc, d);
         return doc;
     }
 
@@ -1100,12 +1401,16 @@ select, .entry-input, .search-wrap input {
         doc.text(d.customer, 10, 33); doc.setFont("helvetica","normal"); doc.setFontSize(8);
         if(d.phone) doc.text(d.phone, 10, 38);
         _autoTable(doc, d, 44, [20,83,45], [255,255,255]);
-        const y = doc.lastAutoTable.finalY + 6;
-        _totals(doc, d, y, [22,163,74]);
-        let footerY = y + 18;
-        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [140,130,115]); footerY += 26; } else { footerY += 4; }
+        let y = doc.lastAutoTable.finalY + 6;
+        y = _ensureSpace(doc, y, 55);
+        const contentEndY = _totals(doc, d, y, [22,163,74]);
+        let footerY = contentEndY + 12;
+        if (d.qr) _addUpiQr(doc, d, 10, footerY, [140,130,115]);
+        if (d.seal) _addSealSignature(doc, d, 104, footerY, [140,130,115]);
+        footerY += d.qr ? 32 : (d.seal ? 26 : 4);
         doc.setTextColor(156,142,122); doc.setFontSize(7);
         doc.text("🌿  " + d.store + "  — Thank you!", 74, footerY, {align:"center"});
+        _addWatermark(doc, d);
         return doc;
     }
 
@@ -1128,13 +1433,17 @@ select, .entry-input, .search-wrap input {
         if(d.gst) { doc.setFontSize(7); doc.text(`GSTIN: ${d.gst}`, 10, 54); }
         doc.setFont("helvetica","bold"); doc.text(d.dateStr, 138, 38, {align:"right"});
         _autoTable(doc, d, 58, [190,18,60], [255,255,255], false, [255,236,239]);
-        const y = doc.lastAutoTable.finalY + 6;
-        _totals(doc, d, y, [190,18,60]);
-        let footerY = y + 18;
-        if (d.seal) { _addSealSignature(doc, d, 96, footerY, [190,18,60]); footerY += 26; } else { footerY += 6; }
+        let y = doc.lastAutoTable.finalY + 6;
+        y = _ensureSpace(doc, y, 55);
+        const contentEndY = _totals(doc, d, y, [190,18,60]);
+        let footerY = contentEndY + 12;
+        if (d.qr) _addUpiQr(doc, d, 20, footerY, [190,18,60]);
+        if (d.seal) _addSealSignature(doc, d, 96, footerY, [190,18,60]);
+        footerY += d.qr ? 32 : (d.seal ? 26 : 6);
         doc.setDrawColor(253,164,175); doc.line(20, footerY, 128, footerY);
         doc.setTextColor(190,18,60); doc.setFontSize(7);
         doc.text(`With love — ${d.store}  ♥`, 74, footerY+5, {align:"center"});
+        _addWatermark(doc, d);
         return doc;
     }
 
@@ -1158,14 +1467,18 @@ select, .entry-input, .search-wrap input {
         if(d.gst) { doc.setFontSize(7); doc.text(`GSTIN: ${d.gst}`, 10, 51); }
         doc.setFont("helvetica","bold"); doc.setTextColor(26,18,8); doc.text(d.dateStr, 138, 40, {align:"right"});
         _autoTable(doc, d, 56, [0,0,0], [255,255,255]);
-        const y = doc.lastAutoTable.finalY + 6;
-        _totals(doc, d, y, [202,138,4]);
-        let footerY = y + 18;
-        if (d.seal) { _addSealSignature(doc, d, 104, footerY, [90,90,90]); footerY += 26; } else { footerY += 6; }
+        let y = doc.lastAutoTable.finalY + 6;
+        y = _ensureSpace(doc, y, 55);
+        const contentEndY = _totals(doc, d, y, [202,138,4]);
+        let footerY = contentEndY + 12;
+        if (d.qr) _addUpiQr(doc, d, 10, footerY, [90,90,90]);
+        if (d.seal) _addSealSignature(doc, d, 104, footerY, [90,90,90]);
+        footerY += d.qr ? 32 : (d.seal ? 26 : 6);
         doc.setFillColor(0,0,0); doc.rect(0, footerY-4, 148, 8, "F");
         doc.setFillColor(250,204,21); doc.rect(0, footerY-4, 5, 8, "F");
         doc.setTextColor(255,255,255); doc.setFontSize(7);
         doc.text(`THANK YOU — ${d.store.toUpperCase()}`, 74, footerY+1, {align:"center"});
+        _addWatermark(doc, d);
         return doc;
     }
 
@@ -1173,8 +1486,8 @@ select, .entry-input, .search-wrap input {
     function _autoTable(doc, d, startY, headFill, headText, lightHead=false, altColor=null) {
         const rows = d.items.map(i => [
             i.name, String(i.qty),
-            `Rs.${parseFloat(i.price).toFixed(2)}`,
-            `Rs.${parseFloat(i.total).toFixed(2)}`
+            `Rs.${formatINR(i.price)}`,
+            `Rs.${formatINR(i.total)}`
         ]);
         doc.autoTable({
             startY, head: [["Item","Qty","Rate","Total"]], body: rows,
@@ -1193,18 +1506,31 @@ select, .entry-input, .search-wrap input {
 
     function _totals(doc, d, y, accentColor) {
         doc.setFontSize(8); doc.setTextColor(156,142,122); doc.setFont("helvetica","normal");
-        if(d.discount > 0) { doc.text("Discount:", 90, y); doc.text(`-Rs.${d.discount.toFixed(2)}`, 138, y, {align:"right"}); y+=5; }
-        if(d.oldDue   > 0) { doc.text("Old Due:",  90, y); doc.text(`+Rs.${d.oldDue.toFixed(2)}`,   138, y, {align:"right"}); y+=5; }
+        if(d.discount > 0) { doc.text("Discount:", 90, y); doc.text(`-Rs.${formatINR(d.discount)}`, 138, y, {align:"right"}); y+=5; }
+        if(d.oldDue   > 0) { doc.text("Old Due:",  90, y); doc.text(`+Rs.${formatINR(d.oldDue)}`,   138, y, {align:"right"}); y+=5; }
+
+        // GST tax breakup (only if a rate is configured in Settings)
+        if (d.gstRate > 0) {
+            const saleValue = Math.max((d.subtotal || 0) - (d.discount || 0), 0);
+            const taxable   = d.gstInclusive === "no" ? saleValue : saleValue / (1 + d.gstRate / 100);
+            const taxAmt    = d.gstInclusive === "no" ? saleValue * (d.gstRate / 100) : saleValue - taxable;
+            const half      = taxAmt / 2;
+            doc.text("Taxable Value:", 90, y); doc.text(`Rs.${formatINR(taxable)}`, 138, y, {align:"right"}); y += 5;
+            doc.text(`CGST @ ${(d.gstRate/2).toFixed(1)}%:`, 90, y); doc.text(`Rs.${formatINR(half)}`, 138, y, {align:"right"}); y += 5;
+            doc.text(`SGST @ ${(d.gstRate/2).toFixed(1)}%:`, 90, y); doc.text(`Rs.${formatINR(half)}`, 138, y, {align:"right"}); y += 5;
+        }
+
         doc.setDrawColor(...accentColor); doc.setLineWidth(0.4); doc.line(10, y+2, 138, y+2);
         doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.setTextColor(...accentColor);
-        doc.text(`Rs.${d.finalTotal.toFixed(2)}`, 138, y+10, {align:"right"});
+        doc.text(`Rs.${formatINR(d.finalTotal)}`, 138, y+10, {align:"right"});
         doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(26,18,8);
-        doc.text(`Paid: Rs.${d.paid.toFixed(2)}`, 10, y+10);
+        doc.text(`Paid: Rs.${formatINR(d.paid)}`, 10, y+10);
         if(d.due > 0) {
-            doc.setTextColor(220,38,38); doc.text(`Balance Due: Rs.${d.due.toFixed(2)}`, 10, y+16);
+            doc.setTextColor(220,38,38); doc.text(`Balance Due: Rs.${formatINR(d.due)}`, 10, y+16);
         } else {
             doc.setTextColor(22,163,74); doc.text("Paid in Full", 10, y+16);
         }
+        return y + 16; // bottom-most y actually used, so callers can position the footer safely
     }
 
     // Init template selector on load
@@ -1229,22 +1555,30 @@ select, .entry-input, .search-wrap input {
         const phone      = document.getElementById("custPhone").value.trim() || "";
 
         try {
+            currentInvNo = await commitInvNo(); // reserve the real invoice number now
             await db.collection("orders").add({
                 invNo: currentInvNo, customer, phone,
                 items: cart, subtotal, oldDue, discount,
                 total: finalTotal, paid, due,
                 status: "Delivered", dateRaw: today,
                 date: getInvoiceDateStr(),
+                soldBy:     localStorage.getItem("staffId")   || null,
+                soldByName: localStorage.getItem("staffName") || "",
+                gstRate: parseFloat(storeData.gstRate) || 0,
+                gstInclusive: storeData.gstInclusive || "yes",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            awardLoyaltyPoints(phone, customer, Math.max(subtotal - discount, 0));
 
             const store   = storeData.name || "Surjya Bakery";
             const address = storeData.address || "";
             const dateStr = getInvoiceDateStr();
 
             // ── Generate PDF using selected template ──
+            const qrDataUrl = await getUpiQrDataUrl(due);
             const pdfData = { invNo: currentInvNo, customer, phone, items: cart, subtotal, oldDue, discount, finalTotal, paid, due, store, address, dateStr,
-                               gst: storeData.gst || "", logo: storeData.logo || "", seal: storeData.seal || "" };
+                               gst: storeData.gst || "", logo: storeData.logo || "", seal: storeData.seal || "", qr: qrDataUrl,
+                               gstRate: parseFloat(storeData.gstRate) || 0, gstInclusive: storeData.gstInclusive || "yes" };
             const doc = generatePDF(pdfData);
             doc.save(`Invoice_${currentInvNo}.pdf`);
 
@@ -1351,5 +1685,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

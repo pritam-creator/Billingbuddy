@@ -21,8 +21,10 @@
             --blue: #2563eb; --blue-bg: #eff6ff;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -292,6 +294,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li class="active">                        <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -373,6 +377,16 @@ select, .entry-input, .search-wrap input {
         <div class="form-group">
             <label>Phone (optional)</label>
             <input type="tel" id="newPhone" placeholder="+91 00000 00000">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Login PIN (optional, 4-digit)</label>
+                <input type="text" id="newPin" placeholder="e.g. 4521" maxlength="4" inputmode="numeric">
+            </div>
+            <div class="form-group">
+                <label>Sales Commission (%)</label>
+                <input type="number" id="newCommission" placeholder="0" inputmode="numeric" step="0.1">
+            </div>
         </div>
         <button class="btn-submit" id="addEmpBtn" onclick="addEmployee()">
             <i class="fa-solid fa-cloud-arrow-up"></i> Save
@@ -470,6 +484,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -494,6 +511,8 @@ select, .entry-input, .search-wrap input {
 
     // State
     let employees     = [];
+    let allOrders     = [];
+    let allLivesales  = [];
     let activeEmpId   = null;
     let attendType    = "full";
     let pendingDelete = null;
@@ -505,6 +524,40 @@ select, .entry-input, .search-wrap input {
         renderList();
         updateProdSelect();
     });
+
+    db.collection("orders").onSnapshot(snap => {
+        allOrders = snap.docs.map(d => d.data());
+        renderList();
+    });
+    db.collection("livesales").onSnapshot(snap => {
+        allLivesales = snap.docs.map(d => d.data());
+        renderList();
+    });
+
+    function calcCommission(emp) {
+        if (!emp.commissionRate) return 0;
+        const ym = new Date().toISOString().slice(0, 7).replace("-", ""); // YYYYMM
+        const myOrders = allOrders.filter(o => o.soldBy === emp.id && String(o.dateRaw || "").startsWith(ym));
+        const myLive   = allLivesales.filter(o => o.soldBy === emp.id && String(o.dateRaw || "").startsWith(ym));
+        const total = myOrders.reduce((s, o) => s + parseFloat(o.total || 0), 0)
+                    + myLive.reduce((s, o) => s + parseFloat(o.total || 0), 0);
+        return total * (parseFloat(emp.commissionRate) / 100);
+    }
+
+    async function setPinCommission(id) {
+        const emp = employees.find(e => e.id === id);
+        if (!emp) return;
+        const newPin = prompt("Login PIN (4-digit, khaali chhodo hatane ke liye):", emp.pin || "");
+        if (newPin === null) return;
+        if (newPin && !/^\d{4}$/.test(newPin)) { alert("PIN 4 digit ka hona chahiye."); return; }
+        const newRate = prompt("Sales Commission (%):", emp.commissionRate || 0);
+        if (newRate === null) return;
+        const update = { commissionRate: parseFloat(newRate) || 0 };
+        if (newPin) update.pin = newPin;
+        else update.pin = firebase.firestore.FieldValue.delete();
+        try { await db.collection("employees").doc(id).update(update); }
+        catch(e) { alert(e.message); }
+    }
 
     db.collection("production").where("date", "==", todayStr).onSnapshot(snap => {
         const items = snap.docs.map(d => d.data());
@@ -550,22 +603,27 @@ select, .entry-input, .search-wrap input {
             const { days, wage, earned, adv, netDue } = calcSalary(emp);
             const present = isPresent(emp);
             const letter  = (emp.name || "?")[0].toUpperCase();
+            const commission = calcCommission(emp);
             return `
             <div class="emp-card">
                 <div class="emp-top">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <div class="emp-avatar">${letter}</div>
                         <div>
-                            <div class="emp-name">${emp.name}</div>
+                            <div class="emp-name">${emp.name} ${emp.pin ? '<i class="fa-solid fa-key" style="font-size:10px; color:var(--sub);" title="Login enabled"></i>' : ''}</div>
                             <div class="emp-wage">₹${wage}/day ${emp.phone ? "· " + emp.phone : ""}</div>
                         </div>
                     </div>
-                    <i class="fa-solid fa-circle-minus del-icon" onclick="openDeleteModal('${emp.id}')"></i>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <i class="fa-solid fa-gear" style="cursor:pointer; color:var(--sub); font-size:14px;" onclick="setPinCommission('${emp.id}')" title="PIN / Commission"></i>
+                        <i class="fa-solid fa-circle-minus del-icon" onclick="openDeleteModal('${emp.id}')"></i>
+                    </div>
                 </div>
                 <div class="salary-row">
                     <div class="sal-box"><span>Days</span><b>${days}</b></div>
                     <div class="sal-box"><span>Advance</span><b style="color:var(--danger)">₹${Math.round(adv)}</b></div>
                     <div class="sal-box"><span>Net Due</span><b style="color:var(--success)">₹${Math.round(Math.max(0, netDue))}</b></div>
+                    ${emp.commissionRate > 0 ? `<div class="sal-box"><span>Commission (Month)</span><b style="color:var(--accent)">₹${Math.round(commission)}</b></div>` : ""}
                 </div>
                 <div class="emp-actions">
                     <button class="act-btn ${present ? 'btn-attend-on' : 'btn-attend-off'}"
@@ -666,18 +724,25 @@ select, .entry-input, .search-wrap input {
         const name  = document.getElementById("newName").value.trim();
         const wage  = parseFloat(document.getElementById("newWage").value) || 0;
         const phone = document.getElementById("newPhone").value.trim();
+        const pin   = document.getElementById("newPin").value.trim();
+        const commissionRate = parseFloat(document.getElementById("newCommission").value) || 0;
         if (!name) return alert("Naam daalna zaroori hai.");
+        if (pin && !/^\d{4}$/.test(pin)) return alert("PIN 4 digit ka hona chahiye.");
 
         const btn = document.getElementById("addEmpBtn");
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-        await db.collection("employees").add({ name, wage, phone, advance: 0, attendance: [],
-            createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        const empData = { name, wage, phone, advance: 0, attendance: [], commissionRate,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        if (pin) empData.pin = pin;
+        await db.collection("employees").add(empData);
 
         document.getElementById("newName").value  = "";
         document.getElementById("newWage").value  = "";
         document.getElementById("newPhone").value = "";
+        document.getElementById("newPin").value   = "";
+        document.getElementById("newCommission").value = "";
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save';
         closeAddModal();
@@ -706,5 +771,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

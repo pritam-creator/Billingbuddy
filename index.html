@@ -9,7 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
 
     :root {
       --bg: #faf7f2;
@@ -34,8 +36,7 @@
         radial-gradient(ellipse at 20% 20%, rgba(200,134,10,0.07) 0%, transparent 60%),
         radial-gradient(ellipse at 80% 80%, rgba(200,134,10,0.05) 0%, transparent 60%);
       font-family: 'DM Sans', sans-serif;
-      padding: 20px;
-    }
+      padding: 20px; overflow-x: hidden; }
 
     /* ── Card ── */
     .card {
@@ -484,6 +485,9 @@ select, .entry-input, .search-wrap input {
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
   // ── Elements ──
   const inputs       = document.querySelectorAll(".pin-input");
@@ -538,13 +542,27 @@ select, .entry-input, .search-wrap input {
 
       const isAdmin = pin === String(data.pin || "");
       const isMgr   = data.managerPin && pin === String(data.managerPin);
+      let staffMatch = null;
+      if (!isAdmin && !isMgr) {
+        try {
+          const empSnap = await db.collection("employees").where("pin", "==", pin).limit(1).get();
+          if (!empSnap.empty) staffMatch = { id: empSnap.docs[0].id, ...empSnap.docs[0].data() };
+        } catch(e) { /* ignore, treat as no match */ }
+      }
 
-      if (isAdmin || isMgr) {
+      if (isAdmin || isMgr || staffMatch) {
         // ✅ Success
-        const role = isAdmin ? "admin" : "manager";
-        showMessage("✓ Welcome" + (role === "manager" ? " Manager" : "") + "!", "#16a34a");
+        const role = isAdmin ? "admin" : isMgr ? "manager" : "staff";
+        showMessage("✓ Welcome" + (staffMatch ? " " + (staffMatch.name || "") : role === "manager" ? " Manager" : "") + "!", "#16a34a");
         localStorage.setItem("loggedIn", "true");
         localStorage.setItem("userRole", role);
+        if (staffMatch) {
+          localStorage.setItem("staffId", staffMatch.id);
+          localStorage.setItem("staffName", staffMatch.name || "Staff");
+        } else {
+          localStorage.removeItem("staffId");
+          localStorage.removeItem("staffName");
+        }
         setTimeout(() => {
           document.getElementById("transitionOverlay").classList.add("active");
         }, 400);
@@ -689,5 +707,6 @@ select, .entry-input, .search-wrap input {
   window.onerror = (msg, src, line) => console.error("Error:", msg, "at", src, line);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

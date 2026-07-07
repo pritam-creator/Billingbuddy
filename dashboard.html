@@ -11,6 +11,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 
     <style>
         :root {
@@ -29,8 +30,10 @@
             --sidebar-w: 260px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
 
         /* ── Dark Mode ── */
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
@@ -162,6 +165,7 @@
         }
         .badge-success { background: var(--success-bg); color: var(--success); }
         .badge-danger  { background: var(--danger-bg); color: var(--danger); }
+        .badge-warning { background: #fff7ed; color: #c2410c; }
         .badge-warn    { background: #fef9c3; color: #92400e; }
 
         /* ── Empty state ── */
@@ -356,6 +360,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('employees.html')"><i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('delivery.html')"> <i class="fa-solid fa-truck"></i> Delivery</li>
             <li onclick="goPage('history.html')">  <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')"> <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -427,18 +433,30 @@ select, .entry-input, .search-wrap input {
             </div>
         </div>
 
+        <!-- Sales Trend -->
+        <span class="section-label">Sales Trend (Last 7 Days)</span>
+        <div class="activity-card" style="padding:16px 12px;">
+            <div style="position:relative; height:200px;">
+                <canvas id="salesTrendChart"></canvas>
+            </div>
+        </div>
+
         <!-- Activity + Top Products -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:8px;">
             <div>
                 <span class="section-label">Popular Items</span>
                 <div class="activity-card" id="topProducts">
-                    <div class="empty-state">Analyzing data...</div>
+                    <div class="skeleton" style="height:16px; width:70%; margin-bottom:10px;"></div>
+                    <div class="skeleton" style="height:16px; width:50%; margin-bottom:10px;"></div>
+                    <div class="skeleton" style="height:16px; width:60%;"></div>
                 </div>
             </div>
             <div>
                 <span class="section-label">Recent Orders</span>
                 <div class="activity-card" id="recentActivity">
-                    <div class="empty-state">Loading orders...</div>
+                    <div class="skeleton" style="height:16px; width:80%; margin-bottom:10px;"></div>
+                    <div class="skeleton" style="height:16px; width:45%; margin-bottom:10px;"></div>
+                    <div class="skeleton" style="height:16px; width:65%;"></div>
                 </div>
             </div>
         </div>
@@ -446,6 +464,12 @@ select, .entry-input, .search-wrap input {
         <!-- Stock Alerts -->
         <span class="section-label" id="stockAlertLabel" style="color:var(--danger); display:none;">⚠️ Low Stock Alerts</span>
         <div class="alert-card" id="stockAlerts"></div>
+
+        <span class="section-label" id="expiryAlertLabel" style="color:#c2410c; display:none;">⏳ Expiring Soon</span>
+        <div class="alert-card" id="expiryAlerts" style="border-color:#fed7aa;"></div>
+
+        <span class="section-label" id="birthdayAlertLabel" style="color:#c2410c; display:none;">🎂 Upcoming Birthdays &amp; Anniversaries</span>
+        <div class="alert-card" id="birthdayAlerts" style="border-color:#fed7aa;"></div>
 
     </main>
 
@@ -477,6 +501,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // ── Dark Mode ──
     const darkToggle = document.getElementById("darkToggle");
@@ -545,12 +572,15 @@ select, .entry-input, .search-wrap input {
         // FIX 1: 'customers' collection (not 'clients')
         db.collection("customers").onSnapshot(snap => {
             document.getElementById("dash-clients").innerText = snap.size;
+            renderBirthdayAlerts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
 
         // Items
         db.collection("items").onSnapshot(snap => {
             document.getElementById("dash-items").innerText = snap.size;
-            renderStockAlerts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderStockAlerts(items);
+            renderExpiryAlerts(items);
         });
 
         // Ledger
@@ -577,6 +607,7 @@ select, .entry-input, .search-wrap input {
 
             renderRecentActivity(orders);
             renderTopProducts(orders);
+            renderSalesTrend(orders);
         });
 
         // FIX 4: Expenses — single independent listener (not nested inside orders)
@@ -598,6 +629,56 @@ select, .entry-input, .search-wrap input {
             // expenses collection doesn't exist yet — show ₹0
             document.getElementById("dash-profit").innerText = "₹ 0";
             document.getElementById("profit-label").innerText = "Net Profit (no expenses)";
+        });
+    }
+
+    // ── Render: Sales Trend (last 7 days) ──
+    function renderSalesTrend(orders) {
+        const canvas = document.getElementById("salesTrendChart");
+        if (!canvas || typeof Chart === "undefined") return;
+
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key   = d.toISOString().slice(0, 10).replace(/-/g, "");
+            const label = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+            days.push({ key, label, total: 0 });
+        }
+        orders.forEach(o => {
+            const day = days.find(d => d.key === o.dateRaw);
+            if (day) day.total += parseFloat(o.total || 0);
+        });
+
+        if (window._salesChart) window._salesChart.destroy();
+        window._salesChart = new Chart(canvas, {
+            type: "line",
+            data: {
+                labels: days.map(d => d.label),
+                datasets: [{
+                    label: "Sales",
+                    data: days.map(d => d.total),
+                    borderColor: "#c8860a",
+                    backgroundColor: "rgba(200,134,10,0.12)",
+                    fill: true,
+                    tension: 0.35,
+                    pointBackgroundColor: "#c8860a",
+                    pointRadius: 4,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => "₹" + Math.round(ctx.parsed.y).toLocaleString() } }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => "₹" + v } },
+                    x: { grid: { display: false } }
+                }
+            }
         });
     }
 
@@ -650,6 +731,95 @@ select, .entry-input, .search-wrap input {
             </div>`).join("");
     }
 
+    // ── Render: Upcoming Birthdays & Anniversaries (next 7 days) ──
+    function renderBirthdayAlerts(customers) {
+        const label     = document.getElementById("birthdayAlertLabel");
+        const container = document.getElementById("birthdayAlerts");
+
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        function daysUntilNext(isoDate) {
+            if (!isoDate) return null;
+            const parts = isoDate.split("-").map(Number);
+            if (parts.length !== 3) return null;
+            const [, m, d] = parts;
+            let next = new Date(today.getFullYear(), m - 1, d);
+            if (next < today) next = new Date(today.getFullYear() + 1, m - 1, d);
+            return Math.round((next - today) / 86400000);
+        }
+
+        const upcoming = [];
+        customers.forEach(c => {
+            if (c.birthday) {
+                const days = daysUntilNext(c.birthday);
+                if (days !== null && days <= 7) upcoming.push({ ...c, _type: "Birthday", _emoji: "🎂", _days: days });
+            }
+            if (c.anniversary) {
+                const days = daysUntilNext(c.anniversary);
+                if (days !== null && days <= 7) upcoming.push({ ...c, _type: "Anniversary", _emoji: "💍", _days: days });
+            }
+        });
+        upcoming.sort((a, b) => a._days - b._days);
+
+        if (!upcoming.length) {
+            label.style.display     = "none";
+            container.style.display = "none";
+            return;
+        }
+
+        label.style.display     = "block";
+        container.style.display = "block";
+        container.innerHTML = upcoming.map(c => {
+            const when = c._days === 0 ? "Today!" : c._days === 1 ? "Tomorrow" : `In ${c._days} days`;
+            const msg  = encodeURIComponent(
+                c._type === "Birthday"
+                ? `🎂 Happy Birthday, ${c.name}! Surjya Bakery ki taraf se aapko dher saari khushiyan. Aaj special discount ke liye visit karein! 🥳`
+                : `💍 Happy Anniversary, ${c.name}! Surjya Bakery ki taraf se aapko badhai. Celebrate karne aaiye humare saath! 🎉`
+            );
+            const waLink = c.phone ? `https://wa.me/${c.phone.replace(/\D/g,"")}?text=${msg}` : null;
+            return `
+            <div class="activity-row">
+                <div>
+                    <b>${c._emoji} ${c.name}</b>
+                    <div class="sub-text">${c._type} · ${when}</div>
+                </div>
+                ${waLink ? `<a href="${waLink}" target="_blank" class="badge badge-success" style="text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> Wish</a>` : `<span class="badge">No phone</span>`}
+            </div>`;
+        }).join("");
+    }
+
+    // ── Render: Expiry Alerts (expired or within 3 days) ──
+    function renderExpiryAlerts(items) {
+        const label     = document.getElementById("expiryAlertLabel");
+        const container = document.getElementById("expiryAlerts");
+        const today = new Date(new Date().toDateString());
+
+        const expiring = items
+            .filter(i => i.expiryDate)
+            .map(i => ({ ...i, _days: Math.round((new Date(i.expiryDate) - today) / 86400000) }))
+            .filter(i => i._days <= 3)
+            .sort((a, b) => a._days - b._days);
+
+        if (!expiring.length) {
+            label.style.display     = "none";
+            container.style.display = "none";
+            return;
+        }
+
+        label.style.display     = "block";
+        container.style.display = "block";
+        container.innerHTML = expiring.map(i => {
+            const status = i._days < 0 ? "Expired" : i._days === 0 ? "Expires Today" : `Expires in ${i._days}d`;
+            const cls    = i._days < 0 ? "badge-danger" : "badge-warning";
+            return `
+            <div class="activity-row">
+                <b>${i.name}</b>
+                <span class="badge ${cls}">${status}</span>
+            </div>`;
+        }).join("");
+    }
+
     // ── Render: Stock Alerts ──
     function renderStockAlerts(items) {
         const lowStock  = items.filter(i => parseFloat(i.stock || 0) < 10);
@@ -695,5 +865,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (msg, src, line) => console.error("Error:", msg, "at", src, line);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

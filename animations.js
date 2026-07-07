@@ -119,16 +119,18 @@
     });
   }
 
-  // Hook onto sale record buttons
+  // Hook onto sale record / invoice save buttons across pages
   function hookSaleButton() {
-    const btn = document.getElementById('recordBtn');
-    if (!btn || btn.dataset.burstHooked) return;
-    btn.dataset.burstHooked = '1';
-    btn.addEventListener('click', (e) => {
-      if (!btn.disabled) {
-        const r = btn.getBoundingClientRect();
-        breadBurst(r.left + r.width / 2, r.top);
-      }
+    ['recordBtn', 'printBtn', 'waBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn || btn.dataset.burstHooked) return;
+      btn.dataset.burstHooked = '1';
+      btn.addEventListener('click', (e) => {
+        if (!btn.disabled) {
+          const r = btn.getBoundingClientRect();
+          breadBurst(r.left + r.width / 2, r.top);
+        }
+      });
     });
   }
 

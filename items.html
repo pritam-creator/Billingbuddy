@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.6/JsBarcode.all.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
@@ -20,8 +21,10 @@
             --danger: #dc2626; --danger-bg: #fee2e2;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -61,7 +64,7 @@
         .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,134,10,0.1); }
 
         /* Category chips */
-        .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 16px; scrollbar-width: none; }
+        .cat-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .cat-chip { padding: 7px 16px; background: var(--card-bg); border: 1.5px solid var(--border); border-radius: 100px; cursor: pointer; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: all 0.18s; color: var(--sub); }
         .cat-chip.active { background: var(--text); color: #fff; border-color: var(--text); }
         body.dark .cat-chip.active { background: var(--accent); border-color: var(--accent); }
@@ -299,6 +302,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -397,6 +402,35 @@ select, .entry-input, .search-wrap input {
     </div>
 </div>
 
+<!-- Barcode Label Print Modal -->
+<div class="modal-overlay" id="labelModal">
+    <div class="modal-sheet">
+        <h3><i class="fa-solid fa-print" style="color:var(--accent);"></i> Print Barcode Label</h3>
+        <p id="labelItemName" style="font-size:14px; color:var(--sub); margin-bottom:14px;"></p>
+        <div class="form-group">
+            <label>Kitne Labels Print Karne Hain?</label>
+            <input type="number" id="labelQty" value="1" min="1" max="100" inputmode="numeric">
+        </div>
+        <button class="btn-submit" onclick="printBarcodeLabels()">
+            <i class="fa-solid fa-print"></i> Print Labels
+        </button>
+        <button class="btn-cancel-modal" onclick="closeLabelModal()">Cancel</button>
+    </div>
+</div>
+
+<!-- Hidden printable label sheet -->
+<div id="labelPrintSection"></div>
+<style>
+    #labelPrintSection { display: none; }
+    @media print {
+        body * { visibility: hidden; }
+        #labelPrintSection, #labelPrintSection * { visibility: visible; }
+        #labelPrintSection { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
+        .label-item { display: inline-block; width: 42mm; padding: 3mm; text-align: center; border: 1px dashed #999; margin: 1mm; page-break-inside: avoid; }
+        .label-item svg { width: 100%; }
+    }
+</style>
+
 <!-- Logout Modal -->
 <div class="logout-overlay" id="logoutModal">
     <div class="logout-card">
@@ -420,6 +454,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -495,7 +532,9 @@ select, .entry-input, .search-wrap input {
                 <div class="card-body">
                     <h3>${item.name}</h3>
                     <span class="card-price">₹${parseFloat(item.price || 0).toLocaleString()}</span>
-                    ${item.barcode ? `<div class="barcode-tag"><i class="fa-solid fa-barcode"></i> ${item.barcode}</div>` : ""}
+                    ${item.barcode ? `<div class="barcode-tag"><i class="fa-solid fa-barcode"></i> ${item.barcode}
+                        <i class="fa-solid fa-print" style="margin-left:6px; cursor:pointer;" onclick="event.stopPropagation(); openLabelModal('${item.id}')" title="Print Label"></i>
+                    </div>` : ""}
                     <span class="stock-badge ${isLow ? 'stock-low' : 'stock-ok'}">
                         ${isLow ? '⚠ Low' : '✓ In Stock'} · ${stock}
                     </span>
@@ -562,6 +601,49 @@ select, .entry-input, .search-wrap input {
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save Item';
     }
 
+    // ── Barcode Label Printing ──
+    let labelItemId = null;
+    function openLabelModal(id) {
+        const item = allItems.find(i => i.id === id);
+        if (!item || !item.barcode) return;
+        labelItemId = id;
+        document.getElementById("labelItemName").innerText = `${item.name} — ₹${item.price}`;
+        document.getElementById("labelQty").value = 1;
+        document.getElementById("labelModal").classList.add("active");
+    }
+    function closeLabelModal() {
+        document.getElementById("labelModal").classList.remove("active");
+        labelItemId = null;
+    }
+
+    function printBarcodeLabels() {
+        const item = allItems.find(i => i.id === labelItemId);
+        if (!item) return;
+        const qty = Math.max(1, Math.min(100, parseInt(document.getElementById("labelQty").value) || 1));
+
+        const section = document.getElementById("labelPrintSection");
+        section.innerHTML = "";
+        for (let i = 0; i < qty; i++) {
+            const wrap = document.createElement("div");
+            wrap.className = "label-item";
+            wrap.innerHTML = `
+                <div style="font-size:11px; font-weight:700; margin-bottom:2px;">${item.name}</div>
+                <div style="font-size:10px; margin-bottom:2px;">₹${item.price}</div>
+                <svg class="barcode-svg-${i}"></svg>`;
+            section.appendChild(wrap);
+        }
+        // Render each barcode after elements are in the DOM
+        for (let i = 0; i < qty; i++) {
+            try {
+                JsBarcode(section.querySelectorAll(`.barcode-svg-${i}`)[0], item.barcode, {
+                    format: "CODE128", width: 1.5, height: 32, displayValue: true, fontSize: 10, margin: 2
+                });
+            } catch(e) { console.warn("Barcode render failed:", e); }
+        }
+        closeLabelModal();
+        setTimeout(() => window.print(), 200);
+    }
+
     function openLogout()    { document.getElementById("logoutModal").style.display = "flex"; }
     function closeLogout()   { document.getElementById("logoutModal").style.display = "none"; }
     function confirmLogout() { localStorage.removeItem("loggedIn"); window.location.replace("index.html"); }
@@ -585,5 +667,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>

@@ -20,8 +20,10 @@
             --warn: #d97706; --warn-bg: #fef9c3;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { overflow-x: hidden; overscroll-behavior-y: contain; }
+        img, svg, table, video, canvas { max-width: 100%; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -291,6 +293,8 @@ select, .entry-input, .search-wrap input {
             <li onclick="goPage('records.html')">      <i class="fa-solid fa-chart-simple"></i> Records</li>
             <li onclick="goPage('employees.html')">    <i class="fa-solid fa-user-group"></i> Employees</li>
             <li onclick="goPage('history.html')">      <i class="fa-solid fa-clock-rotate-left"></i> Invoice History</li>
+            <li onclick="goPage('subscriptions.html')"><i class="fa-solid fa-repeat"></i> Subscriptions</li>
+            <li onclick="goPage('suppliers.html')"><i class="fa-solid fa-truck-ramp-box"></i> Suppliers</li>
             <li onclick="goPage('settings.html')">     <i class="fa-solid fa-gear"></i> Settings</li>
         </ul>
         <div class="sidebar-footer">
@@ -353,7 +357,7 @@ select, .entry-input, .search-wrap input {
             </div>
             <div class="form-group">
                 <label>Type</label>
-                <select id="fType">
+                <select id="fType" onchange="handleTypeChange()">
                     <option value="Finished">Finished Product</option>
                     <option value="Raw">Raw Material</option>
                 </select>
@@ -362,7 +366,7 @@ select, .entry-input, .search-wrap input {
         <div class="form-row">
             <div class="form-group">
                 <label>Cost Price (₹)</label>
-                <input type="number" id="fPrice" placeholder="0" inputmode="numeric">
+                <input type="number" id="fPrice" placeholder="0" inputmode="numeric" oninput="computeRecipeCost()">
             </div>
             <div class="form-group">
                 <label>Unit</label>
@@ -379,6 +383,24 @@ select, .entry-input, .search-wrap input {
                 <input type="number" id="fMin" placeholder="10" inputmode="numeric">
             </div>
         </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Expiry Date — optional</label>
+                <input type="date" id="fExpiry">
+            </div>
+        </div>
+
+        <!-- Recipe / Ingredient Costing (Finished Products only) -->
+        <div id="recipeSection" style="display:none; border-top:1px solid var(--border); padding-top:14px; margin-top:6px; margin-bottom:14px;">
+            <label style="font-weight:700; display:block; margin-bottom:2px;">Recipe (Ingredients Used)</label>
+            <p style="font-size:12px; color:var(--sub); margin-bottom:10px;">1 unit banane mein jo Raw Materials lagte hain, unki quantity daalein.</p>
+            <div id="recipeRows"></div>
+            <button type="button" class="btn-cancel-m" style="margin-top:8px; padding:9px;" onclick="addRecipeRow()">
+                <i class="fa-solid fa-plus"></i> Add Ingredient
+            </button>
+            <div id="recipeCostBox" style="background:var(--bg); border-radius:10px; padding:12px 14px; margin-top:12px; font-size:13px;"></div>
+        </div>
+
         <button class="btn-submit" id="itemSaveBtn" onclick="saveItem()">
             <i class="fa-solid fa-cloud-arrow-up"></i> Save Item
         </button>
@@ -394,7 +416,7 @@ select, .entry-input, .search-wrap input {
         <p id="stockModalCurrent" style="font-size:12px; color:var(--sub); margin-bottom:16px;"></p>
 
         <!-- Quick amount chips -->
-        <div style="display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:12px;">
+        <div style="display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding-bottom:12px;">
             <button onclick="setStockQty(5)"  style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">5</button>
             <button onclick="setStockQty(10)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">10</button>
             <button onclick="setStockQty(25)" style="flex-shrink:0; padding:8px 14px; border:1.5px solid var(--border); border-radius:100px; background:var(--bg); font-size:12.5px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; color:var(--sub); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">25</button>
@@ -462,6 +484,9 @@ select, .entry-input, .search-wrap input {
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+        console.warn("Offline mode not available:", err.code); // multiple tabs / unsupported browser
+    });
 
     // Dark mode
     const darkToggle = document.getElementById("darkToggle");
@@ -532,6 +557,14 @@ select, .entry-input, .search-wrap input {
             const unit   = item.unit || "Pcs";
             const val    = (stock * price).toLocaleString();
 
+            // Expiry status
+            let expiryBadge = "";
+            if (item.expiryDate) {
+                const daysLeft = Math.round((new Date(item.expiryDate) - new Date(new Date().toDateString())) / 86400000);
+                if (daysLeft < 0)      expiryBadge = `<span style="font-size:11px; font-weight:700; background:var(--danger-bg); color:var(--danger); padding:2px 8px; border-radius:6px; margin-left:4px;">⛔ Expired</span>`;
+                else if (daysLeft <= 2) expiryBadge = `<span style="font-size:11px; font-weight:700; background:#fff7ed; color:#c2410c; padding:2px 8px; border-radius:6px; margin-left:4px;">⏳ ${daysLeft === 0 ? "Expires Today" : "Expires in " + daysLeft + "d"}</span>`;
+            }
+
             return `
             <div class="inv-card">
                 <div class="inv-card-header">
@@ -549,12 +582,14 @@ select, .entry-input, .search-wrap input {
                     <span class="stock-num ${isLow ? 'stock-low' : 'stock-ok'}">${stock}</span>
                     <span class="stock-unit">${unit}</span>
                     ${isLow ? '<span style="font-size:11px; font-weight:700; background:var(--danger-bg); color:var(--danger); padding:2px 8px; border-radius:6px; margin-left:4px;">⚠ Low</span>' : ''}
+                    ${expiryBadge}
                 </div>
 
                 <div class="inv-meta">
                     <span>Cost: <span>₹${price}</span></span>
                     <span>Min: <span>${min} ${unit}</span></span>
                     <span>Value: <span>₹${val}</span></span>
+                    ${item.type === "Finished" && item.costPrice != null ? `<span>Margin: <span style="color:${(price - item.costPrice) >= 0 ? 'var(--success)' : 'var(--danger)'};">₹${(price - item.costPrice).toFixed(2)}</span></span>` : ""}
                 </div>
 
                 <div class="progress-track">
@@ -574,12 +609,18 @@ select, .entry-input, .search-wrap input {
     }
 
     // ── Add / Edit Item Modal ──
+    let recipeState = []; // [{rawId, qty}]
+
     function openAddModal() {
         editingId = null;
         document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-plus" style="color:var(--accent);"></i> Add Item';
         ["fName","fPrice","fUnit","fStock"].forEach(id => document.getElementById(id).value = "");
-        document.getElementById("fMin").value  = "10";
-        document.getElementById("fType").value = currentTab;
+        document.getElementById("fMin").value    = "10";
+        document.getElementById("fExpiry").value = "";
+        document.getElementById("fType").value   = currentTab;
+        recipeState = [];
+        renderRecipeRows();
+        handleTypeChange();
         document.getElementById("itemModal").classList.add("active");
     }
 
@@ -587,24 +628,96 @@ select, .entry-input, .search-wrap input {
         editingId = id;
         const item = allItems.find(i => i.id === id);
         document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-pen" style="color:var(--accent);"></i> Edit Item';
-        document.getElementById("fName").value  = item.name;
-        document.getElementById("fPrice").value = item.price || 0;
-        document.getElementById("fUnit").value  = item.unit || "";
-        document.getElementById("fStock").value = item.stock || 0;
-        document.getElementById("fMin").value   = item.minLevel || 10;
-        document.getElementById("fType").value  = item.type || "Finished";
+        document.getElementById("fName").value   = item.name;
+        document.getElementById("fPrice").value  = item.price || 0;
+        document.getElementById("fUnit").value   = item.unit || "";
+        document.getElementById("fStock").value  = item.stock || 0;
+        document.getElementById("fMin").value    = item.minLevel || 10;
+        document.getElementById("fExpiry").value = item.expiryDate || "";
+        document.getElementById("fType").value   = item.type || "Finished";
+        recipeState = (item.recipe || []).map(r => ({ rawId: r.rawItemId, qty: r.qty }));
+        renderRecipeRows();
+        handleTypeChange();
         document.getElementById("itemModal").classList.add("active");
+    }
+
+    function handleTypeChange() {
+        const isFinished = document.getElementById("fType").value === "Finished";
+        document.getElementById("recipeSection").style.display = isFinished ? "block" : "none";
+        if (isFinished) computeRecipeCost();
+    }
+
+    function renderRecipeRows() {
+        const rawItems = allItems.filter(i => i.type === "Raw");
+        const wrap = document.getElementById("recipeRows");
+        if (!recipeState.length) {
+            wrap.innerHTML = `<p style="font-size:12px; color:var(--sub); padding:8px 0;">Koi ingredient add nahi kiya. "Add Ingredient" dabayein.</p>`;
+            return;
+        }
+        wrap.innerHTML = recipeState.map((r, idx) => `
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                <select onchange="updateRecipeRow(${idx}, 'rawId', this.value)" style="flex:1; padding:9px; border-radius:8px; border:1.5px solid var(--border); font-family:'DM Sans',sans-serif; font-size:13px;">
+                    <option value="">-- Raw Material Chunein --</option>
+                    ${rawItems.map(ri => `<option value="${ri.id}" ${ri.id === r.rawId ? "selected" : ""}>${ri.name} (₹${ri.price || 0}/${ri.unit || "unit"})</option>`).join("")}
+                </select>
+                <input type="number" min="0" step="0.01" value="${r.qty || ""}" placeholder="Qty"
+                       oninput="updateRecipeRow(${idx}, 'qty', this.value)"
+                       style="width:70px; padding:9px; border-radius:8px; border:1.5px solid var(--border); text-align:center;">
+                <button type="button" onclick="removeRecipeRow(${idx})" style="background:#fee2e2; color:#dc2626; border:none; border-radius:8px; width:36px; height:36px; cursor:pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>`).join("");
+    }
+
+    function addRecipeRow() {
+        if (!allItems.some(i => i.type === "Raw")) {
+            alert("Pehle kam se kam ek 'Raw Material' item add karein (Raw Materials tab se).");
+            return;
+        }
+        recipeState.push({ rawId: "", qty: 0 });
+        renderRecipeRows();
+        computeRecipeCost();
+    }
+    function removeRecipeRow(idx) {
+        recipeState.splice(idx, 1);
+        renderRecipeRows();
+        computeRecipeCost();
+    }
+    function updateRecipeRow(idx, field, val) {
+        recipeState[idx][field] = field === "qty" ? (parseFloat(val) || 0) : val;
+        computeRecipeCost();
+    }
+
+    function computeRecipeCost() {
+        const box = document.getElementById("recipeCostBox");
+        if (!box) return;
+        let totalCost = 0;
+        recipeState.forEach(r => {
+            const raw = allItems.find(i => i.id === r.rawId);
+            if (raw) totalCost += (parseFloat(raw.price) || 0) * (parseFloat(r.qty) || 0);
+        });
+        const sellPrice = parseFloat(document.getElementById("fPrice").value) || 0;
+        const margin    = sellPrice - totalCost;
+        const marginPct = sellPrice > 0 ? (margin / sellPrice) * 100 : 0;
+        box.innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="color:var(--sub);">Ingredient Cost</span><b>₹${totalCost.toFixed(2)}</b></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="color:var(--sub);">Selling Price</span><b>₹${sellPrice.toFixed(2)}</b></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:6px; margin-top:4px;">
+                <span style="font-weight:700;">Profit Margin</span>
+                <b style="color:${margin >= 0 ? 'var(--success)' : 'var(--danger)'};">₹${margin.toFixed(2)} (${marginPct.toFixed(0)}%)</b>
+            </div>`;
     }
 
     function closeItemModal() { document.getElementById("itemModal").classList.remove("active"); }
 
     async function saveItem() {
-        const name  = document.getElementById("fName").value.trim();
-        const price = parseFloat(document.getElementById("fPrice").value) || 0;
-        const unit  = document.getElementById("fUnit").value.trim() || "Pcs";
-        const stock = parseFloat(document.getElementById("fStock").value) || 0;
-        const min   = parseFloat(document.getElementById("fMin").value) || 10;
-        const type  = document.getElementById("fType").value;
+        const name   = document.getElementById("fName").value.trim();
+        const price  = parseFloat(document.getElementById("fPrice").value) || 0;
+        const unit   = document.getElementById("fUnit").value.trim() || "Pcs";
+        const stock  = parseFloat(document.getElementById("fStock").value) || 0;
+        const min    = parseFloat(document.getElementById("fMin").value) || 10;
+        const type   = document.getElementById("fType").value;
+        const expiry = document.getElementById("fExpiry").value || "";
 
         if (!name) return alert("Item ka naam daalna zaroori hai.");
 
@@ -614,9 +727,35 @@ select, .entry-input, .search-wrap input {
 
         const data = { name, price, unit, stock, minLevel: min, type,
                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp() };
+        if (expiry) data.expiryDate = expiry;
+        else        data.expiryDate = firebase.firestore.FieldValue.delete();
+
+        if (type === "Finished") {
+            const recipe = recipeState
+                .filter(r => r.rawId && r.qty > 0)
+                .map(r => {
+                    const raw = allItems.find(i => i.id === r.rawId);
+                    return { rawItemId: r.rawId, rawItemName: raw?.name || "", qty: r.qty };
+                });
+            const costPrice = recipe.reduce((sum, r) => {
+                const raw = allItems.find(i => i.id === r.rawItemId);
+                return sum + (parseFloat(raw?.price) || 0) * r.qty;
+            }, 0);
+            data.recipe    = recipe;
+            data.costPrice = costPrice;
+        } else {
+            data.recipe    = firebase.firestore.FieldValue.delete();
+            data.costPrice = firebase.firestore.FieldValue.delete();
+        }
+
         try {
             if (editingId) await db.collection("items").doc(editingId).update(data);
-            else await db.collection("items").add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            else {
+                // FieldValue.delete() isn't valid on create — strip empty optional fields first
+                if (!expiry) delete data.expiryDate;
+                if (type !== "Finished") { delete data.recipe; delete data.costPrice; }
+                await db.collection("items").add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
             closeItemModal();
         } catch (e) { alert("Error: " + e.message); }
 
@@ -716,5 +855,6 @@ select, .entry-input, .search-wrap input {
     window.onerror = (m, s, l) => console.error(m, s, l);
 </script>
     <script src="animations.js" defer></script>
+<script src="pwa-install.js" defer></script>
 </body>
 </html>
