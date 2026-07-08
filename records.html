@@ -19,10 +19,8 @@
             --danger: #dc2626; --danger-bg: #fee2e2;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html { overflow-x: hidden; overscroll-behavior-y: contain; }
-        img, svg, table, video, canvas { max-width: 100%; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -53,8 +51,6 @@
         .page-sub { font-size: 12px; color: var(--sub); margin-top: 3px; font-weight: 500; }
         .icon-btn { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
         .icon-btn:hover { border-color: var(--accent); }
-        .report-btn { width: 100%; height: 44px; padding: 0 10px; border-radius: 11px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-size: 13px; font-weight: 700; white-space: nowrap; display: flex; align-items: center; justify-content: center; color: var(--text); transition: all 0.2s; }
-        .report-btn:hover { border-color: var(--accent); }
 
         /* Section label */
         .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px; color: var(--sub); font-weight: 700; display: block; }
@@ -80,7 +76,7 @@
         .clr-out { color: #fb923c; }
 
         /* Filter tabs */
-        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; -webkit-overflow-scrolling: touch; }
+        .tab-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin-bottom: 4px; }
         .tab { padding: 8px 18px; border-radius: 100px; background: var(--card-bg); border: 1.5px solid var(--border); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.18s; color: var(--sub); font-family: 'DM Sans', sans-serif; }
         .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
         body.dark .tab.active { background: var(--accent); border-color: var(--accent); }
@@ -112,9 +108,9 @@
         .modal-sheet { background: var(--card-bg); border-radius: 24px 24px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; margin: 0 auto; border: 1px solid var(--border); animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .modal-sheet h3 { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 18px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; min-width: 0; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
-        .form-group input { width: 100%; min-width: 0; padding: 12px 14px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
+        .form-group input { padding: 12px 14px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
         .form-group input:focus { border-color: var(--accent); background: var(--accent-light); }
 
         /* Type toggle */
@@ -334,15 +330,15 @@ select, .entry-input, .search-wrap input {
         <!-- Reports -->
         <span class="section-label">Reports</span>
         <div class="summary-card" style="margin-bottom:16px;">
-            <div style="margin-bottom:14px;">
-                <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; display:block; margin-bottom:6px;">Month</label>
-                <input type="month" id="reportMonth" style="width:100%; padding:10px 0px; border-radius:10px; border:1.5px solid var(--border); font-family:'DM Sans',sans-serif; font-size:14px; background:var(--card-bg); color:var(--text);">
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <button class="report-btn" onclick="generatePnlReport()">
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+                <div style="flex:1; min-width:140px;">
+                    <label style="font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; display:block; margin-bottom:6px;">Month</label>
+                    <input type="month" id="reportMonth" style="width:100%; padding:11px 12px; border-radius:10px; border:1.5px solid var(--border); font-family:'DM Sans',sans-serif; font-size:14px; background:var(--card-bg); color:var(--text);">
+                </div>
+                <button class="icon-btn" style="width:auto; padding:0 16px; height:44px; font-size:13px; font-weight:700;" onclick="generatePnlReport()">
                     <i class="fa-solid fa-chart-pie"></i>&nbsp; P&amp;L Report
                 </button>
-                <button class="report-btn" onclick="exportGstSummary()">
+                <button class="icon-btn" style="width:auto; padding:0 16px; height:44px; font-size:13px; font-weight:700;" onclick="exportGstSummary()">
                     <i class="fa-solid fa-file-csv"></i>&nbsp; GSTR-1 CSV
                 </button>
             </div>

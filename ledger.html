@@ -22,9 +22,7 @@
             --blue: #2563eb; --blue-bg: #eff6ff;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html { overflow-x: hidden; overscroll-behavior-y: contain; }
-        img, svg, table, video, canvas { max-width: 100%; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
@@ -133,7 +131,7 @@
         .del-txn:hover { background: var(--danger-bg); color: var(--danger); }
 
         .entry-panel { padding: 12px 18px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
-        .quick-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .quick-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
         .chip { padding: 7px 14px; border-radius: 100px; background: var(--bg); border: 1.5px solid var(--border); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; color: var(--sub); font-family: 'DM Sans', sans-serif; }
         .chip:hover { border-color: var(--accent); color: var(--accent); }
         .entry-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 10px; }
@@ -145,8 +143,7 @@
         .btn-gave:hover, .btn-got:hover { opacity: 0.8; }
 
         /* ── Add customer form ── */
-        .form-group { margin-bottom: 12px; min-width: 0; }
-        .form-group input, .form-group select { width: 100%; min-width: 0; }
+        .form-group { margin-bottom: 12px; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; display: block; margin-bottom: 5px; }
         .btn-create { width: 100%; padding: 14px; border: none; border-radius: 13px; background: var(--text); color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 6px; transition: opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-create:hover { opacity: 0.85; }

@@ -18,10 +18,8 @@
             --danger: #dc2626; --danger-bg: #fee2e2;
             --warn: #d97706; --warn-bg: #fef9c3;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html { overflow-x: hidden; overscroll-behavior-y: contain; }
-        img, svg, table, video, canvas { max-width: 100%; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; display: flex; justify-content: center; align-items: flex-start; padding: 28px 16px 60px; transition: background 0.3s; overflow-x: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; display: flex; justify-content: center; align-items: flex-start; padding: 28px 16px 60px; transition: background 0.3s; }
         body.dark { --bg: #0f1117; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .page { width: 100%; max-width: 420px; }
@@ -61,9 +59,9 @@
         /* Edit form */
         .edit-card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; display: none; }
         .edit-card.visible { display: block; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; min-width: 0; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
-        .form-group input { width: 100%; min-width: 0; padding: 11px 14px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
+        .form-group input { padding: 11px 14px; border-radius: 11px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.2s; }
         .form-group input:focus { border-color: var(--accent); background: var(--accent-light); }
 
         /* Buttons */

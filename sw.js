@@ -1,4 +1,4 @@
-const CACHE_NAME = "surjya-bakery-v2";
+const CACHE_NAME = "surjya-bakery-v3";
 const STATIC_ASSETS = [
   "./index.html",
   "./dashboard.html",
@@ -26,10 +26,17 @@ const STATIC_ASSETS = [
   "./pwa-install.js"
 ];
 
-// Install: cache static files
+// Install: cache static files (each file cached independently so one
+// failure doesn't block caching of everything else)
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(
+        STATIC_ASSETS.map(url => cache.add(url).catch(err => {
+          console.warn("SW: failed to cache", url, err);
+        }))
+      )
+    ).then(() => self.skipWaiting())
   );
 });
 

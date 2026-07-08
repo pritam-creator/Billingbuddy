@@ -4,6 +4,16 @@
    and exposes window.triggerPWAInstall() for a manual
    "Install App" button (used in Settings).
    ══════════════════════════════════════════════════════ */
+
+// ── Register the service worker (this is what actually makes offline mode work) ──
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(reg => console.log("Service worker registered:", reg.scope))
+      .catch(err => console.warn("Service worker registration failed:", err));
+  });
+}
+
 (function () {
   let deferredPrompt = null;
   const DISMISS_KEY = "pwaInstallDismissedAt";

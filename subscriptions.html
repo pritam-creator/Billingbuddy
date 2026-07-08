@@ -21,10 +21,8 @@
             --warn: #c2410c; --warn-bg: #fff7ed;
             --sidebar-w: 260px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html { overflow-x: hidden; overscroll-behavior-y: contain; }
-        img, svg, table, video, canvas { max-width: 100%; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; font-family: 'DM Sans', sans-serif; transition: background 0.3s, color 0.3s; }
         body.dark { --bg: #0f1117; --sidebar-bg: #1a1d27; --card-bg: #1a1d27; --border: #2a2d3a; --text: #f0ece4; --sub: #6b6558; --accent-light: #1e1a10; }
 
         .app { display: flex; height: 100vh; overflow: hidden; }
@@ -95,8 +93,7 @@
         .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group { min-width: 0; }
-        .form-group input, .form-group select { width: 100%; min-width: 0; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
+        .form-group input, .form-group select { padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
         .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
         .form-row { display: flex; gap: 10px; }
         .form-row .form-group { flex: 1; }
@@ -524,12 +521,14 @@
                     source: "subscription", subscriptionId: sub.id,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                // Advance nextDate
-                const next = new Date(sub.nextDate);
+                // Advance nextDate (parse Y-M-D manually to avoid UTC/local timezone drift)
+                const [ny, nm, nd] = sub.nextDate.split("-").map(Number);
+                const next = new Date(ny, nm - 1, nd);
                 if (sub.frequency === "daily")   next.setDate(next.getDate() + 1);
                 else if (sub.frequency === "weekly")  next.setDate(next.getDate() + 7);
                 else if (sub.frequency === "monthly") next.setMonth(next.getMonth() + 1);
-                await db.collection("subscriptions").doc(sub.id).update({ nextDate: next.toISOString().slice(0,10) });
+                const nextIso = `${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,"0")}-${String(next.getDate()).padStart(2,"0")}`;
+                await db.collection("subscriptions").doc(sub.id).update({ nextDate: nextIso });
                 created++;
             } catch(e) { console.error("Order gen failed for", sub.id, e); }
         }
