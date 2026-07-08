@@ -99,9 +99,9 @@
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 22px; }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; min-width: 0; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input { padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
+        .form-group input { width: 100%; min-width: 0; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
         .form-group input:focus { border-color: var(--accent); }
 
         /* Slab builder */

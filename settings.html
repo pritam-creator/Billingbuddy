@@ -94,7 +94,8 @@
         .settings-card h3 i { color: var(--accent); font-size: 15px; }
 
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .form-group input, .form-group select { width: 100%; min-width: 0; }
         .form-group.full { grid-column: 1 / -1; }
 
         label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }

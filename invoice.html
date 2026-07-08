@@ -64,7 +64,8 @@
 
         /* Customer inputs */
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+        .form-group input, .form-group select { width: 100%; min-width: 0; }
         .form-group label { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.7px; }
         input[type="text"], input[type="tel"], input[type="number"] {
             padding: 11px 14px; border-radius: 11px; border: 1.5px solid var(--border);
