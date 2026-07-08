@@ -385,15 +385,13 @@ select, .entry-input, .search-wrap input {
             </div>
             <div class="header-actions">
                 <button class="icon-btn" id="darkToggle" title="Toggle dark mode">🌙</button>
-                <button class="icon-btn" onclick="sharePortal()" title="Share customer portal" style="font-size:13px;"><i class="fa-brands fa-whatsapp" style="color:#16a34a;"></i></button>
             </div>
         </header>
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <button class="action-chip" onclick="goPage('invoice.html')"><i class="fa-solid fa-plus"></i> New Bill</button>
-            <button class="action-chip" onclick="goPage('items.html')">Add Item</button>
-            <button class="action-chip green" onclick="sharePortal()">Share Portal</button>
+            <button class="action-chip" onclick="goPage('items.html')"><i class="fa-solid fa-box"></i> Add Item</button>
+            <button class="action-chip green" onclick="sharePortal()"><i class="fa-brands fa-whatsapp"></i> Share Portal</button>
         </div>
 
         <!-- Finance -->
@@ -569,9 +567,56 @@ select, .entry-input, .search-wrap input {
     // ── Main Dashboard Listeners ──
     function startDashboard() {
 
+        // Finance Summary: To Collect (from customers' ledger) / To Pay (from suppliers' ledger)
+        let _financeCustomers = [], _financeLedger = [], _financeSuppliers = [], _financeSupplierLedger = [];
+
+        function calcCustBalance(custId, openingDue) {
+            let bal = parseFloat(openingDue || 0);
+            _financeLedger.filter(e => e.customerId === custId).forEach(e => {
+                const amt = parseFloat(e.amount || 0);
+                if (e.type === "debit")  bal += amt;
+                if (e.type === "credit") bal -= amt;
+            });
+            return bal;
+        }
+
+        function calcSupBalance(supId, opening) {
+            let bal = parseFloat(opening || 0);
+            _financeSupplierLedger.filter(e => e.supplierId === supId).forEach(e => {
+                const amt = parseFloat(e.amount || 0);
+                if (e.type === "purchase") bal += amt;
+                if (e.type === "payment")  bal -= amt;
+            });
+            return bal;
+        }
+
+        function updateFinanceSummary() {
+            const collect = _financeCustomers.reduce((sum, c) => sum + Math.max(calcCustBalance(c.id, c.openingDue), 0), 0);
+            const pay     = _financeSuppliers.reduce((sum, s) => sum + Math.max(calcSupBalance(s.id, s.openingDue), 0), 0);
+            document.getElementById("dash-collect").innerText = "₹ " + Math.round(collect).toLocaleString();
+            document.getElementById("dash-pay").innerText     = "₹ " + Math.round(pay).toLocaleString();
+        }
+
+        db.collection("ledger").onSnapshot(snap => {
+            _financeLedger = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateFinanceSummary();
+        });
+
+        db.collection("suppliers").onSnapshot(snap => {
+            _financeSuppliers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateFinanceSummary();
+        });
+
+        db.collection("supplierLedger").onSnapshot(snap => {
+            _financeSupplierLedger = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateFinanceSummary();
+        });
+
         // FIX 1: 'customers' collection (not 'clients')
         db.collection("customers").onSnapshot(snap => {
             document.getElementById("dash-clients").innerText = snap.size;
+            _financeCustomers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateFinanceSummary();
             renderBirthdayAlerts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         });
 
@@ -581,17 +626,6 @@ select, .entry-input, .search-wrap input {
             const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderStockAlerts(items);
             renderExpiryAlerts(items);
-        });
-
-        // Ledger
-        db.collection("ledger").onSnapshot(snap => {
-            let collect = 0, pay = 0;
-            snap.forEach(doc => {
-                const bal = parseFloat(doc.data().balance || 0);
-                if (bal > 0) collect += bal; else pay += Math.abs(bal);
-            });
-            document.getElementById("dash-collect").innerText = "₹ " + collect.toLocaleString();
-            document.getElementById("dash-pay").innerText     = "₹ " + pay.toLocaleString();
         });
 
         // FIX 2: orders listener — no nested onSnapshot
